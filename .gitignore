@@ -1,0 +1,60 @@
+# ---------- 密钥 / 凭据（绝对不要提交） ----------
+系统/tools/gee-key.json
+*.pem
+.env
+.env.*
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---------- Node ----------
+node_modules/
+npm-debug.log*
+
+# ---------- 生成数据（体积大，可由 tools/ 里的脚本重新生成） ----------
+系统/data/tiles/
+系统/data/tiles_dem/
+系统/data/detail/
+系统/data/patch/
+系统/data/basin/
+系统/data/gee/
+系统/data/rsei/
+系统/data/dem.bin
+系统/data/*.log
+系统/data/public_url.txt
+系统/data/pg_status.json
+
+# ---------- 构建产物 / 打包 ----------
+系统/dist/
+系统/tools/bin/
+dist/
+build/
+*.exe
+*.spec
+
+# ---------- 工具缓存 ----------
+系统/_shot/
+系统/_v2.png
+系统/v2/
+.slidep/
+
+# ---------- 本机运行态数据 ----------
+*.sqlite
+*.sqlite3
+*.db
+*.genie
+.wbapp_*
+.workbuddy-ai/
+
+# ---------- 本机配置与编辑器 ----------
+.workbuddy/
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

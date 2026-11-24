@@ -1,0 +1,38 @@
+{
+ "version": "2026.10.23",
+ "built": "2026-10-23 16:40",
+ "last_sync": "2026-11-24",
+ "bbox": [
+  97.6,
+  25.9,
+  105.4,
+  32.5
+ ],
+ "dem": {
+  "cols": 1024,
+  "rows": 1024,
+  "min": 143,
+  "max": 7317,
+  "res": 742,
+  "source": "Esri WorldElevation3D / Terrain3D"
+ },
+ "imagery": {
+  "source": "Esri World Imagery",
+  "size": 2048,
+  "res": "≈380 m/px"
+ },
+ "lulc": {
+  "source": "Sentinel-2 10 m Land Cover (Impact Observatory / Esri)",
+  "period": "2017–2021 复合",
+  "license": "CC BY 4.0"
+ },
+ "streams": {
+  "thr": 700,
+  "n": 365,
+  "method": "洼地填充 + D8 汇流累积 + RDP 简化"
+ },
+ "climate": {
+  "source": "台站/再分析参考值",
+  "status": "参考"
+ }
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>金沙江流域森林生态环境智能评估系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070A0D'/%3E%3Cpath d='M6 22c4-6 7-9 11-8s5 4 9 3' stroke='%2337D9A0' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='10' r='2.4' fill='%2337D9A0'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+
+<header id="top">
+  <div class="brand">
+    <svg viewBox="0 0 40 40" fill="none">
+      <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#5BEBBE"/><stop offset="1" stop-color="#1FA97C"/></linearGradient></defs>
+      <rect x="1" y="1" width="38" height="38" rx="10" stroke="url(#bg1)" stroke-width="1.4"/>
+      <path d="M8 27.5c4.2-6.6 7.4-9.4 11-8.6 3.4.8 5.1 4.2 9.2 3.1" stroke="url(#bg1)" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="27.6" cy="11.4" r="2.2" fill="#5BEBBE"/>
+    </svg>
+    <div><div class="t1">金沙江流域森林生态环境智能评估</div>
+      <div class="t2">JINSHA RIVER FOREST ECOLOGY · DIGITAL TWIN</div></div>
+  </div>
+  <nav id="nav">
+    <button class="tab on" data-mod="twin">数字孪生</button>
+    <button class="tab" data-mod="data">数据</button>
+    <button class="tab" data-mod="model">模型</button>
+    <button class="tab" data-mod="assess">评估</button>
+    <button class="tab" data-mod="warn">预警</button>
+    <button class="tab" data-mod="agent">智能体</button>
+    <button class="tab" data-mod="method">方法</button>
+  </nav>
+  <div id="topRight">
+    <div class="chip" title="数据集版本与构建时间"><i></i>数据 <b id="cVer">—</b></div>
+    <div class="chip" id="cFps" title="实时渲染帧率（自适应画质）"><i></i><b id="fps">--</b> FPS</div>
+    <div class="chip" id="cApi" title="服务端连接状态"><i></i><b id="apiTxt">在线</b></div>
+    <div class="user" id="userBtn">
+      <div class="av" id="uAv">A</div><div class="nm" id="uName">管理员</div><div class="caret">▼</div>
+      <div id="userMenu">
+        <button id="mPwd">修改密码</button>
+        <button id="mAbout">关于本系统</button>
+        <div class="sep"></div>
+        <button id="mOut">退出登录</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="stage">
+  <canvas id="gl"></canvas>
+  <div id="labels"></div>
+
+  <div class="hud" id="hudTitle">
+    <div class="k">DIGITAL TWIN · 数字孪生</div>
+    <h2>金沙江流域 · 三维生态基底</h2>
+    <p>真实高程 × 卫星影像 × 土地覆盖</p>
+    <div class="meta">
+      <span>高程 <b id="hElev">—</b></span>
+      <span>垂直夸张 <b id="hExag">16×</b></span>
+      <span>站点 <b id="hStn">20</b></span>
+    </div>
+  </div>
+
+  <div class="hud" id="legend">
+    <div>
+      <div class="lg">高程 / m</div>
+      <div style="display:flex;gap:7px">
+        <div class="bar" id="legBar"></div>
+        <div class="ticks" id="legTicks"></div>
+      </div>
+    </div>
+    <div class="st">
+      <span><i class="dot" style="background:#FF6B6B;color:#FF6B6B"></i>高风险</span>
+      <span><i class="dot" style="background:#F0B44C;color:#F0B44C"></i>中风险</span>
+      <span><i class="dot" style="background:#37D9A0;color:#37D9A0"></i>低风险</span>
+      <span id="legOv" style="display:none;margin-top:2px;color:#9FB2B5">专题层：<b id="legOvName">—</b></span>
+    </div>
+  </div>
+
+  <div class="hud" id="hudCam">
+    <span>方位 <b id="camAz">000°</b></span>
+    <span>视高 <b id="camAlt">—</b></span>
+    <span>比例 <b id="camScale">—</b></span>
+  </div>
+
+  <div id="card">
+    <div class="ch">
+      <div><h3 id="cdName">—</h3><div class="en" id="cdEn">—</div></div>
+      <button class="x" id="cdClose">✕</button>
+    </div>
+    <div class="tags" id="cdTags"></div>
+    <div class="rows" id="cdRows"></div>
+    <div class="acts">
+      <button class="pri" id="cdFly">定位飞行</button>
+      <button id="cdAssess">进入评估</button>
+    </div>
+  </div>
+
+  <div id="loading">
+    <svg class="ldlogo" viewBox="0 0 40 40" fill="none">
+      <rect x="1" y="1" width="38" height="38" rx="10" stroke="#37D9A0" stroke-width="1.2" opacity=".5"/>
+      <path d="M8 27.5c4.2-6.6 7.4-9.4 11-8.6 3.4.8 5.1 4.2 9.2 3.1" stroke="#37D9A0" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="txt" id="ldTxt">正在装配真实高程与影像…</div>
+    <div class="bar"><i></i></div>
+  </div>
+  <div id="glErr"><div style="font-size:26px">⚠</div><div id="glErrMsg">WebGL 初始化失败</div></div>
+</main>
+
+<aside id="dock">
+  <button id="dockToggle" title="收起 / 展开面板">›</button>
+  <div id="dockHead">
+    <div class="k" id="dhK">DIGITAL TWIN</div>
+    <h2 id="dhT">数字孪生</h2>
+    <p id="dhD">—</p>
+  </div>
+  <div id="dockBody"></div>
+</aside>
+
+<div id="toasts"></div>
+
+<div id="routeView">
+  <div class="rv-top">
+    <div>
+      <div class="rv-k">TECHNICAL ROADMAP</div>
+      <h2>金沙江流域森林生态环境智能评估 · 技术路线</h2>
+    </div>
+    <div class="rv-legend">
+      <span><i class="b obs"></i>已接入 / 已实现</span>
+      <span><i class="b der"></i>派生计算</span>
+      <span><i class="b plan"></i>规划中</span>
+    </div>
+    <button id="rvClose">✕ 关闭</button>
+  </div>
+  <div class="rv-body" id="rvBody"></div>
+</div>
+
+<div id="modal">
+  <div class="mbox">
+    <h3>修改登录密码</h3>
+    <p>新密码至少 8 位，建议包含字母、数字与符号。修改后其他设备需重新登录。</p>
+    <label class="lab">原密码</label><input class="inp" id="pwdOld" type="password" autocomplete="current-password">
+    <label class="lab">新密码</label><input class="inp" id="pwdNew" type="password" autocomplete="new-password">
+    <label class="lab">确认新密码</label><input class="inp" id="pwdNew2" type="password" autocomplete="new-password">
+    <div class="merr" id="pwdErr"></div>
+    <div class="mact"><button class="btn" id="pwdCancel">取消</button><button class="btn pri" id="pwdOk">保存</button></div>
+  </div>
+</div>
+
+<script src="/assets/vendor/three.min.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>

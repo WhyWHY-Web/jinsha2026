@@ -1,0 +1,12 @@
+{
+ "users": [
+  {
+   "u": "why",
+   "name": "why",
+   "role": "admin",
+   "salt": "ec77745865a63ee688ee7b0d378c949c",
+   "hash": "02287f926229cf948cecc7ed1d302400441e57d4a285080a7d5a123c2888f6e3",
+   "created": "2026-10-23 20:13:53"
+  }
+ ]
+}
