@@ -21,10 +21,10 @@ import time
 import webbrowser
 
 APP_NAME = 'JinshaEco'
-SEED_FILES = ['dem.bin', 'dem256.bin', 'streams.json', 'stations.json',
+SEED_FILES = ['dem.bin', 'dem256.bin', 'streams.json', 'hydro.json', 'stations.json',
               'climate.json', 'meta.json', 'users.json', 'detail.json', 'pg_status.json',
               '.secret', '.power_cache.json', 'validate.json']
-SEED_DIRS = ['detail', 'patch', 'gee', 'tiles']   # 实景补丁 + 离线影像瓦片金字塔(z10–14)
+SEED_DIRS = ['detail', 'patch', 'gee', 'tiles', 'tiles_dem']   # 实景补丁 + 离线影像/DEM 瓦片金字塔
 
 
 def bundle_dir():
@@ -72,18 +72,18 @@ def seed_data():
         if not os.path.isdir(sd):
             continue
         os.makedirs(dd, exist_ok=True)
-        if sub == 'tiles':
-            # 瓦片是 {z}/{x}/{y}.jpg 三级目录，逐层复制
+        if sub in ('tiles', 'tiles_dem'):
+            # 瓦片是 {z}/{x}/{y}.jpg|.png 三级目录，逐层复制
             for root, _dirs, files in os.walk(sd):
                 rel = os.path.relpath(root, sd)
                 tgt = os.path.join(dd, rel)
                 os.makedirs(tgt, exist_ok=True)
                 for f in files:
-                    if f.endswith('.jpg'):
+                    if f.endswith(('.jpg', '.png')):
                         copied += ok_copy(os.path.join(root, f), os.path.join(tgt, f))
             continue
         for f in sorted(os.listdir(sd)):
-            if not f.endswith(('.jpg', '.bin')):
+            if not f.endswith(('.jpg', '.bin', '.png')):
                 continue
             copied += ok_copy(os.path.join(sd, f), os.path.join(dd, f))
     # 关键数据硬校验：dem256.bin 必须是 131072 字节（256×256×2），否则三维地形必然崩溃

@@ -238,19 +238,50 @@ body.maxmap #sidebar,body.maxmap #vsplit,body.maxmap #hsplit,body.maxmap #bottom
 /* ===== 渲染控制台（系统设置） ===== */
 .sgroup{margin-bottom:13px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .sgroup .sg-head{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:#d9f5ef;font-weight:700;
-  letter-spacing:1.5px;background:linear-gradient(90deg,rgba(53,224,184,.08),transparent 70%);cursor:pointer}
+  letter-spacing:1.5px;background:linear-gradient(90deg,rgba(53,224,184,.08),transparent 70%)}
 .sgroup .sg-head .gi{font-size:14px}
 .sgroup .sg-head .en{font-size:8px;color:var(--dim2);letter-spacing:1px;font-weight:400;margin-left:auto}
-.sgroup .sg-body{padding:5px 12px 12px}
-.srow{display:flex;align-items:center;gap:10px;padding:6.5px 0;border-bottom:1px dashed rgba(64,205,178,.08)}
+.sgroup .sg-body{padding:6px 12px 12px}
+.sg-tip{font-size:10px;line-height:1.7;color:#6fa89c;background:rgba(53,224,184,.05);
+  border-left:2px solid rgba(53,224,184,.45);border-radius:0 5px 5px 0;padding:6px 9px;margin-top:2px}
+.sgroup-look .sg-body{padding-top:10px}
+
+/* 设置行：左侧固定宽度标签，右侧控件列（滑杆 + 数值），所有行垂直对齐 */
+.srow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(64,205,178,.08);min-height:38px}
 .srow:last-child{border-bottom:none}
-.srow .sl{flex:0 0 108px;font-size:11px;color:#9fc6c0}
-.srow .sl small{display:block;color:var(--dim2);font-size:8.5px;margin-top:1px}
-.srow input[type=range]{flex:1;accent-color:var(--teal);height:4px}
-.srow .sv{flex:0 0 56px;text-align:right;font-family:Consolas,monospace;font-size:11px;color:#7fe3cd}
-.srow select{flex:1;background:rgba(8,20,27,.95);border:1px solid var(--line);border-radius:5px;color:#d9ecec;
-  font-size:11.5px;padding:5px 8px;outline:none;font-family:inherit;cursor:pointer}
-.srow select:focus{border-color:var(--teal2)}
+.srow .sl{flex:0 0 92px;font-size:11.5px;color:#a6cdc6;line-height:1.35}
+.srow .sl small{display:block;color:var(--dim2);font-size:9px;margin-top:1px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.srow .sc{flex:1;min-width:0;display:flex;align-items:center;gap:9px}
+.srow .sc input[type=range]{flex:1;min-width:0;accent-color:var(--teal);height:4px;margin:0}
+.srow .sv{flex:0 0 52px;text-align:right;font-family:Consolas,monospace;font-size:11px;color:#7fe3cd;
+  font-variant-numeric:tabular-nums}
+.srow .sc select{flex:1;min-width:0;background:rgba(8,20,27,.95);border:1px solid var(--line);border-radius:5px;
+  color:#d9ecec;font-size:11.5px;padding:5px 8px;outline:none;font-family:inherit;cursor:pointer}
+.srow .sc select:focus{border-color:var(--teal2)}
+/* 开关行：标签占满，开关靠右 */
+.srow.sw .sl{flex:1}
+.sw2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.sw2 .srow{padding:6px 0;min-height:34px}
+.sw2 .srow .sl{flex:1 1 auto;font-size:11px}
+.sw2 .srow .sl small{display:none}
+
+/* 折叠式分组（服务状态） */
+.sg-details{border:1px solid var(--line);border-radius:8px;margin-bottom:13px;overflow:hidden}
+.sg-details summary{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:#d9f5ef;
+  font-weight:700;letter-spacing:1.5px;cursor:pointer;list-style:none;
+  background:linear-gradient(90deg,rgba(53,224,184,.08),transparent 70%)}
+.sg-details summary::-webkit-details-marker{display:none}
+.sg-details summary .en{font-size:8px;color:var(--dim2);letter-spacing:1px;font-weight:400;margin-left:auto}
+.sg-details summary i{font-style:normal;color:var(--dim);transition:transform .2s}
+.sg-details[open] summary i{transform:rotate(180deg)}
+.sg-details .sg-body{padding:6px 12px 12px}
+
+/* 底部固定操作条 */
+#setActions{position:sticky;bottom:-14px;display:flex;gap:7px;padding:10px 0 14px;margin:4px -12px -14px;
+  padding-left:12px;padding-right:12px;background:linear-gradient(180deg,rgba(10,22,29,0),rgba(10,22,29,.96) 38%)}
+#setActions .abtn{flex:1;font-size:11px;padding:7px 0;letter-spacing:.5px}
+
 .switch{position:relative;width:36px;height:19px;flex:0 0 auto;cursor:pointer}
 .switch input{display:none}
 .switch .tk{position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid var(--line);transition:all .2s}
@@ -1761,6 +1792,28 @@ var RAMPS=[
  ["#0b1026","#14204a","#1e3a6e","#2a5e97","#3f8fc9","#6fd0e8","#d5f6ff"]];
 var RAMP_NAMES=["经典分层设色","高山冰川","红外诊断","星际暗夜"];
 
+/* ===== 光照/外观预设 =====
+   real：写实自然光 —— 晴天斜射日光 + 天光补光 + 轻大气，最贴近谷歌地球/真实现场
+   dusk：晨昏暖光 —— 低角度暖阳，峡谷拉长阴影，画面更有氛围
+   两套都只改"观感"参数，不参与任何指标计算。 */
+var LOOK={
+  mode:'real',
+  hill:.72, warm:.10, snow:1, snowLine:4300, snowSoft:190, polar:260,
+  mist:.30, mistH:.22, atmos:1
+};
+var LOOK_SET={
+  real:{sunAz:318,sunEl:46,sunI:.92,ambI:.62,shadow:.34,exposure:1.14,fog:.022,
+        hill:.58,warm:.08,snow:0,snowLine:6200,snowSoft:170,polar:0,
+        mist:.10,mistH:.12,atmos:.55,skyTop:'#243642',skyMid:'#1a2a34',skyLow:'#0b1218',
+        haze:'#b6c9d6',sunWarm:'#ffe2b8'},
+  dusk:{sunAz:288,sunEl:24,sunI:1.05,ambI:.78,shadow:.55,exposure:1.30,fog:.050,
+        hill:.80,warm:.16,snow:0,snowLine:6200,snowSoft:170,polar:0,
+        mist:.26,mistH:.14,atmos:.95,skyTop:'#3a3244',skyMid:'#4a3436',skyLow:'#141018',
+        haze:'#d8ae8c',sunWarm:'#ffb170'}
+};
+/* 远山数：按《中国地层表》/区域地质，干流各段主要出露岩性（用于山体基色） */
+
+
 var TERRAIN_VS=`
 varying vec2 vUv;varying vec3 vWpos;
 uniform float uExag;
@@ -1787,11 +1840,18 @@ uniform sampler2D uSat;uniform float uSatOn;
 uniform sampler2D uDetTex;uniform float uDetOn;uniform vec4 uDetUv;
 uniform sampler2D uAO;uniform float uAOAmt;
 uniform float uHMin,uHRange,uNrmK,uEdgeF;
+/* ===== 真实感增强（v4）：光照模式 / 坡向 / 日光晕渲 / 雪线 / 大气 ===== */
+uniform vec3 uSnowCol,uHazeCol,uWarmCol,uCoolCol,uSunWarm;
+uniform vec2 uAtmos;            /* x=地雾密度  y=天雾高度（0 无雾） */
+uniform float uSnowLine,uSnowSoft,uPolar,uHillAmt;
+uniform float uWarmMix,uSnowMix,uHazeMix,uAtmosAmt;
 float getH(vec2 uv){return texture2D(uHt,uv).r;}
 /* 值噪声：只用于近景地表颗粒，弥补 4096² 影像在 1:50 放大后的糊 */
 float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
 float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
   return mix(mix(h21(i),h21(i+vec2(1.0,0.0)),f.x),mix(h21(i+vec2(0.0,1.0)),h21(i+vec2(1.0,1.0)),f.x),f.y);}
+float fbm2(vec2 p){float a=0.0,w=0.5;
+  for(int i=0;i<4;i++){a+=w*n2(p);p*=2.07;w*=0.5;}return a;}
 void main(){
   vec2 texel=1.0/vec2(uGridN);
   float h=getH(vUv);
@@ -1856,9 +1916,10 @@ void main(){
   float slope=1.0-n.y;
   col=mix(col,vec3(.42,.36,.32),smoothstep(.34,.62,slope)*.55);
   }
-  /* 光照：半兰伯特 + 天光补光。
-     旧版 amb .34 / sun 1.25 是 4.7:1 的硬对比，背光坡直接压成黑块；
-     实景影像（图二）是阴天散射光，背光面还有大量天光。 */
+  /* 光照：归一化半兰伯特 + 天光补光。
+     旧版 light = amb + sun*wrap*sh 没有归一化，amb .62 + sun .92 = 1.54 会把整幅图推到过曝；
+     反过来 amb 低时背光坡又压成黑块。这里把两者加和后归一化到平均 1.0，
+     晴天既保持力度的明暗反差，整幅图的平均亮度又和原影像一致。 */
   float nl=dot(n,uSunDir);
   float wrap=clamp((nl+0.42)/1.42,0.0,1.0);
   float dist=dist0;
@@ -1879,10 +1940,51 @@ void main(){
     }
     sh=1.0-clamp(occ,0.,1.)*uShadowS;
   }
-  float light=uAmbI+uSunI*wrap*sh;
-  /* 卫星影像自带日照阴影，再叠一遍定向光会双倍塑形；只取 68% 做浮雕，既保留影像层次又有地形体积 */
-  if(uSatOn>.5)light=mix(1.0,light,0.90);
-  if(uShowHill>.5)col*=light; else col*=uAmbI+uSunI*.75;
+  float light=(uAmbI+uSunI*wrap*sh)/max(uAmbI+uSunI*0.80,0.001);
+  /* 卫星影像自带日照阴影，再叠一遍定向光会双倍塑形；只取 88% 做浮雕，既保留影像层次又有地形体积 */
+  if(uSatOn>.5)light=mix(1.0,light,0.88);
+  if(uShowHill>.5)col*=light; else col*=1.0;
+
+  /* ===== 真实感：日光晕渲（hillshade）=====
+     卫星影像默认是在「拍摄那天的光照」下成像的，叠到地形上会和实际坡向对不上，
+     看起来像"平贴的图"。这里按当前太阳方向重算一遍坡面明暗，再用乘法混进影像：
+     朝太阳的坡变亮、背光坡变暗，山谷沟系立刻浮出来，这就是谷歌地球的观感来源。 */
+  if(uSatOn>.5&&uHillAmt>0.001){
+    /* 斜坡率：把真实坡度（uNrmK 已换算到世界尺度）还原成 tan(坡角) 的量级 */
+    vec2 slope2=nt*uNrmK*0.42;
+    vec3 nL=normalize(vec3(-slope2.x,1.0,-slope2.y));
+    float hs=clamp(dot(nL,normalize(uSunDir))*0.82+0.18,0.0,1.0);
+    hs=hs*hs*(3.0-2.0*hs);                  /* smoothstep 对比，地形轮廓更硬朗 */
+    col*=mix(1.0,0.80+0.44*hs,uHillAmt);
+    /* 沟谷暗部染一点冷色（大气散射），山脊亮部染暖色 —— 肉眼看到的真实山体分层
+       注意：色偏必须用"围绕 1.0 的偏移量"，否则乘法会把绿/蓝通道压掉，整幅图发红发暗。 */
+    float hsW=clamp(hs,0.0,1.0);
+    vec3 tintK=vec3(1.0)+(uCoolCol-vec3(1.0))*(1.0-hsW)*0.55+(uWarmCol-vec3(1.0))*hsW*0.34;
+    col*=mix(vec3(1.0),tintK*1.06,uHillAmt*0.55);
+  }
+  /* 坡向色温：南朝坡（阳坡）偏暖偏干，北朝坡（阴坡）偏冷偏湿，金沙江干热河谷的真实特征 */
+  if(uWarmMix>0.001&&uSatOn>.5){
+    vec3 sN=normalize(vec3(-nt.r*uNrmK,1.0,-nt.g*uNrmK));
+    float south=sN.z<0.0?sN.z*-1.0:0.0;
+    float north=sN.z>0.0?sN.z:0.0;
+    col*=vec3(1.0)+(uWarmCol-vec3(1.0))*south*uWarmMix;
+    col*=vec3(1.0)+(uCoolCol-vec3(1.0))*north*uWarmMix;
+  }
+  /* ===== 雪线：按高程 + 坡向 + 噪声给永久冰雪，最高峰不再是一块块死白 ===== */
+  if(uSnowMix>0.001&&uSatOn>.5){
+    float sn=fbm2(vUv*vec2(220.0)+vec2(11.0,7.0));
+    float sl=uSnowLine+uPolar*(1.0-abs(vUv.y-0.5)*2.0)*420.0+(sn-0.5)*520.0;
+    /* 只有远高于雪线的顶才有冰：elevM 是米，雪线以下完全不出现白色 */
+    float cover=clamp((elevM-sl)/(uSnowSoft*1.6),0.0,1.0);
+    cover=cover*cover*(3.0-2.0*cover);
+    /* 太陡的岩壁挂不住雪 */
+    float flat_=clamp((n.y-0.42)/0.34,0.0,1.0);
+    cover*=mix(0.45,1.0,flat_);
+    vec3 snowC=uSnowCol*vec3(0.90,0.95,1.0);
+    snowC*=0.86+0.26*max(dot(n,normalize(uSunDir)),0.0);
+    col=mix(col,snowC,cover*uSnowMix);
+  }
+
   col*=mix(1.0,texture2D(uAO,vUv).r,uAOAmt);   /* 环境光遮蔽：沟谷压暗 */
   // 等高线
   if(uShowContour>.5&&uContourStep>1.0){
@@ -1924,6 +2026,31 @@ void main(){
   float fd=dist/(uWorldW*1.05);
   float fog=(1.0-exp(-pow(fd*uFogD*0.9,2.0)))*0.42;
   col=mix(col,uSkyCol,fog);
+  /* ===== 真实大气：高度衰减 + 太阳前向散射 =====
+     真实大气密度随高度指数下降，所以谷底远山发蓝白发灰、山顶远山更清透；
+     朝太阳方向看时，大气还会被阳光"点亮"成暖金色（Mie 散射）。 */
+  if(uAtmosAmt>0.001){
+    float camH=max(cameraPosition.y,0.0);
+    float distKm=dist*1.08;
+    float dens=uAtmos.x;
+    float hA=uAtmos.y*6.0+1.0;
+    float viewH=max((vWpos.y+cameraPosition.y)*0.5/uHScaleN,0.0);
+    float fall=exp(-viewH/hA);
+    float opt=dens*distKm*1e-3*(0.55+0.9*fall);
+    float aer=1.0-exp(-opt);
+    vec3 Vd=normalize(vWpos-cameraPosition);
+    float sunAmt=pow(max(dot(Vd,normalize(uSunDir)),0.0),5.0);
+    vec3 airC=mix(uHazeCol,uSunWarm,sunAmt*0.85);
+    col=mix(col,airC,aer*uAtmosAmt*0.45);
+    /* 空气透视：远处的对比度下降、饱和度降低（真实的"雾感"不是单纯变白） */
+    float lumA=dot(col,vec3(.299,.587,.114));
+    col=mix(col,vec3(lumA),clamp(aer*0.55,0.0,0.45)*uAtmosAmt);
+  }
+  /* 近景地表最后一层颗粒：让高山岩壁、林冠不平得像塑料 */
+  if(dn>0.01&&uSatOn>.5){
+    float grain=n2(vWpos.xz*3.1)*0.6+n2(vWpos.xz*11.0)*0.4;
+    col*=1.0+(grain-0.5)*0.06*dn;
+  }
   gl_FragColor=vec4(col,1.0);
 }`;
 
@@ -2186,23 +2313,19 @@ function toggleSat(on){
         SAT.tex=loc;terrainU.uSat.value=loc;terrainU.uSatOn.value=1;SAT.on=true;
         var b0=$('btnSat');if(b0)b0.classList.add('on');
         toast('全域卫星影像已贴合 · 4096² 离线版','ok','✅');
-        return;
+      }else{
+        /* 本地高清底图缺失时才联网拼 Esri z9 影像 */
+        buildSatTex(9,function(d,t){
+          if(d%24===0||d===t)toast('影像 '+d+'/'+t,'ok','🛰');
+        },function(tex){
+          if(!tex){SAT.on=false;SAT.loading=false;toast('真实影像加载失败，已保持高程着色','warn','⚠');return;}
+          SAT.tex=tex;terrainU.uSat.value=tex;terrainU.uSatOn.value=1;SAT.on=true;
+          toast('真实卫星影像已贴合地形','ok','✅');
+          var b=$('btnSat');if(b)b.classList.add('on');
+        });
       }
-      buildSatTex(9,function(d,t){
-      if(d%24===0||d===t)toast('影像 '+d+'/'+t,'ok','🛰');
-    },function(tex){
-      /* 失败保护：空纹理一旦开启 uSatOn，地表必然全黑——宁可保持高程着色 */
-      if(!tex){
-        SAT.on=false;SAT.loading=false;
-        var b=$('btnSat');if(b)b.classList.remove('on');
-        toast('真实影像加载失败，已保持高程着色，可稍后重试','warn','⚠');
-        return;
-      }
-      SAT.tex=tex;terrainU.uSat.value=tex;terrainU.uSatOn.value=1;SAT.on=true;
-      toast('真实卫星影像已贴合地形','ok','✅');
-      /* 真实地形下不再自动灌水，避免低海拔盆地被整体淹没 */
-      var b=$('btnSat');if(b)b.classList.add('on');
-    });
+      /* 影像就绪后重建河道（河床/水面高度依赖地形与影像对齐） */
+      setTimeout(function(){try{buildWater();buildRiverLayer();}catch(e){}},300);
     });
     return;
   }
@@ -2214,106 +2337,101 @@ function toggleSat(on){
 /* ===== 真实水体：Gerstner 波 + 深度着色 + 菲涅尔 ===== */
 var WATER_VS = `
 precision highp float;
-varying vec3 vWpos;
-uniform float uTime,uLevel;
-uniform float uWorldW,uWorldH;
-vec3 gerstner(vec3 p, vec2 dir, float amp, float len, float spd, float t){
-  float k = 6.2831853 / len;
-  vec2 d = normalize(dir);
-  float f = k * (dot(d, p.xz) - spd * t);
-  float a = amp;
-  return vec3(d.x * a * cos(f), a * sin(f), d.y * a * cos(f));
-}
+varying vec3 vWpos;varying vec2 vUv;varying float vDepth;
+uniform float uTime,uExagY;
 void main(){
-  vec3 pos = position;
-  /* 平面在 XZ，水面高度由 uLevel 决定 */
-  pos.y = 0.0;
-  vec3 disp = vec3(0.0);
-  disp += gerstner(pos, vec2( 1.0, 0.35), 0.085, 26.0, 1.6, uTime);
-  disp += gerstner(pos, vec2(-0.7, 1.0 ), 0.055, 15.0, 2.1, uTime);
-  disp += gerstner(pos, vec2( 0.4,-1.0 ), 0.032,  9.0, 2.8, uTime);
-  disp += gerstner(pos, vec2(-1.0,-0.5 ), 0.018,  5.5, 3.6, uTime);
-  pos += disp;
-  vec4 wp = modelMatrix * vec4(pos,1.0);
-  wp.y += uLevel;
-  vWpos = wp.xyz;
-  gl_Position = projectionMatrix * viewMatrix * wp;
+  vUv=uv;
+  vDepth=uv.y;                       /* 0=岸  1=江心：用于深浅与流速 */
+  vec3 p=position;
+  p.y*=uExagY;                       /* 与地形 TERRAIN_VS 的 p.y*=uExag 完全一致 */
+  vec4 wp=modelMatrix*vec4(p,1.0);
+  vWpos=wp.xyz;
+  gl_Position=projectionMatrix*viewMatrix*wp;
 }`;
 
 var WATER_FS = `
 precision highp float;
-varying vec3 vWpos;
-uniform sampler2D uHt;
-uniform float uTime,uLevel,uWorldW,uWorldH,uExag,uSatOn;
+varying vec3 vWpos;varying vec2 vUv;varying float vDepth;
+uniform float uTime,uSatOn,uOn,uFlow,uTurbid;
 uniform vec3 uSunDir,uSkyCol,uRimCol;
 uniform sampler2D uSat;
-float getH(vec2 uv){return texture2D(uHt,uv).r;}
+float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+  return mix(mix(h21(i),h21(i+vec2(1.0,0.0)),f.x),mix(h21(i+vec2(0.0,1.0)),h21(i+vec2(1.0,1.0)),f.x),f.y);}
 void main(){
-  vec2 uv = vec2(vWpos.x/uWorldW+0.5, -vWpos.z/uWorldH+0.5);
-  if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)discard;
+  float t=uTime;
+  /* 河道 uv：x=沿程比例  y=横向 0 岸 → 1 江心 */
+  float along=vUv.x, across=vDepth;
+  /* 顺流波纹：两层不同频率的噪声错位漂移，模拟真实水流纹理 */
+  float w1=n2(vec2(along*520.0-t*uFlow*2.2, across*7.0));
+  float w2=n2(vec2(along*150.0-t*uFlow*1.1+31.0, across*3.4));
+  float ripple=w1*0.62+w2*0.38;
+  float nA=(n2(vec2(along*520.0-t*uFlow*2.2, across*7.0+0.06))-w1)*2.4;
+  float nB=(n2(vec2(along*520.0+0.05-t*uFlow*2.2, across*7.0))-w1)*1.6;
+  vec3 N=normalize(vec3(-nB*0.55,1.0,-nA*0.55));
 
-  /* 水深 = 水面高度 - 河床高度（世界单位） */
-  float bedY = getH(uv) * 30.0 * uExag;
-  float depth = (uLevel - bedY);
-  if(depth <= 0.0) discard;              /* 只在淹没区显示水体 */
+  vec3 V=normalize(cameraPosition-vWpos);
+  float ndv=clamp(dot(N,V),0.0,1.0);
+  float fres=pow(1.0-ndv,3.0);
 
-  /* 波面法线：解析求导（三条主波） */
-  float t = uTime;
-  vec2 p = vWpos.xz;
-  float n1 = cos(6.2831853/26.0*(dot(normalize(vec2( 1.0,0.35)),p) - 1.6*t)) * 0.085 * 6.2831853/26.0;
-  float n2 = cos(6.2831853/15.0*(dot(normalize(vec2(-0.7,1.0 )),p) - 2.1*t)) * 0.055 * 6.2831853/15.0;
-  float n3 = cos(6.2831853/ 9.0*(dot(normalize(vec2( 0.4,-1.0)),p) - 2.8*t)) * 0.032 * 6.2831853/9.0;
-  vec3 N = normalize(vec3(-(n1+n2+n3)*1.6, 1.0, -(n1*0.35+n2-n3)*1.6));
+  /* 金沙江真实水色：高含沙（年输沙约 2.4 亿 t），雨季黄褐、旱季青灰 */
+  vec3 shallow=vec3(0.30,0.42,0.40);
+  vec3 midC=vec3(0.15,0.30,0.33);
+  vec3 deepC=vec3(0.05,0.14,0.19);
+  float dk=clamp(across,0.0,1.0);
+  vec3 col=mix(shallow,midC,smoothstep(0.05,0.55,dk));
+  col=mix(col,deepC,smoothstep(0.55,1.0,dk));
+  col=mix(col,vec3(0.42,0.36,0.24),uTurbid*(0.25+0.25*ripple));
 
-  vec3 V = normalize(cameraPosition - vWpos);
-  float fres = pow(1.0 - clamp(dot(N,V),0.0,1.0), 3.2);
+  /* 天空反射 */
+  col=mix(col,uSkyCol*1.35+vec3(0.04,0.09,0.12),fres*0.66);
 
-  /* 深水/浅水色 */
-  vec3 shallow = vec3(0.30,0.72,0.68);
-  vec3 mid     = vec3(0.09,0.42,0.52);
-  vec3 deep    = vec3(0.03,0.16,0.28);
-  float dk = clamp(depth/9.0, 0.0, 1.0);
-  vec3 col = mix(shallow, mid, smoothstep(0.0,0.45,dk));
-  col = mix(col, deep, smoothstep(0.45,1.0,dk));
+  /* 太阳高光：窄镜面 + 宽碎波 */
+  vec3 Hv=normalize(uSunDir+V);
+  col+=vec3(1.0,0.96,0.88)*pow(max(dot(N,Hv),0.0),180.0)*1.5;
+  col+=vec3(0.6,0.78,0.8)*pow(max(dot(N,Hv),0.0),22.0)*0.16;
+  col+=vec3(0.75,0.88,0.9)*smoothstep(0.72,1.0,ripple)*0.10*clamp(across*1.4,0.0,1.0);
 
-  /* 天空反射（用影像/天空色近似） */
-  vec3 skyRef = uSkyCol*1.5 + vec3(0.05,0.12,0.16);
-  col = mix(col, skyRef, fres*0.72);
+  /* 岸边浅滩：靠岸变亮变浅，像真实江边的砾石滩 */
+  float bank=1.0-smoothstep(0.0,0.34,across);
+  col=mix(col,col*1.28+vec3(0.05,0.06,0.05),bank*0.45);
 
-  /* 太阳高光 */
-  vec3 H = normalize(uSunDir + V);
-  float spec = pow(max(dot(N,H),0.0), 220.0);
-  col += vec3(1.0,0.96,0.88) * spec * 1.6;
-  float spec2 = pow(max(dot(N,H),0.0), 26.0);
-  col += vec3(0.55,0.75,0.78) * spec2 * 0.22;
-
-  /* 岸边泡沫（浅水带） */
-  float foam = smoothstep(0.55,0.0,dk) * 0.55;
-  col = mix(col, vec3(0.82,0.92,0.92), foam);
-
-  float alpha = mix(0.62, 0.97, smoothstep(0.0,0.35,dk));
-  gl_FragColor = vec4(col, alpha);
+  float alpha=mix(0.42,0.94,smoothstep(0.0,0.30,across));
+  gl_FragColor=vec4(col,alpha*uOn);
 }`;
 
-var waterU=null,waterMesh=null,WATER={on:false,level:400};   /* 真实水位：仅淹没 400 m 以下的干流谷底 */
+/* 河道水面：沿干流/支流中线各取半宽，做成贴地的窄条带。
+   旧版是一整张覆盖全流域的水平面（水位 400 m），会把所有低海拔盆地淹没成一片湖，
+   而且从没跟随河道；现在水面严格沿水线走，宽度按河段位置（上游窄、下游宽）渐变。 */
+var waterU=null,waterMesh=null,WATER={on:true,level:400};
 function waterElevToY(m){return (m-G.hMin)/(G.hMax-G.hMin)*HSCALE*G.exag;}
+/* 河面几何：与河道同一条中线、同样的断面，但略微放大（覆盖河道并做出岸边过渡），
+   抬升到水面高度；uv.y 用"横向位置 0→1"给水面着色器做深浅/岸边过渡。 */
+function buildRiverWaterGeo(){
+  var g=buildRiverRibbonNet(1.35,0.06,1);
+  if(!g)return null;
+  g.computeVertexNormals();
+  return g;
+}
+function riverHalfW(r,wScale){
+  /* 主流：上游 1.4 → 下游 3.4 世界单位（约 1.5–3.7 km）；支流更窄 */
+  var base=r.lvl===1?(1.4+2.0*clamp((r.len||0)/1300,0,1)):(r.lvl===2?1.05:0.8);
+  return base*(wScale||1);
+}
 function buildWater(){
-  if(waterMesh){scene.remove(waterMesh);waterMesh.geometry.dispose();waterMesh.material.dispose();}
-  var wW=(LON_MAX-LON_MIN)*SX, wH=(LAT_MAX-LAT_MIN)*SZ;
-  var geo=new THREE.PlaneGeometry(wW,wH,96,96);
-  geo.rotateX(-Math.PI/2);
+  if(waterMesh){scene.remove(waterMesh);waterMesh.geometry.dispose();waterMesh.material.dispose();waterMesh=null;}
+  var geo=RIVER.net?buildRiverWaterGeo():null;
+  if(!geo)return;
   waterU={
-    uTime:{value:0},uLevel:{value:waterElevToY(WATER.level)},
-    uWorldW:{value:wW},uWorldH:{value:wH},
-    uHt:{value:terrainU.uHt.value},uExag:{value:G.exag},
-    uSunDir:terrainU.uSunDir,uSkyCol:terrainU.uSkyCol,
-    uSat:{value:null},uSatOn:{value:0}
+    uTime:{value:0},uSunDir:terrainU.uSunDir,uSkyCol:terrainU.uSkyCol,
+    uSat:{value:null},uSatOn:{value:0},uOn:{value:WATER.on?1:0},
+    uFlow:{value:1.0},uTurbid:{value:.42},uExagY:{value:G.exag}
   };
   waterMesh=new THREE.Mesh(geo,new THREE.ShaderMaterial({
     uniforms:waterU,vertexShader:WATER_VS,fragmentShader:WATER_FS,
     transparent:true,depthWrite:false,side:THREE.DoubleSide
   }));
-  waterMesh.renderOrder=2;
+  waterMesh.renderOrder=3;
   waterMesh.visible=WATER.on;
   scene.add(waterMesh);
 }
@@ -2321,8 +2439,7 @@ function setWater(on,level){
   if(level!=null)WATER.level=level;
   WATER.on=!!on;
   if(!waterMesh)buildWater();
-  if(waterU){waterU.uLevel.value=waterElevToY(WATER.level);waterU.uExag.value=G.exag;}
-  waterMesh.visible=WATER.on;
+  else{if(waterU)waterU.uOn.value=WATER.on?1:0;waterMesh.visible=WATER.on;}
   var b=$('btnWater');if(b)b.classList.toggle('on',WATER.on);
   var sl=$('waterLvl');if(sl){sl.value=WATER.level;var lb=$('waterLvlVal');if(lb)lb.textContent=Math.round(WATER.level)+' m';}
 }
@@ -2345,6 +2462,7 @@ function applyQuality(k,silent){
   resize();
   rebuildScene();
   if(WATER.on)buildWater();
+  try{if(RIVER.net)buildRiverAxis();buildWater();buildRiverLayer();buildMainStreamLine();}catch(e){}
   try{saveSettings();}catch(e){}
   if(!silent)toast('画质：'+q.nm+' · 地形 '+q.detail+'² · 像素比上限 '+q.px,'ok','🎚');
   var sel=$('qSel');if(sel)sel.value=k;
@@ -2458,6 +2576,12 @@ try{
   }catch(e){}
   m2Init();
   aiInit();
+  /* 光照预设：首次以「写实自然光」启动（晴天斜射日光 + 天光 + 轻大气 + 雪线） */
+  try{
+    var _lookSaved=null;
+    try{_lookSaved=JSON.parse(localStorage.getItem(LS_KEY)||'{}').look;}catch(e){}
+    applyLook(_lookSaved||LOOK.mode||'real',true);
+  }catch(e){console.warn('applyLook',e);}
   if(hp.get('mod'))switchModule(hp.get('mod'));   // 调试：#mod=set / #mod=map / #mod=ai
   /* 深链：?exag=12 直接指定垂直夸张度（答辩演示可复现同一视角） */
   var _qs=new URLSearchParams(location.search);
@@ -2582,6 +2706,13 @@ function buildTerrainMesh(){
     uOverlay:{value:null},uOverlayOn:{value:0},uTime:{value:0},
     uSat:{value:null},uSatOn:{value:0},uAO:{value:buildAO()},uAOAmt:{value:0.55},
     uDetTex:{value:null},uDetOn:{value:0},uDetUv:{value:new THREE.Vector4(0,0,1,1)},
+    /* 真实感增强（默认即是最接近实景的一组参数） */
+    uHillAmt:{value:LOOK.hill},uWarmMix:{value:LOOK.warm},uSnowMix:{value:LOOK.snow},
+    uSnowLine:{value:LOOK.snowLine},uSnowSoft:{value:LOOK.snowSoft},uPolar:{value:LOOK.polar},
+    uSnowCol:{value:new THREE.Color('#f2f7ff')},uHazeCol:{value:new THREE.Color('#9fb6c4')},
+    uWarmCol:{value:new THREE.Color('#ffdcb0')},uCoolCol:{value:new THREE.Color('#b9cfe0')},
+    uSunWarm:{value:new THREE.Color('#ffd9a0')},
+    uAtmos:{value:new THREE.Vector2(LOOK.mist,LOOK.mistH)},uAtmosAmt:{value:LOOK.atmos},
     uHMin:{value:G.hMin},uHRange:{value:G.hMax-G.hMin},uEdgeF:{value:0}};
   terrainMesh=new THREE.Mesh(geo,new THREE.ShaderMaterial({
     uniforms:terrainU,vertexShader:TERRAIN_VS,fragmentShader:TERRAIN_FS,side:THREE.DoubleSide}));
@@ -2701,64 +2832,189 @@ function riverOnPatch(){
   riverU.uOn.value=1;
 }
 
-/* ===== 全流域河网（三维版）：把 streams.json 的全部 365 条河线贴到地形上 =====
-   二维底图里的河网是矢量线，三维里如果只画干流，流域结构就丢了。
-   这里逐段生成线段几何（8022 个点、约 1.6 万顶点），整体放进一个 group 按 exag 缩放，
-   和二维底图用的是同一份数据，走向完全一致。 */
-var streamGroup=null;
-function buildStreamNet(){
-  if(streamGroup){scene.remove(streamGroup);streamGroup.traverse(function(o){if(o.geometry)o.geometry.dispose();});streamGroup=null;}
-  var net=window.__NET;
-  if(!net||!net.length)return;
-  var pos=[];
-  for(var li=0;li<net.length;li++){
-    var line=net[li];
-    if(!line||line.length<2)continue;
-    var prev=null;
-    for(var i=0;i<line.length;i++){
-      var lon=line[i][0],lat=line[i][1];
-      if(lon<LON_MIN||lon>LON_MAX||lat<LAT_MIN||lat>LAT_MAX){prev=null;continue;}
-      var w=toWorld(lon,lat);
-      var p=[w.x,terrainYAt(lon,lat)+0.9,w.z];
-      if(prev){pos.push(prev[0],prev[1],prev[2],p[0],p[1],p[2]);}
-      prev=p;
+/* ===== 河流数据加载（web/data/hydro.json：金沙江主流 + 6 条重要支流） =====
+   旧版把 streams.json 全部 679 条河沟都画成青色线，屏幕上就是一张发光蛛网；
+   现在只保留主流与重要支流，并且画成"河"的样子：贴谷底的窄水面 + 沿程宽度渐变。 */
+var RIVER={net:null,loading:false,ok:false};
+function loadRiverNet(cb){
+  if(RIVER.loading)return;
+  RIVER.loading=true;
+  fetch('/data/hydro.json',{cache:'force-cache'}).then(function(r){
+    if(!r.ok)throw new Error('hydro.json '+r.status); return r.json();
+  }).then(function(j){
+    var rs=(j.rivers||[]).filter(function(x){return x.p&&x.p.length>1;});
+    if(!rs.length)throw new Error('empty');
+    rs.forEach(function(r){
+      var c=[0];
+      for(var i=1;i<r.p.length;i++)
+        c.push(c[i-1]+Math.hypot((r.p[i][0]-r.p[i-1][0])*SX,(r.p[i][1]-r.p[i-1][1])*SZ));
+      r.cum=c; r.tot=c[c.length-1];
+      /* 河线只保留经纬度；高度在 buildRiverAxis() 里按地形网格实测（见下） */
+      r.axis=r.p.map(function(p){return {lon:p[0],lat:p[1],e:0};});
+    });
+    RIVER.net=rs; RIVER.loading=false; RIVER.ok=true;
+    buildRiverAxis();
+    console.log('[RIVER] 金沙江主流 + '+(rs.length-1)+' 条重要支流（原始河网 '+
+      (j.meta?j.meta.srcLines:679)+' 条，其余不再渲染）');
+    if(cb)cb(rs);
+  }).catch(function(e){
+    RIVER.loading=false;
+    console.warn('[RIVER] 河流数据不可用：'+(e&&e.message));
+    if(cb)cb(null);
+  });
+}
+/* 河道半宽（世界单位，1u≈1.08 km）：河流真实宽度 100–600 m ≈ 0.09–0.55 u。
+   但实际 3D 视图里 1 px 往往是数公里，物理宽度会细到看不见，所以做适度夸张：
+   主流 0.30–0.75 u（≈320–810 m 视觉），支流 0.18–0.42 u，仍然远小于河谷。 */
+function riverHalfWidth(r,i){
+  var t=r.cum[i]/Math.max(1,r.tot);
+  if(r.lvl===1)return 0.30+0.20*t+0.25*t*t;   /* 0.30 → 0.75 */
+  if(r.lvl===2)return 0.18+0.18*t;
+  return 0.15+0.13*t;
+}
+/* ===== 把河线钉到地形上（关键一步） =====
+   河网几何来自 4096² 原始 DEM，而显示地形是重建网格 + 一次低通平滑，
+   两者在 1–2 个栅格尺度上不一致：河线直接贴原始高程会"爬上山脊"。
+   这里直接读 reborn 后的 elevM 数组（与地形网格同一份数据、同一套插值），
+   在 ±1 格窗口里取最小值作为谷底水位，再做沿程平滑 —— 与地形完全一致。 */
+function buildRiverAxis(){
+  var net=RIVER.net; if(!net||!elevM)return;
+  var N=G.N;
+  net.forEach(function(r){
+    var yArr=[];
+    for(var i=0;i<r.axis.length;i++){
+      var a=r.axis[i];
+      /* 在地形网格坐标系里取 3×3 邻域最小高程 */
+      var u=(a.lon-LON_MIN)/(LON_MAX-LON_MIN)*(N-1);
+      var v=(a.lat-LAT_MIN)/(LAT_MAX-LAT_MIN)*(N-1);
+      var ci=Math.round(u),cj=Math.round(v),best=1e9;
+      for(var dj=-1;dj<=1;dj++)for(var di=-1;di<=1;di++){
+        var ii=Math.max(0,Math.min(N-1,ci+di)),jj=Math.max(0,Math.min(N-1,cj+dj));
+        var e=elevM[jj*N+ii];
+        if(e<best)best=e;
+      }
+      yArr.push((best-G.hMin)/(G.hMax-G.hMin)*HSCALE);
+    }
+    /* 沿程两次 1-2-1 平滑，去掉栅格台阶 */
+    for(var p=0;p<2;p++){
+      var s=yArr.slice();
+      for(var k=1;k<yArr.length-1;k++)s[k]=(yArr[k-1]+yArr[k]*2+yArr[k+1])/4;
+      yArr=s;
+    }
+    r.axis.forEach(function(a,k){a.y=yArr[k];});
+  });
+  RIVER.pinned=true;
+}
+function riverYBase(r,i){
+  var a=r.axis[i];
+  var y=(a.y!=null)?a.y:((a.e-G.hMin)/(G.hMax-G.hMin)*HSCALE);
+  return y+0.30;   /* 抬一点：河面略高于谷底，避免与地形同高被遮住 */
+}
+function riverYAt(r,i){
+  return riverYBase(r,i);   /* 基准高度：顶点着色器统一乘 exag */
+}
+/* 沿中线生成贴地条带（水面 / 里程用），每断面 3 顶点：左岸 / 江心 / 右岸 */
+function buildRiverRibbonNet(halfScale,lift,every){
+  var net=RIVER.net; if(!net)return null;
+  var pos=[],uv=[],idx=[],n=0;
+  for(var ri=0;ri<net.length;ri++){
+    var r=net[ri],P=r.axis,step=every||1;
+    var start=n,last=-1;
+    for(var i=0;i<P.length;i+=step){
+      if(i===P.length-1&&last===P.length-1)continue;
+      last=i;
+      var A=P[i];
+      var w=toWorld(A.lon,A.lat);
+      var y=riverYAt(r,i)+lift;
+      var pi=Math.max(0,i-step),pj=Math.min(P.length-1,i+step);
+      var wa=toWorld(P[pi].lon,P[pi].lat),wb=toWorld(P[pj].lon,P[pj].lat);
+      var wx=wb.x-wa.x,wz=wb.z-wa.z;
+      var L=Math.sqrt(wx*wx+wz*wz)||1;wx/=L;wz/=L;
+      var hw=riverHalfWidth(r,i)*halfScale;
+      /* 首尾收窄，避免河源/河口出现方头 */
+      hw*=Math.max(0.05,Math.min(1,i/3,(P.length-1-i)/3));
+      var nx=-wz,nz=wx;
+      for(var sgn=-1;sgn<=1;sgn++){
+        pos.push(w.x+nx*hw*sgn,y,w.z+nz*hw*sgn);
+        uv.push(i/(P.length-1),sgn===0?1:0);
+      }
+      n+=3;
+    }
+    for(var q=start;q<n-3;q+=3){
+      var L0=q,C0=q+1,R0=q+2,L1=q+3,C1=q+4,R1=q+5;
+      idx.push(L0,L1,C0, C0,L1,C1, C0,C1,R0, R0,C1,R1);
     }
   }
-  if(window.__DETLOG)console.log('[NET] lines='+net.length+' segs='+(pos.length/6));
-  if(!pos.length)return;
   var g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
-  /* 河网作为矢量覆盖层画在最前：二维底图里河线也是压在影像上的，
-       三维里若做深度测试，1 px 的线在山脊背面会被地形吃掉大段 */
-  /* 深度测试打开：河线才会被山脊正确遮挡、贴着谷底，而不是悬浮在整张图上 */
-  var m=new THREE.LineBasicMaterial({color:0x6fe0f5,transparent:true,opacity:0.9,depthWrite:false,depthTest:true});
-  streamGroup=new THREE.LineSegments(g,m);
-  streamGroup.scale.y=G.exag;          /* 与地形同步拉伸，河线永远贴着地表 */
-  streamGroup.renderOrder=2;
-  scene.add(streamGroup);
-  if(window.__DETLOG){
-    console.log('[NET] added vis='+streamGroup.visible+' parent='+(streamGroup.parent===scene)
-      +' y0='+pos[1].toFixed(2)+' exag='+G.exag+' camNear='+camera.near);
-    setTimeout(function(){
-      console.log('[NET] t1 vis='+streamGroup.visible+' layerWater='+(G.layers&&G.layers.water)
-        +' children='+scene.children.length);
-    },1500);
-  }
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx);
+  return g;
 }
-
+/* 构建河道：主干水面 + 重要支流水面，整体按 exag 一起拉伸 */
+var riverNetGroup=null;
+function buildRiverLayer(){
+  if(riverNetGroup){
+    scene.remove(riverNetGroup);
+    riverNetGroup.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});
+    riverNetGroup=null;
+  }
+  if(!RIVER.net)return;
+  var g=buildRiverRibbonNet(1.0,0.05,1);
+  if(!g)return;
+  var mat=new THREE.ShaderMaterial({
+    uniforms:{uExagY:{value:G.exag}},
+    transparent:true,depthWrite:false,side:THREE.DoubleSide,
+    vertexShader:'uniform float uExagY;varying float vArc;void main(){vArc=position.y;vec3 p=position;p.y*=uExagY;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}',
+    fragmentShader:'varying float vArc;void main(){gl_FragColor=vec4(0.04,0.16,0.20,0.62);}'
+  });
+  var m=new THREE.Mesh(g,mat);
+  m.renderOrder=2;
+  riverNetGroup=new THREE.Group();
+  riverNetGroup.add(m);
+  riverNetGroup.visible=!!G.layers.water;
+  scene.add(riverNetGroup);
+  /* 主流入水线：沿河道中线的发光细线，让"主流比支流深、比支流粗"一眼看得出来 */
+  buildMainStreamLine();
+}
+/* 干流高亮线：中线细亮线 + 两侧暗描边，远看是一条有厚度的江 */
+var mainLineGroup=null;
+function buildMainStreamLine(){
+  if(mainLineGroup){scene.remove(mainLineGroup);mainLineGroup=null;}
+  if(!RIVER.net)return;
+  mainLineGroup=new THREE.Group();
+  var r=RIVER.net[0],P=r.axis;
+  var pos=[];
+  for(var i=0;i<P.length-1;i++){
+    var a=P[i],b=P[i+1];
+    var wa=toWorld(a.lon,a.lat),wb=toWorld(b.lon,b.lat);
+    var ya=(a.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;
+    var yb=(b.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;
+    pos.push(wa.x,ya,wa.z,wb.x,yb,wb.z);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  var m=new THREE.ShaderMaterial({
+    uniforms:{uExagY:{value:G.exag}},
+    transparent:true,depthWrite:false,depthTest:true,
+    vertexShader:'uniform float uExagY;void main(){vec3 p=position;p.y*=uExagY;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}',
+    fragmentShader:'void main(){gl_FragColor=vec4(0.50,0.89,1.0,0.55);}'
+  });
+  var ln=new THREE.LineSegments(g,m);
+  ln.renderOrder=4;
+  mainLineGroup.add(ln);
+  mainLineGroup.visible=!!G.layers.trib;
+  scene.add(mainLineGroup);
+}
 function loadMainStem(){
-  fetch('/data/streams.json',{cache:'force-cache'}).then(function(r){return r.json();}).then(function(j){
-    window.__NET=(j.lines||[]).map(function(l){return l[1]||l;});
-    var best=null;
-    (j.lines||[]).forEach(function(l){
-      if(!best||(l[1]&&l[1].length>best[1].length))best=l;
-    });
-    if(best&&best[1]&&best[1].length>20){
-      window.__MAINSTEM=best[1];
-      buildRiver();          /* 用真实干流重建河道 */
-    }
-    try{ buildStreamNet(); }catch(e){}
-  }).catch(function(){});
+  /* 用 hydro.json（主流 + 重要支流）驱动场景：载入后重建水面与主干流线 */
+  loadRiverNet(function(rs){
+    if(!rs)return;
+    try{buildRiver();}catch(e){}            /* 干流漫游曲线（沿用干流几何） */
+    try{buildWater();}catch(e){}            /* 水面：严格沿河道中线 */
+    try{buildRiverLayer();}catch(e){}
+    try{buildPatrol();}catch(e){}
+  });
 }
 /* 贴地河道带：沿干流两侧各取半宽，逐点贴地形高度成三角带。
    为什么不用 TubeGeometry：管半径 4 个单位时，山谷宽度可能只有 2–3 个单位，
@@ -2798,85 +3054,48 @@ function buildRiverRibbon(pts, halfW, exag, yFn, halfW0){
 }
 
 function buildRiver(){
-  if(riverMesh){scene.remove(riverMesh);riverMesh.geometry.dispose();}
-  /* 远景时抬高一点：24 位深度缓冲在 500 单位距离上分辨不出 0.06 单位的高差，
-     河道会被地形"吃"掉；抬高量与视距成正比，屏幕上依旧贴着谷底。 */
-  window.__riverLift=Math.max(0.06,(camCtl?camCtl.r:600)*0.0028);
-  var pts=[];
-  var src=(window.__MAINSTEM&&window.__MAINSTEM.length>20)?window.__MAINSTEM:null;
-  if(src){
-    for(var q=0;q<src.length;q++){
-      var s=src[q];
-      if(s[0]<LON_MIN+0.06||s[0]>LON_MAX-0.06||s[1]<LAT_MIN+0.06||s[1]>LAT_MAX-0.06)continue;
-      var w0=toWorld(s[0],s[1]);
-      pts.push(new THREE.Vector3(w0.x,terrainYAt(s[0],s[1])*G.exag+0.06,w0.z));
+  /* 干流漫游曲线 + 主流水面。河流几何现在来自 RIVER.net（hydro.json），本函数只负责：
+     ① 生成沿干流的漫游相机曲线；② 保持 riverMesh 与图层开关一致（旧版管子不再绘制）。 */
+  var net=RIVER.net;
+  var pts=[],srcLatLon=[];
+  if(net&&net.length){
+    var r=net[0],A=r.axis;
+    for(var i=0;i<A.length;i++){
+      var w=toWorld(A.lon,A.lat);
+      var y=(A.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;   /* 基准高度，随 exag 一起拉伸 */
+      pts.push(new THREE.Vector3(w.x,y,w.z));
+      srcLatLon.push([A.lon,A.lat]);
     }
+    G.riverLonLat=srcLatLon;
+    window.__MAINSTEM=srcLatLon;
+  }else{
+    /* 数据未就绪：用河脊控制点占位，避免漫游/巡检取空数组 */
+    for(var k=0;k<spineDense.length;k+=3){
+      var s=spineDense[k];
+      var w2=toWorld(s[0],s[1]);
+      pts.push(new THREE.Vector3(w2.x,(s[2]-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06,w2.z));
+      srcLatLon.push([s[0],s[1]]);
+    }
+    G.riverLonLat=srcLatLon;
   }
-  for(var i=0;src?false:i<spineDense.length;i+=3){
-    var s=spineDense[i];
-    /* 干流首尾也可能超出地形范围，跳过界外点，避免河道飘出地图 */
-    if(s[0]<LON_MIN+0.06||s[0]>LON_MAX-0.06||s[1]<LAT_MIN+0.06||s[1]>LAT_MAX-0.06)continue;
-    var w=toWorld(s[0],s[1]);
-    pts.push(new THREE.Vector3(w.x,terrainYAt(s[0],s[1])*G.exag+0.06,w.z));
-  }
-  /* 原始 polyline 点距不均、转角很硬，直接做带子会变成折线闪电。
-     用 Catmull-Rom 按弧长均匀重采样（约 0.32 世界单位一个断面），河道才是连续曲线。 */
-  var curve=new THREE.CatmullRomCurve3(pts);
-  G.riverCurve=curve;
-  G.riverLonLat=(src?src:spineDense.map(function(p){return [p[0],p[1]];}));
   if(pts.length>3){
+    var curve=new THREE.CatmullRomCurve3(pts);
+    G.riverCurve=curve;
     try{
       var _len=curve.getLength();
       var _n=Math.max(48,Math.min(1500,Math.round(_len/0.32)));
       pts=curve.getSpacedPoints(_n);
     }catch(e){}
   }
-  riverU={uTime:{value:0},uOn:{value:G.layers.water?1:0}};
-  riverMesh=new THREE.Mesh(buildRiverRibbon(pts, G.riverW||2.0, G.exag, null, (G.riverW||2.0)*0.62), new THREE.ShaderMaterial({
-    uniforms:riverU,transparent:true,depthWrite:false,side:THREE.DoubleSide,
-    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:[
-    'varying vec2 vUv;uniform float uTime,uOn;',
-    'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
-    'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);',
-    '  return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),f.x),mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),f.x),f.y);}',
-    'void main(){',
-    ' float t=uTime;',
-    ' float n1=noise(vec2(vUv.x*170.0-t*2.4, vUv.y*7.0));',
-    ' float n2=noise(vec2(vUv.x*74.0-t*1.2+17.0, vUv.y*4.0));',
-    ' float n3=noise(vec2(vUv.x*340.0-t*4.6, vUv.y*11.0));',
-    ' float flow=n1*0.5+n2*0.32+n3*0.18;',
-    ' float edge=abs(vUv.y-0.5)*2.0;',
-    ' vec3 deep=vec3(0.07,0.24,0.32);',
-    ' vec3 shallow=vec3(0.22,0.50,0.60);',
-    ' vec3 c=mix(deep,shallow,0.28+0.55*flow);',
-    ' c+=vec3(0.36,0.58,0.66)*smoothstep(0.56,0.92,flow)*0.22;',        /* 顺流亮带 */
-    ' float spec=pow(max(flow-0.58,0.0)*2.2,3.0);',
-    ' c+=vec3(1.0,0.97,0.88)*spec*0.5;',                                  /* 阳光高光 */
-    ' c=mix(c,vec3(0.62,0.71,0.72),smoothstep(0.74,1.0,edge)*(0.12+0.20*flow));', /* 岸边泡沫 */
-    ' float core=pow(max(0.0,1.0-abs(vUv.y-0.5)*2.0),3.0);',
-    ' c+=vec3(0.55,0.78,0.82)*core*(0.05+0.08*flow);',
-    /* 岸边渐隐：靠近河岸两侧 alpha 降到 0，水体边缘不再是一刀切的色带 */
-    ' float bank=smoothstep(0.0,0.34,min(vUv.y,1.0-vUv.y));',
-    /* 视角近似菲涅耳：越接近侧视越亮（用 uv 纵向位置近似视线角） */
-    ' float fres=pow(1.0-abs(vUv.y-0.5)*2.0,1.4);',
-    ' c=mix(c*0.82,c,0.35+0.65*fres);',
-    ' c+=vec3(0.20,0.40,0.48)*pow(1.0-bank,2.0)*0.22;',
-    ' gl_FragColor=vec4(c,(0.70+0.28*bank)*uOn);}',
-    ].join('\n')}));
-  riverMesh.renderOrder=3;
-    scene.add(riverMesh);
-  // 漫游相机曲线（贴地抬升）
-  /* 漫游曲线：高度做 5 点滑动平均，消除栅格台阶导致的上下抖动 */
+  /* 漫游曲线：沿干流、贴水面上方 4.5 个世界单位（≈4.8 km 航高），5 点滑动平均去抖动 */
   var rp=[],ys=pts.map(function(p){return p.y;});
-  for(var k=0;k<pts.length;k++){
+  for(var k2=0;k2<pts.length;k2++){
     var sum=0,n=0;
-    for(var q=-2;q<=2;q++){var kk=k+q;if(kk>=0&&kk<ys.length){sum+=ys[kk];n++;}}
-    rp.push(new THREE.Vector3(pts[k].x,sum/n+4.5,pts[k].z));
+    for(var q=-2;q<=2;q++){var kk=k2+q;if(kk>=0&&kk<ys.length){sum+=ys[kk];n++;}}
+    rp.push(new THREE.Vector3(pts[k2].x,sum/n+4.5,pts[k2].z));
   }
-  roamCurve=new THREE.CatmullRomCurve3(rp,false,'catmullrom',0.35);
-  /* 竞态：实景期间 loadMainStem 的 fetch 才返回、重建了全域管子，
-     立刻改回块内河流，否则旧管子会在 1.4× 实景块旁悬空 */
+  if(rp.length>2)roamCurve=new THREE.CatmullRomCurve3(rp,false,'catmullrom',0.35);
+  if(riverMesh){scene.remove(riverMesh);riverMesh.geometry.dispose();riverMesh=null;riverU=null;}
   if(DET.cur)riverOnPatch();
 }
 
@@ -3199,13 +3418,18 @@ function animate(){
   if(M2.on)return;                 // 二维底图模式下暂停三维渲染，省 GPU
   var dt=Math.min(clock.getDelta(),.08);
   var t=clock.elapsedTime;
-  terrainU.uTime.value=t;riverU.uTime.value=t;
-  /* 矢量河网只在中远观显示：拉近后卫星影像里的真实河道才是"河"，
-      DEM 提取的河线分辨率(~700m)远低于影像，近看必然错位。 */
-  var _rf=clamp((camCtl.r-120)/170,0,1);
-  if(streamGroup)streamGroup.visible=!!G.layers.water&&_rf>0.03;
-  if(riverU)riverU.uOn.value=(G.layers.water&&_rf>0.03)?1:0;
-  if(tribGroup)tribGroup.visible=!!G.layers.trib&&_rf>0.03;
+  terrainU.uTime.value=t;
+  if(riverU)riverU.uTime.value=t;
+  if(waterU)waterU.uTime.value=t;         /* 水面波纹：全局时钟，避免停滞感 */
+  /* 河网显隐：远观看整体水系，非常近时才让位于卫星影像里的真实河道。
+     旧版门槛是 r>120，等于放大后河流直接消失，"只剩影像里一条细缝"。 */
+  var _rf=clamp((camCtl.r-34)/60,0,1);
+  if(riverU)riverU.uOn.value=(G.layers.water&&_rf>0.02)?1:0;
+  if(tribGroup)tribGroup.visible=!!G.layers.trib&&_rf>0.02;
+  if(riverNetGroup)riverNetGroup.visible=!!G.layers.water&&_rf>0.01;
+  if(mainLineGroup)mainLineGroup.visible=!!G.layers.trib&&_rf>0.01;
+  if(waterMesh)waterMesh.visible=!!G.layers.water&&_rf>0.01;
+  if(waterU)waterU.uOn.value=(G.layers.water&&_rf>0.01)?1:0;
   /* 地台是"看模型"的舞台道具：视距拉到 300 单位以内就逐步淡出。
      否则贴近边界时，一堵十几公里厚的岩壁会占满屏幕，变成一块纯黑的墙。 */
   if(slabMesh&&!DET.cur){
@@ -3247,7 +3471,7 @@ function animate(){
     var _dt=(DETF.on?1:0), _dc=terrainU.uDetOn.value;
     if(Math.abs(_dc-_dt)>0.003) terrainU.uDetOn.value=_dc+(_dt-_dc)*0.10;
   }
-  if(waterU&&WATER.on){waterU.uTime.value=t;waterU.uLevel.value=waterElevToY(WATER.level);waterU.uExag.value=G.exag;}
+  if(waterU&&WATER.on&&waterU.uTime)waterU.uTime.value=t;
   // 漫游
   if(G.roaming&&!G.roamPaused&&roamCurve){
     roamT+=G.roamSpeed*dt;
@@ -4645,105 +4869,159 @@ $('simClear')&&($('simClear').onclick=function(){
 function buildSettings(){
   var B=$('setBody');
   var html='';
-  // 服务状态
-  html+='<div class="sgroup"><div class="sg-head"><span class="gi">📡</span>服务与数据源状态<span class="en">SERVICE STATUS</span></div><div class="sg-body">'+
+  /* 顶部：光照模式分段按钮 —— 最常用、最影响观感的开关放在最上面 */
+  html+='<div class="sgroup sgroup-look"><div class="sg-head"><span class="gi">💡</span>光照模式<span class="en">LIGHTING</span></div>'+
+    '<div class="sg-body"><div class="seg" id="lookSeg">'+
+      '<button data-look="real" class="'+(LOOK.mode==='real'?'on':'')+'">写实自然光</button>'+
+      '<button data-look="dusk" class="'+(LOOK.mode==='dusk'?'on':'')+'">晨昏暖光</button>'+
+    '</div><div class="sg-tip">写实自然光＝晴天斜射日光＋天光补光＋轻大气，最接近真实现场；晨昏暖光＝低角度暖阳，峡谷拉出长阴影。两者只改观感，不参与指标计算。</div>'+
+    '</div></div>';
+  /* 渲染控制台：左侧固定标签、右侧控件对齐、统一单位 */
+  html+=sgroup('⚙','渲染控制台','RENDER CONSOLE',[
+    ssel('画质档位','流畅 / 标准 / 高清',['流畅（低配）','标准（推荐）','高清（高性能）'],
+      G.quality==='low'?0:G.quality==='high'?2:1,'_q',function(v){
+      applyQuality(v===0?'low':v===2?'high':'mid');}),
+    ssel('地形精度','网格密度',['256² 标准','768² 流畅','1024² 精细','2048² 超清'],
+      G.detail<=256?0:G.detail<=768?1:G.detail<=1024?2:3,'detail',function(v){
+      G.detail=v===0?256:v===1?768:v===2?1024:2048;rebuildScene();
+      toast('地形精度已切换为 '+G.detail+'²（三角面 '+Math.round((G.detail-1)*(G.detail-1)*2/1e4)+' 万）','ok','⛰');}),
+    srange('垂直夸张','垂直夸张度（倍）',1,8,.5,G.exagUser,'exag',null,'×'),
+    srange('等高线','等高线间距（m）',100,1000,50,G.contour,'contour',null,'m'),
+    srange('太阳方位','太阳方位角（°）',0,360,1,G.sunAz,'sunAz',null,'°'),
+    srange('太阳高度','太阳高度角（°）',5,85,1,G.sunEl,'sunEl',null,'°'),
+    srange('阴影强度','地形阴影（0–1）',0,1,.05,G.shadow,'shadow',null,''),
+    srange('大气雾','空气透视（0–1）',0,1,.05,G.fog,'fog',null,''),
+    srange('晕渲强度','把卫星影像压成山体明暗',0,1,.05,LOOK.hill,'_hill',null,''),
+    srange('雪线','永久冰雪起始高程（m）',4000,6500,50,LOOK.snowLine,'_snowLine',null,'m'),
+    srange('曝光','色调映射曝光',.5,1.8,.05,G.exposure,'exposure',null,'')
+  ]);
+  /* 图层开关：横向两列，更紧凑 */
+  html+=sgroup('🗂','图层开关','LAYERS',[
+    '<div class="sw2">'+stog('等高线','Contour','layers.contour')+stog('山体阴影','Hillshade','layers.hillshade')+
+    stog('高程设色','Hypsometric','layers.ramp')+stog('经纬网格','Graticule','layers.grid')+
+    stog('水系','Rivers','layers.water')+stog('流域网','Network','layers.trib')+stog('巡检','Patrol','layers.patrol')+
+    stog('形变','Deform','layers.deform')+'</div>',
+    ssel('色带方案','高程设色配色',RAMP_NAMES,G.ramp,'ramp',function(v){
+      G.ramp=v;terrainU.uRamp.value=RAMPS[v].map(function(c){return new THREE.Color(c);});updateLegendBar();})
+  ]);
+  /* 视图与漫游 */
+  html+=sgroup('🎥','视图与漫游','VIEW',[
+    stog('自动环绕','Auto orbit','autoOrbit'),
+    srange('环绕速度','环绕速度',.05,1.2,.05,G.orbitSpeed,'orbitSpeed',null,''),
+    srange('漫游速度','漫游速度',.01,.15,.005,G.roamSpeed,'roamSpeed',null,''),
+    srange('视场角','视场角 FOV',30,90,1,G.fov,'fov',null,'°'),
+    srange('标注大小','站点名称字号',2,8,.2,G.labelScale,'labelScale',null,'×')
+  ]);
+  /* 数据配置 */
+  html+=sgroup('📡','数据配置','DATA',[
+    ssel('高程数据源','高程数据源',['90m 融合','SRTM 30m','ASTER GDEM'],['90m 融合','SRTM 30m','ASTER GDEM'].indexOf(G.demSrc),'demSrc',function(v){
+      var arr=['90m 融合','SRTM 30m','ASTER GDEM'];G.demSrc=arr[v];rebuildScene();toast('数据源切换：'+G.demSrc+'，地形已重生成','ok','🗂');}),
+    srange('同步间隔','自动刷新间隔（s）',5,300,5,DH.interval,'_sync',null,'s'),
+    ssel('同步模式','数据同步模式',['轮询（自动）','仅手动刷新'],0,'_syncMode',function(v){
+      DH.mode=v;DH.enabled=(v===0);scheduleDH();
+      toast('同步模式：'+(v===0?'每 '+DH.interval+'s 轮询':'仅手动'),'ok','🔄');}),
+    stog('启用自动更新','实时同步开关','_autoSync')
+  ]);
+  /* 服务状态（折叠） */
+  html+='<details class="sg-details"><summary><span class="gi">📶</span>服务与数据源状态<span class="en">SERVICE STATUS</span><i>▾</i></summary>'+
+   '<div class="sg-body">'+
    '<div class="srv"><span class="dot" id="srvBeDot"></span><span class="nm">内置数据服务</span><span class="ad" id="srvBeAd">检测中</span><span class="st ok" id="srvBeSt">在线</span></div>'+
    '<div class="srv"><span class="dot" id="srvDbDot"></span><span class="nm">内置数据库 · jinsha</span><span class="ad">本地 JSON · 免安装 · 离线可用</span><span class="st ok" id="srvDbSt">在线</span></div>'+
    '<div class="srv"><span class="dot"></span><span class="nm">前端渲染引擎</span><span class="ad">Three.js WebGL2</span><span class="st ok">就绪</span></div>'+
    '<div class="srv"><span class="dot"></span><span class="nm">当前页面</span><span class="ad" id="srvPage">—</span><span class="st ok">本地</span></div>'+
    '<div class="sec-lab" style="margin-top:9px">研究技术栈</div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">智能体开发环境<small style="display:block;color:var(--dim2);font-size:8.5px">需求理解 · 代码生成 · 自动化验证</small></span><span class="ad">WorkBuddy · Deepseek-V4-Pro</span><span class="st ok">在用</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 三维地形平台<small style="display:block;color:var(--dim2);font-size:8.5px">本页面 · 自定义高度场 Shader</small></span><span class="ad">Three.js r158 · WebGL2</span><span class="st ok">在用</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 评估工作台<small style="display:block;color:var(--dim2);font-size:8.5px">/studio · 指标 / 权重 / 情景对比</small></span><span class="ad">ECharts 5 · 原生 ES5</span><span class="st ok">在用</span></div>'+
-   '<div class="srv"><span class="dot" id="srvBeDot2"></span><span class="nm">后端服务<small style="display:block;color:var(--dim2);font-size:8.5px">stations / eco / db / fs / llm 等 20 组 REST API</small></span><span class="ad">Python 标准库 http.server : 8080</span><span class="st ok" id="srvBeSt2">在线</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">数据层<small style="display:block;color:var(--dim2);font-size:8.5px">表：站点 / 土地覆盖 / 生态指标 / 气候 / 数据来源台账</small></span><span class="ad">data/*.json（可平滑迁 PostgreSQL）</span><span class="st ok">jinsha</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">AI 模型群<small style="display:block;color:var(--dim2);font-size:8.5px">风险分级 · 碳密度回归 · 遥感分割 · 时序预测</small></span><span class="ad">RF / SVM / U-Net / XGBoost / LSTM</span><span class="st ok">已注册</span></div>'+
-   '</div></div>';
-  // 显示效果
-  html+=sgroup('🎨','显示效果','DISPLAY',[
-    ssel('色带方案',RAMP_NAMES,G.ramp,'ramp',function(v){G.ramp=v;terrainU.uRamp.value=RAMPS[v].map(function(c){return new THREE.Color(c);});updateLegendBar();}),
-    srange('垂直夸张度','1× = 真实比例；4× 为默认，能读出山脊又不失真',1,8,.5,G.exagUser,'exag',function(v){setExag(v);}),
-    srange('等高线间距','Major contour interval',100,1000,50,G.contour,'contour',function(v){G.contour=v;terrainU.uContourStep.value=v;$('tbCont').textContent=v+'m';}),
-    stog('等高线显示','Contour lines','layers.contour'),
-    stog('山体阴影','Hillshade lighting','layers.hillshade'),
-    stog('高程分层设色','Hypsometric tint','layers.ramp'),
-    stog('经纬网格','Graticule 1°','layers.grid')]);
-  // 渲染参数
-  html+=sgroup('☀','渲染参数','RENDER',[
-    srange('太阳方位角','Sun azimuth',0,360,1,G.sunAz,'sunAz',function(v){G.sunAz=v;}),
-    srange('太阳高度角','Sun elevation',5,85,1,G.sunEl,'sunEl',function(v){G.sunEl=v;}),
-    srange('阴影强度','Shadow strength',0,1,.05,G.shadow,'shadow',function(v){G.shadow=v;terrainU.uShadowS.value=v;}),
-    srange('大气雾浓度','Atmospheric fog',0,1,.05,G.fog,'fog',function(v){G.fog=v;terrainU.uFogD.value=v;}),
-    srange('曝光度','Tone exposure',.5,1.8,.05,G.exposure,'exposure',function(v){G.exposure=v;}),
-    ssel('画质档位',['流畅（低配）','标准（推荐）','高清（高性能）'],
-      G.quality==='low'?0:G.quality==='high'?2:1,'_q',function(v){
-      applyQuality(v===0?'low':v===2?'high':'mid');}),
-    ssel('地形精度',['256² 标准','192² 流畅','320² 精细'],G.detail===256?0:G.detail===192?1:2,'detail',function(v){
-      G.detail=v===0?256:v===1?192:320;rebuildScene();toast('地形精度已切换为 '+G.detail+'²','ok','⛰');})]);
-  // 视图偏好
-  html+=sgroup('🎥','视图与漫游','VIEW',[
-    stog('自动环绕','Auto orbit','autoOrbit'),
-    srange('环绕速度','Orbit speed',.05,1.2,.05,G.orbitSpeed,'orbitSpeed',function(v){G.orbitSpeed=v;}),
-    srange('漫游速度','Roam speed',.01,.15,.005,G.roamSpeed,'roamSpeed',function(v){G.roamSpeed=v;}),
-    srange('视场角 FOV','Field of view',30,90,1,G.fov,'fov',function(v){G.fov=v;camera.fov=v;camera.updateProjectionMatrix();}),
-    srange('标注大小','站点名称字号',2,8,.2,G.labelScale,'labelScale',function(v){G.labelScale=v;buildStations();})]);
-  // 数据配置
-  html+=sgroup('🗂','数据配置','DATA',[
-    ssel('高程数据源',['90m 融合','SRTM 30m','ASTER GDEM'],['90m 融合','SRTM 30m','ASTER GDEM'].indexOf(G.demSrc),'demSrc',function(v){
-      var arr=['90m 融合','SRTM 30m','ASTER GDEM'];G.demSrc=arr[v];rebuildScene();toast('数据源切换：'+G.demSrc+'，地形已重生成','ok','🗂');}),
-    srange('自动同步间隔','实时数据刷新（秒）',5,300,5,DH.interval,'_sync',function(v){DH.interval=v;scheduleDH();}),
-    ssel('同步模式',['轮询（自动）','仅手动刷新'],0,'_syncMode',function(v){
-      DH.mode=v;DH.enabled=(v===0);scheduleDH();
-      toast('同步模式：'+(v===0?'每 '+DH.interval+'s 轮询':'仅手动'),'ok','🔄');}),
-    stog('启用自动更新','实时同步开关','_autoSync')]);
-  // 操作
-  html+='<div style="display:flex;gap:9px;margin-top:2px">'+
-   '<button class="abtn" id="dhRefresh">🔄 立即刷新数据</button>'+
-   '<button class="abtn" id="setReset">↺ 恢复默认设置</button>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">智能体开发环境</span><span class="ad">WorkBuddy · Deepseek-V4-Pro</span><span class="st ok">在用</span></div>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 三维地形平台</span><span class="ad">Three.js r158 · WebGL2</span><span class="st ok">在用</span></div>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 评估工作台</span><span class="ad">/studio · ECharts 5</span><span class="st ok">在用</span></div>'+
+   '<div class="srv"><span class="dot" id="srvBeDot2"></span><span class="nm">后端服务</span><span class="ad">Python http.server · 20 组 REST API</span><span class="st ok" id="srvBeSt2">在线</span></div>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">数据层</span><span class="ad">data/*.json（可平滑迁 PostgreSQL）</span><span class="st ok">jinsha</span></div>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">AI 模型群</span><span class="ad">RF / SVM / U-Net / XGBoost / LSTM</span><span class="st ok">已注册</span></div>'+
+   '</div></details>';
+  /* 底部操作条：固定在面板底部 */
+  html+='<div id="setActions">'+
+   '<button class="abtn" id="dhRefresh">🔄 刷新数据</button>'+
+   '<button class="abtn" id="setReset">↺ 恢复默认</button>'+
    '<button class="abtn" id="setResetView">✈ 复位视角</button></div>';
   B.innerHTML=html;
   bindSettings();
+  var lookSeg=$('lookSeg');
+  if(lookSeg)lookSeg.onclick=function(e){
+    var b2=e.target.closest('button'); if(!b2)return;
+    Array.prototype.forEach.call(lookSeg.children,function(x){x.classList.toggle('on',x===b2);});
+    applyLook(b2.dataset.look,false);
+    buildSettings();   /* 刷新手动参数为预设值 */
+  };
   var dhBtn=$('dhRefresh');
   dhBtn.onclick=function(){toast('正在同步最新数据…','ok','🔄');dataHubTick();};
   var as=$('setBody').querySelector('input[data-k="_autoSync"]');
   if(as)as.onchange=function(){DH.enabled=as.checked;if(DH.enabled)scheduleDH();else if(DH.timer)clearTimeout(DH.timer);
     toast(DH.enabled?'自动更新已开启':'自动更新已暂停','ok','🔄');};
+  var rs=$('setReset');
+  if(rs)rs.onclick=function(){
+    try{localStorage.removeItem(LS_KEY);localStorage.removeItem(LS3_KEY);}catch(e){}
+    toast('已恢复默认设置，正在重载…','ok','↻');
+    setTimeout(function(){location.reload();},600);
+  };
+  var rv=$('setResetView');
+  if(rv)rv.onclick=function(){flyToView('overview');};
 }
 function sgroup(ic,nm,en,rows){return '<div class="sgroup"><div class="sg-head"><span class="gi">'+ic+'</span>'+nm+
   '<span class="en">'+en+'</span></div><div class="sg-body">'+rows.join('')+'</div></div>';}
-function srange(l,sub,min,max,step,val,key,cb){
+/* 滑杆行：左标签（主名 + 副说明），中间滑杆，右侧固定宽度数值（带单位） */
+function srange(l,sub,min,max,step,val,key,cb,unit){
+  var v=(val==null||isNaN(val))?min:val;
   return '<div class="srow"><div class="sl">'+l+'<small>'+sub+'</small></div>'+
-  '<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" data-k="'+key+'">'+
-  '<div class="sv" id="sv_'+key+'">'+val+(step>=1?'':'')+'</div></div>';
+  '<div class="sc"><input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+v+'" data-k="'+key+'">'+
+  '<div class="sv" id="sv_'+key+'">'+v+(unit||'')+'</div></div></div>';
 }
-function ssel(l,opts,val,key,cb){
-  return '<div class="srow"><div class="sl">'+l+'</div><select data-k="'+key+'">'+
-   opts.map(function(o,i){return '<option value="'+i+'"'+(i==val?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>';
+function ssel(l,sub,opts,val,key,cb){
+  return '<div class="srow"><div class="sl">'+l+(sub?'<small>'+sub+'</small>':'')+'</div>'+
+   '<div class="sc"><select data-k="'+key+'">'+
+   opts.map(function(o,i){return '<option value="'+i+'"'+(i==val?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div></div>';
 }
 function stog(l,sub,key){
   var v=key.indexOf('.')>0?G.layers[key.split('.')[1]]:G[key];
-  return '<div class="srow"><div class="sl">'+l+'<small>'+sub+'</small></div>'+
+  return '<div class="srow sw"><div class="sl">'+l+'<small>'+sub+'</small></div>'+
    '<label class="switch"><input type="checkbox" data-k="'+key+'"'+(v?' checked':'')+'><span class="tk"></span></label></div>';
 }
 function bindSettings(){
+  /* 统一回调表：滑杆 / 下拉共用一个映射，避免"改了没反应"（旧版 ssel 的 cb 从未被调用） */
+  var CB={
+    exag:function(v){setExag(v);},
+    contour:function(v){G.contour=v;terrainU.uContourStep.value=v;var t=$('tbCont');if(t)t.textContent=v+'m';},
+    sunAz:function(v){G.sunAz=v;},
+    sunEl:function(v){G.sunEl=v;},
+    shadow:function(v){G.shadow=v;terrainU.uShadowS.value=v;},
+    fog:function(v){G.fog=v;terrainU.uFogD.value=v;},
+    exposure:function(v){G.exposure=v;renderer.toneMappingExposure=v;},
+    orbitSpeed:function(v){G.orbitSpeed=v;},
+    roamSpeed:function(v){G.roamSpeed=v;},
+    fov:function(v){G.fov=v;camera.fov=v;camera.updateProjectionMatrix();},
+    labelScale:function(v){updateLabelScale(v);},
+    _sync:function(v){DH.interval=v;scheduleDH();},
+    /* 新增：真实感相关 */
+    _hill:function(v){LOOK.hill=v;terrainU.uHillAmt.value=v;},
+    _snowLine:function(v){LOOK.snowLine=v;terrainU.uSnowLine.value=v;},
+    _warm:function(v){LOOK.warm=v;terrainU.uWarmMix.value=v;},
+    ramp:function(v){G.ramp=v;terrainU.uRamp.value=RAMPS[v].map(function(c){return new THREE.Color(c);});updateLegendBar();},
+    _q:function(v){applyQuality(v===0?'low':v===2?'high':'mid');},
+    detail:function(v){G.detail=v===0?256:v===1?768:v===2?1024:2048;rebuildScene();
+      toast('地形精度已切换为 '+G.detail+'²','ok','⛰');},
+    demSrc:function(v){var arr=['90m 融合','SRTM 30m','ASTER GDEM'];G.demSrc=arr[v];rebuildScene();
+      toast('数据源切换：'+G.demSrc,'ok','🗂');},
+    _syncMode:function(v){DH.mode=v;DH.enabled=(v===0);scheduleDH();
+      toast('同步模式：'+(v===0?'轮询':'仅手动'),'ok','🔄');}
+  };
   document.querySelectorAll('#setBody input[type=range]').forEach(function(r){
+    var k=r.dataset.k;
     r.oninput=function(){
-      var k=r.dataset.k,v=parseFloat(r.value);
-      var sv=$('sv_'+k);if(sv)sv.textContent=v;
+      var v=parseFloat(r.value),sv=$('sv_'+k);
+      if(sv)sv.textContent=v+(({exag:'×',contour:'m',sunAz:'°',sunEl:'°',fov:'°',labelScale:'×',_sync:'s',_snowLine:'m'})[k]||'');
       if(k.indexOf('.')>0){G.layers[k.split('.')[1]]=v>0;}
       else if(k in G)G[k]=v;
-      if(r._cb)r._cb(v);
+      if(CB[k])CB[k](v);
       saveSettings();
     };
-    // 挂回调
-    var k=r.dataset.k;
-    var map={exag:function(v){setExag(v);},contour:function(v){G.contour=v;terrainU.uContourStep.value=v;$('tbCont').textContent=v+'m';},
-      sunAz:function(v){G.sunAz=v;},sunEl:function(v){G.sunEl=v;},shadow:function(v){G.shadow=v;terrainU.uShadowS.value=v;},
-      fog:function(v){G.fog=v;terrainU.uFogD.value=v;},exposure:function(v){G.exposure=v;},orbitSpeed:function(v){G.orbitSpeed=v;},
-      roamSpeed:function(v){G.roamSpeed=v;},fov:function(v){G.fov=v;camera.fov=v;camera.updateProjectionMatrix();},
-      labelScale:function(v){updateLabelScale(v);},
-      _sync:function(v){DH.interval=v;scheduleDH();}};
-    if(map[k])r._cb=map[k];
     if(k==='exag')r.onchange=function(){buildStations();};
   });
   document.querySelectorAll('#setBody input[type=checkbox]').forEach(function(c){
@@ -4755,10 +5033,21 @@ function bindSettings(){
         terrainU.uShowHill.value=G.layers.hillshade?1:0;
         terrainU.uShowGrid.value=G.layers.grid?1:0;
         terrainU.uShowRamp.value=G.layers.ramp?1:0;
-        if(lk==='water')riverU.uOn.value=c.checked?1:0;
-        if(lk==='stations')stationGroup.visible=c.checked;
+        if(lk==='water'){
+          if(riverU)riverU.uOn.value=c.checked?1:0;
+          if(waterU)waterU.uOn.value=c.checked?1:0;
+          if(waterMesh)waterMesh.visible=c.checked;
+          if(riverNetGroup)riverNetGroup.visible=c.checked;
+        }
+        if(lk==='trib'){
+          if(mainLineGroup)mainLineGroup.visible=c.checked;
+          if(tribGroup)tribGroup.visible=c.checked;
+        }
+        if(lk==='patrol'&&patrolGroup)patrolGroup.visible=c.checked;
+        if(lk==='deform'&&deformGroup)deformGroup.visible=c.checked;
+        if(lk==='stations'&&stationGroup)stationGroup.visible=c.checked;
         var cnt=0;for(var kk in G.layers)if(G.layers[kk])cnt++;
-        $('cvLayers').textContent=cnt;
+        var cv=$('cvLayers');if(cv)cv.textContent=cnt;
       }else if(k in G)G[k]=c.checked;
       saveSettings();
     };
@@ -4766,19 +5055,10 @@ function bindSettings(){
   document.querySelectorAll('#setBody select').forEach(function(s){
     s.onchange=function(){
       var k=s.dataset.k,v=parseInt(s.value);
-      if(k==='ramp'){G.ramp=v;terrainU.uRamp.value=RAMPS[v].map(function(c){return new THREE.Color(c);});updateLegendBar();}
-      else if(k==='_q'){applyQuality(v===0?'low':v===2?'high':'mid');}
-      else if(k==='detail'){G.detail=v===0?256:v===1?192:320;rebuildScene();toast('地形精度已切换为 '+G.detail+'²','ok','⛰');}
-      else if(k==='demSrc'){var arr=['90m 融合','SRTM 30m','ASTER GDEM'];G.demSrc=arr[v];rebuildScene();toast('数据源切换：'+G.demSrc,'ok','🗂');}
-      else if(k==='_syncMode'){DH.mode=v;DH.enabled=(v===0);scheduleDH();toast('同步模式：'+(v===0?'轮询':'仅手动'),'ok','🔄');}
+      if(CB[k])CB[k](v);
       saveSettings();
     };
   });
-  $('setReset').onclick=function(){
-    localStorage.removeItem(LS_KEY);
-    toast('已恢复默认，刷新页面生效','ok','↺');
-  };
-  $('setResetView').onclick=function(){flyToView('overview');};
 }
 /* 垂直夸张随视距自适应：
    远景要夸张（否则 780 km 宽的流域只有 1% 起伏，整块像张纸）；
@@ -4795,6 +5075,10 @@ function applyExagVal(v,rebuild){
   terrainU.uNrmK.value=Math.min(v*0.92,8.0);   /* 法线塑形比几何拉伸保守一档，避免坡面一半死黑 */
   if(slabMesh)slabMesh.scale.y=v;
   if(tribGroup)tribGroup.scale.y=v;
+  /* 河网/水面的 y 拉伸在各自的顶点着色器里完成（p.y*=uExagY），不靠 Object3D.scale */
+  if(waterU&&waterU.uExagY)waterU.uExagY.value=v;
+  if(riverNetGroup)riverNetGroup.children.forEach(function(o){if(o.material&&o.material.uniforms&&o.material.uniforms.uExagY)o.material.uniforms.uExagY.value=v;});
+  if(mainLineGroup)mainLineGroup.children.forEach(function(o){if(o.material&&o.material.uniforms&&o.material.uniforms.uExagY)o.material.uniforms.uExagY.value=v;});
   /* 站点牌跟着地形走，否则自适应缩放时标签会悬在半空 */
   if(stationGroup)stationGroup.children.forEach(function(o){
     var st=o.userData&&o.userData.st;if(!st)return;
@@ -4806,6 +5090,43 @@ function setExag(v){
   v=Math.min(v,8);G.exagUser=v;
   applyExagVal(exagEff(),true);
   $('tbExag').textContent=v.toFixed(1)+'×';
+}
+
+/* ===== 应用光照预设（写实自然光 / 晨昏暖光） =====
+   统一驱动：太阳方位与高度、直射/环境光强、阴影、曝光、雾、天空色、大气与雪线。 */
+function applyLook(mode,silent){
+  var L=LOOK_SET[mode]||LOOK_SET.real;
+  LOOK.mode=mode;
+  G.sunAz=L.sunAz;G.sunEl=L.sunEl;G.shadow=L.shadow;G.fog=L.fog;G.exposure=L.exposure;
+  LOOK.hill=L.hill;LOOK.warm=L.warm;LOOK.snow=L.snow;LOOK.snowLine=L.snowLine;
+  LOOK.snowSoft=L.snowSoft;LOOK.polar=L.polar;LOOK.mist=L.mist;LOOK.mistH=L.mistH;LOOK.atmos=L.atmos;
+  /* 天空：重新画渐变（天空色同时参与地形边缘融合与水体反射） */
+  try{
+    var c=document.createElement('canvas');c.width=2;c.height=256;
+    var g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
+    gr.addColorStop(0,L.skyTop);gr.addColorStop(.55,L.skyMid);gr.addColorStop(1,L.skyLow);
+    g.fillStyle=gr;g.fillRect(0,0,2,256);
+    if(scene&&scene.background&&scene.background.dispose)scene.background.dispose();
+    var t=new THREE.CanvasTexture(c);
+    scene.background=t;skyTex=t;
+    if(terrainU)terrainU.uSkyCol.value=new THREE.Color(L.skyMid);
+  }catch(e){}
+  if(renderer){renderer.toneMappingExposure=G.exposure;}
+  if(terrainU){
+    terrainU.uSunI.value=L.sunI;terrainU.uAmbI.value=L.ambI;
+    terrainU.uShadowS.value=L.shadow;terrainU.uFogD.value=L.fog;
+    terrainU.uHillAmt.value=L.hill;terrainU.uWarmMix.value=L.warm;
+    terrainU.uSnowMix.value=L.snow;terrainU.uSnowLine.value=L.snowLine;
+    terrainU.uSnowSoft.value=L.snowSoft;terrainU.uPolar.value=L.polar;
+    terrainU.uAtmos.value.set(L.mist,L.mistH);terrainU.uAtmosAmt.value=L.atmos;
+    terrainU.uHazeCol.value=new THREE.Color(L.haze);
+    terrainU.uSunWarm.value=new THREE.Color(L.sunWarm);
+    /* 太阳方向（与渲染循环里同一套方位约定） */
+    var _az=G.sunAz*Math.PI/180,_el=G.sunEl*Math.PI/180;
+    terrainU.uSunDir.value.set(Math.sin(_az)*Math.cos(_el),Math.sin(_el),Math.cos(_az)*Math.cos(_el)).normalize();
+  }
+  try{saveSettings();}catch(e){}
+  if(!silent)toast(mode==='dusk'?'光照：晨昏暖光（低角度暖阳，峡谷长阴影）':'光照：写实自然光（晴天斜射日光）','ok',mode==='dusk'?'🌅':'☀');
 }
 function setExagHeavy(v){ // 松开滑块后重排站点
   setExag(v);buildStations();
@@ -4836,14 +5157,17 @@ function saveSettings(){
     .forEach(function(k){o[k]=G[k];});
   /* 存用户设定的夸张度，不存随视距浮动的实时值，否则下次启动会锁在某个奇怪的比例 */
   o.exag=G.exagUser;o.exagUser=G.exagUser;o.autoExag=G.autoExag;
-  o.layers=G.layers;
+  o.look=LOOK.mode;o.layers=G.layers;
   try{localStorage.setItem(LS_KEY,JSON.stringify(o));}catch(e){}
 }
 function rebuildScene(){
   detExit();
   DETF.key='';DETF.tex=null;DETF.on=0;   /* 网格重建会换掉 uniforms，补丁需要重新挂 */                    // 重建前先收掉实景补丁，否则会挂着一个旧网格
   G.N=G.detail;
-  buildTerrain();buildTerrainMesh();buildRiver();buildTributaries();buildStations();
+  buildTerrain();buildTerrainMesh();buildRiver();
+  if(RIVER.net){buildRiverAxis();}       /* 地形网格变了，河线要重新钉一遍 */
+  buildTributaries();buildStations();
+  try{buildWater();buildRiverLayer();buildMainStreamLine();}catch(e){}
   if(G.overlayOn&&G.overlayArch)genOverlay(G.overlayArch);
   terrainU.uOverlay.value=overlayTex;
   drawProfile();
