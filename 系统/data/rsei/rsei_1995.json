@@ -1,0 +1,22 @@
+{
+  "year": 1995,
+  "sensor": "L5",
+  "n_scenes": 167,
+  "pc1_loadings": {
+    "ndvi": -0.612194,
+    "wet": -0.499182,
+    "ndsi": 0.604201,
+    "lst": 0.104768
+  },
+  "rsei_mean": 0.542128,
+  "ndvi_mean": 0.550546,
+  "wet_mean": 0.582268,
+  "ndsi_mean": 0.523536,
+  "lst_mean": 0.481725,
+  "total_area_km2": 387306.28,
+  "class_0_pct": 14.61,
+  "class_1_pct": 17.181,
+  "class_2_pct": 20.381,
+  "class_3_pct": 25.424,
+  "class_4_pct": 22.404
+}

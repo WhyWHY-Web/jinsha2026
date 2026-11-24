@@ -1,0 +1,56 @@
+{
+ "version": "2026.11.24-1106",
+ "updated": "2026-11-24 11:06:01",
+ "source": "Google Earth Engine",
+ "radius_m": 1000,
+ "metrics": {
+  "lst": {
+   "name": "地表温度",
+   "unit": "℃",
+   "collection": "MODIS/061/MOD11A2",
+   "freq": "month"
+  },
+  "treecover": {
+   "name": "树冠覆盖度",
+   "unit": "%",
+   "collection": "MODIS/061/MOD44B",
+   "freq": "year"
+  },
+  "temp": {
+   "name": "2 m 气温",
+   "unit": "℃",
+   "collection": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+   "freq": "month"
+  },
+  "et": {
+   "name": "实际蒸散",
+   "unit": "mm",
+   "collection": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+   "freq": "month"
+  },
+  "evi": {
+   "name": "增强植被指数 EVI",
+   "unit": "1",
+   "collection": "MODIS/061/MOD13Q1",
+   "freq": "month"
+  },
+  "ndvi": {
+   "name": "植被指数 NDVI",
+   "unit": "1",
+   "collection": "MODIS/061/MOD13Q1",
+   "freq": "month"
+  },
+  "precip": {
+   "name": "卫星降水",
+   "unit": "mm",
+   "collection": "NASA/GPM_L3/IMERG_MONTHLY_V07",
+   "freq": "month"
+  },
+  "tcc30": {
+   "name": "树冠覆盖度 30m",
+   "unit": "%",
+   "collection": "UMD/hansen/global_forest_change_2024_v1_12",
+   "freq": "static"
+  }
+ }
+}
