@@ -143,9 +143,70 @@ def pca_loadings(norm_stack):
     w, v = np.linalg.eigh(covarr)   # 升序
     return v[:, -1]                 # 最大特征值对应特征向量
 
+def run_year(year, args):
+    img, sensor, nscenes = composite(year)
+    n = nscenes.getInfo()
+    print('  [%d] %s 生长季影像 %d 景' % (year, sensor, n))
+    cfg = SENSORS[sensor]
+    stack = four_components(img, cfg)
+    norm = ee.Image.cat([normalize(stack, b) for b in ['ndvi', 'wet', 'ndsi', 'lst']])
+
+    load = pca_loadings(norm)
+    wndvi, wwet, wndsi, wlst = load
+    pc1 = (norm.select('ndvi').multiply(wndvi)
+           .add(norm.select('wet').multiply(wwet))
+           .add(norm.select('ndsi').multiply(wndsi))
+           .add(norm.select('lst').multiply(wlst)))
+    rsei0 = (pc1.multiply(-1) if wndvi < 0 else pc1).rename('rsei0')
+
+    pr = rsei0.reduceRegion(reducer=ee.Reducer.percentile([2, 98]), geometry=aoi,
+                            scale=250, maxPixels=1e10, bestEffort=True, tileScale=4)
+    lo = ee.Number(pr.get('rsei0_p2')); hi = ee.Number(pr.get('rsei0_p98'))
+    rsei = rsei0.subtract(lo).divide(hi.subtract(lo)).clamp(0, 1).rename('rsei')
+    rsei_class = (rsei.multiply(5).floor().min(4)).rename('class')
+
+    scale = args.stats_scale
+    mean = rsei.reduceRegion(reducer=ee.Reducer.mean(), geometry=aoi,
+                             scale=scale, maxPixels=1e10, bestEffort=True, tileScale=4)
+    mean4 = norm.reduceRegion(reducer=ee.Reducer.mean(), geometry=aoi,
+                              scale=scale, maxPixels=1e10, bestEffort=True, tileScale=4)
+    pix_area = ee.Image.pixelArea().divide(1e6)  # km²
+    total_area = pix_area.updateMask(rsei.mask()).reduceRegion(
+        reducer=ee.Reducer.sum(), geometry=aoi, scale=scale,
+        maxPixels=1e10, bestEffort=True, tileScale=4)
+    total = ee.Number(total_area.get('area')).getInfo()
+    class_area = {}
+    for k in range(5):
+        a = pix_area.updateMask(rsei_class.eq(k)).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=aoi, scale=scale,
+            maxPixels=1e10, bestEffort=True, tileScale=4)
+        class_area[k] = ee.Number(a.get('area'))
+
+    res = {
+        'year': year, 'sensor': sensor, 'n_scenes': int(n),
+        'pc1_loadings': {'ndvi': round(float(load[0]), 6), 'wet': round(float(load[1]), 6),
+                         'ndsi': round(float(load[2]), 6), 'lst': round(float(load[3]), 6)},
+        'rsei_mean': round(float(mean.get('rsei').getInfo()), 6),
+        'ndvi_mean': round(float(mean4.get('ndvi').getInfo()), 6),
+        'wet_mean': round(float(mean4.get('wet').getInfo()), 6),
+        'ndsi_mean': round(float(mean4.get('ndsi').getInfo()), 6),
+        'lst_mean': round(float(mean4.get('lst').getInfo()), 6),
+        'total_area_km2': round(total, 2),
+    }
+    for k in range(5):
+        res['class_%d_pct' % k] = round(ee.Number(class_area[k]).divide(total).multiply(100).getInfo(), 3)
+
+    path = os.path.join(OUT, 'rsei_%d.json' % year)
+    with open(path, 'w', encoding='utf-8') as fp:
+        json.dump(res, fp, ensure_ascii=False, indent=2)
+    print('  [%d] RSEI均值=%.4f  良+优=%.1f%%  已保存 %s' %
+          (year, res['rsei_mean'], res['class_3_pct'] + res['class_4_pct'], os.path.basename(path)))
+    return res
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--year', type=int, default=2020)
+    ap.add_argument('--year', type=int, default=None)
+    ap.add_argument('--years', type=str, default=None, help='逗号分隔，如 1990,1995,2000')
     ap.add_argument('--stats-scale', type=int, default=250, help='统计/面积占比像元尺度(m)')
     ap.add_argument('--skip-export', action='store_true', help='跳过栅格缩略图导出')
     args = ap.parse_args()
@@ -156,82 +217,28 @@ def main():
 
     global aoi
     fc, aoi = load_aoi()
-    print('[1/5] 合成 %d 年生长季影像...' % args.year)
-    img, sensor, nscenes = composite(args.year)
-    n = nscenes.getInfo()
-    print('      传感器=%s 生长季影像=%d 景' % (sensor, n))
-    cfg = SENSORS[sensor]
+    print('流域 AOI 已加载')
 
-    print('[2/5] 计算四分量...')
-    stack = four_components(img, cfg)
-    norm = ee.Image.cat([normalize(stack, b) for b in ['ndvi', 'wet', 'ndsi', 'lst']])
+    if args.years:
+        years = [int(y) for y in args.years.split(',') if y.strip()]
+    elif args.year:
+        years = [args.year]
+    else:
+        years = [1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025]
+    print('计算期次:', years)
 
-    print('[3/5] PCA 求 PC1 载荷...')
-    load = pca_loadings(norm)
-    print('      PC1 载荷 [ndvi,wet,ndsi,lst] =', np.round(load, 4).tolist())
-    wndvi, wwet, wndsi, wlst = load
-    pc1 = (norm.select('ndvi').multiply(wndvi)
-           .add(norm.select('wet').multiply(wwet))
-           .add(norm.select('ndsi').multiply(wndsi))
-           .add(norm.select('lst').multiply(wlst)))
-    # 若绿度/湿度载荷为负，则生态越好 PC1 越小 -> 取反
-    rsei0 = (pc1.multiply(-1) if wndvi < 0 else pc1).rename('rsei0')
+    results = []
+    for y in years:
+        try:
+            results.append(run_year(y, args))
+        except Exception as e:
+            print('  [%d] 失败: %s' % (y, str(e)[:200]))
+            results.append({'year': y, 'error': str(e)[:300]})
 
-    print('[4/5] 合成 RSEI 并分级...')
-    pr = rsei0.reduceRegion(reducer=ee.Reducer.percentile([2, 98]), geometry=aoi,
-                            scale=250, maxPixels=1e10, bestEffort=True, tileScale=4)
-    lo = ee.Number(pr.get('rsei0_p2')); hi = ee.Number(pr.get('rsei0_p98'))
-    rsei = rsei0.subtract(lo).divide(hi.subtract(lo)).clamp(0, 1).rename('rsei')
-    # 5 级: 0-0.2 差, 0.2-0.4 较差, 0.4-0.6 中, 0.6-0.8 良, 0.8-1.0 优
-    rsei_class = (rsei.multiply(5).floor().min(4)).rename('class')
-
-    print('[5/5] 统计...')
-    scale = args.stats_scale
-    mean = rsei.reduceRegion(reducer=ee.Reducer.mean(), geometry=aoi,
-                             scale=scale, maxPixels=1e10, bestEffort=True, tileScale=4)
-    mean4 = norm.reduceRegion(reducer=ee.Reducer.mean(), geometry=aoi,
-                              scale=scale, maxPixels=1e10, bestEffort=True, tileScale=4)
-    # 分级面积占比
-    pix_area = ee.Image.pixelArea().divide(1e6)  # km²
-    total_area = pix_area.updateMask(rsei.mask()).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=aoi, scale=scale,
-        maxPixels=1e10, bestEffort=True, tileScale=4)
-    class_area = {}
-    for k in range(5):
-        cls = rsei_class.eq(k)
-        a = pix_area.updateMask(cls).reduceRegion(
-            reducer=ee.Reducer.sum(), geometry=aoi, scale=scale,
-            maxPixels=1e10, bestEffort=True, tileScale=4)
-        class_area[k] = ee.Number(a.get('area'))
-
-    res = {
-        'year': args.year, 'sensor': sensor, 'n_scenes': int(n),
-        'pc1_loadings': {'ndvi': float(load[0]), 'wet': float(load[1]),
-                         'ndsi': float(load[2]), 'lst': float(load[3])},
-        'rsei_mean': float(mean.get('rsei').getInfo()),
-        'ndvi_mean': float(mean4.get('ndvi').getInfo()), 'wet_mean': float(mean4.get('wet').getInfo()),
-        'ndsi_mean': float(mean4.get('ndsi').getInfo()), 'lst_mean': float(mean4.get('lst').getInfo()),
-    }
-    total = ee.Number(total_area.get('area')).getInfo()
-    res['total_area_km2'] = total
-    for k in range(5):
-        res['class_%d_pct' % k] = round(ee.Number(class_area[k]).divide(total).multiply(100).getInfo(), 3)
-
-    path = os.path.join(OUT, 'rsei_%d.json' % args.year)
-    with open(path, 'w', encoding='utf-8') as fp:
-        json.dump(res, fp, ensure_ascii=False, indent=2)
-    print('\n===== %d 年 RSEI 结果 =====' % args.year)
-    for kk, vv in res.items():
-        print('  %-16s %s' % (kk, vv))
-    print('已保存:', path)
-
-    if not args.skip_export:
-        # 出可视化缩略图（RSEI 分级配色）
-        palette = ['#d73027', '#fc8d59', '#fee08b', '#a6d96a', '#1a9850']
-        url = rsei_class.getThumbURL({
-            'region': aoi, 'dimensions': 1600, 'min': 0, 'max': 4, 'palette': palette,
-        })
-        print('缩略图 URL:', url[:120], '...')
+    all_path = os.path.join(OUT, 'rsei_all.json')
+    with open(all_path, 'w', encoding='utf-8') as fp:
+        json.dump(results, fp, ensure_ascii=False, indent=2)
+    print('\n汇总已保存:', all_path)
 
 if __name__ == '__main__':
     main()

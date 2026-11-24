@@ -1,0 +1,231 @@
+{
+  "generated_at": "2026-11-24T20:03:02",
+  "source": "jinsha-pg (docker)",
+  "objects": [
+    {
+      "schema": "app",
+      "name": "一站一档",
+      "type": "view",
+      "rows": 20,
+      "file": "app.一站一档.csv.gz",
+      "bytes": 1427
+    },
+    {
+      "schema": "app",
+      "name": "同步日志",
+      "type": "table",
+      "rows": 1,
+      "file": "app.同步日志.csv.gz",
+      "bytes": 100
+    },
+    {
+      "schema": "app",
+      "name": "土地覆盖",
+      "type": "table",
+      "rows": 20,
+      "file": "app.土地覆盖.csv.gz",
+      "bytes": 559
+    },
+    {
+      "schema": "app",
+      "name": "气候年值",
+      "type": "table",
+      "rows": 500,
+      "file": "app.气候年值.csv.gz",
+      "bytes": 5194
+    },
+    {
+      "schema": "app",
+      "name": "治理台账",
+      "type": "table",
+      "rows": 0,
+      "file": "app.治理台账.csv.gz",
+      "bytes": 115
+    },
+    {
+      "schema": "app",
+      "name": "生态指标",
+      "type": "table",
+      "rows": 20,
+      "file": "app.生态指标.csv.gz",
+      "bytes": 1434
+    },
+    {
+      "schema": "app",
+      "name": "站点",
+      "type": "table",
+      "rows": 20,
+      "file": "app.站点.csv.gz",
+      "bytes": 973
+    },
+    {
+      "schema": "public",
+      "name": "任务",
+      "type": "table",
+      "rows": 34,
+      "file": "public.任务.csv.gz",
+      "bytes": 1851
+    },
+    {
+      "schema": "public",
+      "name": "情景",
+      "type": "table",
+      "rows": 9,
+      "file": "public.情景.csv.gz",
+      "bytes": 530
+    },
+    {
+      "schema": "public",
+      "name": "数据源",
+      "type": "table",
+      "rows": 29,
+      "file": "public.数据源.csv.gz",
+      "bytes": 6832
+    },
+    {
+      "schema": "public",
+      "name": "数据源分类",
+      "type": "table",
+      "rows": 4,
+      "file": "public.数据源分类.csv.gz",
+      "bytes": 326
+    },
+    {
+      "schema": "public",
+      "name": "模型评估",
+      "type": "table",
+      "rows": 5,
+      "file": "public.模型评估.csv.gz",
+      "bytes": 231
+    },
+    {
+      "schema": "public",
+      "name": "模型详情",
+      "type": "table",
+      "rows": 5,
+      "file": "public.模型详情.csv.gz",
+      "bytes": 395
+    },
+    {
+      "schema": "public",
+      "name": "气候年值",
+      "type": "table",
+      "rows": 500,
+      "file": "public.气候年值.csv.gz",
+      "bytes": 6797
+    },
+    {
+      "schema": "public",
+      "name": "气候月值",
+      "type": "table",
+      "rows": 2700,
+      "file": "public.气候月值.csv.gz",
+      "bytes": 31467
+    },
+    {
+      "schema": "public",
+      "name": "气候趋势",
+      "type": "table",
+      "rows": 27,
+      "file": "public.气候趋势.csv.gz",
+      "bytes": 478
+    },
+    {
+      "schema": "public",
+      "name": "特征重要性",
+      "type": "table",
+      "rows": 18,
+      "file": "public.特征重要性.csv.gz",
+      "bytes": 315
+    },
+    {
+      "schema": "public",
+      "name": "生态服务",
+      "type": "view",
+      "rows": 20,
+      "file": "public.生态服务.csv.gz",
+      "bytes": 1044
+    },
+    {
+      "schema": "public",
+      "name": "生态评估",
+      "type": "table",
+      "rows": 20,
+      "file": "public.生态评估.csv.gz",
+      "bytes": 670
+    },
+    {
+      "schema": "public",
+      "name": "站点",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点.csv.gz",
+      "bytes": 626
+    },
+    {
+      "schema": "public",
+      "name": "站点植被",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点植被.csv.gz",
+      "bytes": 677
+    },
+    {
+      "schema": "public",
+      "name": "站点气候特征",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点气候特征.csv.gz",
+      "bytes": 626
+    },
+    {
+      "schema": "public",
+      "name": "遥感同步日志",
+      "type": "table",
+      "rows": 6,
+      "file": "public.遥感同步日志.csv.gz",
+      "bytes": 201
+    },
+    {
+      "schema": "public",
+      "name": "遥感年值",
+      "type": "table",
+      "rows": 2800,
+      "file": "public.遥感年值.csv.gz",
+      "bytes": 18645
+    },
+    {
+      "schema": "public",
+      "name": "遥感月值",
+      "type": "table",
+      "rows": 31240,
+      "file": "public.遥感月值.csv.gz",
+      "bytes": 188194
+    },
+    {
+      "schema": "public",
+      "name": "遥感概览",
+      "type": "view",
+      "rows": 20,
+      "file": "public.遥感概览.csv.gz",
+      "bytes": 487
+    },
+    {
+      "schema": "public",
+      "name": "遥感趋势",
+      "type": "table",
+      "rows": 140,
+      "file": "public.遥感趋势.csv.gz",
+      "bytes": 2005
+    },
+    {
+      "schema": "public",
+      "name": "遥感静态值",
+      "type": "table",
+      "rows": 20,
+      "file": "public.遥感静态值.csv.gz",
+      "bytes": 397
+    }
+  ],
+  "total_rows": 38238
+}

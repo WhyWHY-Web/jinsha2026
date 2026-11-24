@@ -35,6 +35,20 @@ python server.py
 
 > 新增了大文件或密钥时，先确认 `.gitignore` 已覆盖，再 `git add`。
 
+## 数据快照备份（每周跑一次）
+
+云数据库负责三人实时共享与 SQL 查询，Git 负责版本留痕。为了让论文数据可追溯，用这个脚本把库里的全部表倒成压缩 CSV 存进仓库：
+
+```bash
+cd 系统
+python tools/backup_to_repo.py --push     # 导出 + 自动提交推送
+```
+
+- 产物在 `系统/data/sql/snapshots/<时间戳>/`，28 个对象、约 3.8 万行，压缩后仅 0.3 MB
+- 每份快照附带 `MANIFEST.json`（导出时间、来源库、每表行数与体积），可用来核对数据是否走样
+- 默认只保留最近 8 份，更早的自动清理（历史仍留在 Git 里）
+- 连接优先级：`--dsn` 参数 > 环境变量 `JINSHA_DSN` > 本机 docker `jinsha-pg`，不会静默连错库
+
 ## 协作约定
 
 1. 拉取最新代码：`git pull`
