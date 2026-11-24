@@ -143,14 +143,13 @@ def pca_loadings(norm_stack):
     w, v = np.linalg.eigh(covarr)   # 升序
     return v[:, -1]                 # 最大特征值对应特征向量
 
-def run_year(year, args):
+def compute_rsei(year):
+    """计算某年 RSEI 栅格，返回 (rsei, rsei_class, sensor, n_scenes, pc1_loadings, norm)"""
     img, sensor, nscenes = composite(year)
     n = nscenes.getInfo()
-    print('  [%d] %s 生长季影像 %d 景' % (year, sensor, n))
     cfg = SENSORS[sensor]
     stack = four_components(img, cfg)
     norm = ee.Image.cat([normalize(stack, b) for b in ['ndvi', 'wet', 'ndsi', 'lst']])
-
     load = pca_loadings(norm)
     wndvi, wwet, wndsi, wlst = load
     pc1 = (norm.select('ndvi').multiply(wndvi)
@@ -158,12 +157,16 @@ def run_year(year, args):
            .add(norm.select('ndsi').multiply(wndsi))
            .add(norm.select('lst').multiply(wlst)))
     rsei0 = (pc1.multiply(-1) if wndvi < 0 else pc1).rename('rsei0')
-
     pr = rsei0.reduceRegion(reducer=ee.Reducer.percentile([2, 98]), geometry=aoi,
                             scale=250, maxPixels=1e10, bestEffort=True, tileScale=4)
     lo = ee.Number(pr.get('rsei0_p2')); hi = ee.Number(pr.get('rsei0_p98'))
     rsei = rsei0.subtract(lo).divide(hi.subtract(lo)).clamp(0, 1).rename('rsei')
     rsei_class = (rsei.multiply(5).floor().min(4)).rename('class')
+    return rsei, rsei_class, sensor, n, load, norm
+
+def run_year(year, args):
+    rsei, rsei_class, sensor, n, load, norm = compute_rsei(year)
+    print('  [%d] %s 生长季影像 %d 景' % (year, sensor, n))
 
     scale = args.stats_scale
     mean = rsei.reduceRegion(reducer=ee.Reducer.mean(), geometry=aoi,

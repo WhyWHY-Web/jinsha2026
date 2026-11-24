@@ -1,0 +1,80 @@
+[
+  {
+    "year": 2013,
+    "mean_radiance": "0.101648",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2014,
+    "mean_radiance": "0.099166",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2015,
+    "mean_radiance": "0.097657",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2016,
+    "mean_radiance": "0.095156",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2017,
+    "mean_radiance": "0.115531",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2018,
+    "mean_radiance": "0.126257",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2019,
+    "mean_radiance": "0.136995",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2020,
+    "mean_radiance": "0.138453",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2021,
+    "mean_radiance": "0.155759",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V21, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:04:11"
+  },
+  {
+    "year": 2022,
+    "mean_radiance": "0.156258",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V22, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:07:36"
+  },
+  {
+    "year": 2023,
+    "mean_radiance": "0.173189",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V22, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:07:36"
+  },
+  {
+    "year": 2024,
+    "mean_radiance": "0.179975",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V22, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:07:36"
+  },
+  {
+    "year": 2025,
+    "mean_radiance": "0.172549",
+    "source": "NPP-VIIRS DNB annual (NOAA/VIIRS/DNB/ANNUAL_V22, average_masked, nW/cm2/sr)",
+    "updated_at": "2026-11-24 22:07:36"
+  }
+]

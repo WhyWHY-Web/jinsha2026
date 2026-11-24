@@ -1,0 +1,1865 @@
+[
+  {
+    "year": 2001,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "1012.513",
+    "pct": "0.2137",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "22055.322",
+    "pct": "4.6557",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "41287.429",
+    "pct": "8.7155",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "875.594",
+    "pct": "0.1848",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "391344.612",
+    "pct": "82.6102",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "833.441",
+    "pct": "0.1759",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "14741.266",
+    "pct": "3.1118",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2001,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1574.369",
+    "pct": "0.3323",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:33"
+  },
+  {
+    "year": 2002,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "19592.430",
+    "pct": "4.1359",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "317.044",
+    "pct": "0.0669",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1576.711",
+    "pct": "0.3328",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "14439.533",
+    "pct": "3.0482",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "825.097",
+    "pct": "0.1742",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "395096.061",
+    "pct": "83.4041",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "471.216",
+    "pct": "0.0995",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2002,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "41394.853",
+    "pct": "8.7384",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:58:55"
+  },
+  {
+    "year": 2003,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "189.818",
+    "pct": "0.0401",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "22050.864",
+    "pct": "4.6548",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "42057.158",
+    "pct": "8.8780",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "321.312",
+    "pct": "0.0678",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "393052.550",
+    "pct": "82.9706",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "821.523",
+    "pct": "0.1734",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13653.647",
+    "pct": "2.8822",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2003,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1578.062",
+    "pct": "0.3331",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:18"
+  },
+  {
+    "year": 2004,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "22531.921",
+    "pct": "4.7562",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "44183.047",
+    "pct": "9.3266",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "258.449",
+    "pct": "0.0546",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "389984.375",
+    "pct": "82.3215",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "874.028",
+    "pct": "0.1845",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "14170.195",
+    "pct": "2.9912",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1578.956",
+    "pct": "0.3333",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2004,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "152.499",
+    "pct": "0.0322",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:59:49"
+  },
+  {
+    "year": 2005,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "21807.254",
+    "pct": "4.6033",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "45451.632",
+    "pct": "9.5943",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "214.718",
+    "pct": "0.0453",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "389445.581",
+    "pct": "82.2076",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "941.342",
+    "pct": "0.1987",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "14153.484",
+    "pct": "2.9876",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1582.251",
+    "pct": "0.3340",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2005,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "137.795",
+    "pct": "0.0291",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:12"
+  },
+  {
+    "year": 2006,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "21601.146",
+    "pct": "4.5597",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "134.245",
+    "pct": "0.0283",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1591.731",
+    "pct": "0.3360",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13332.914",
+    "pct": "2.8144",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "920.737",
+    "pct": "0.1944",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "390125.957",
+    "pct": "82.3509",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "203.189",
+    "pct": "0.0429",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2006,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "45826.068",
+    "pct": "9.6733",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:00:51"
+  },
+  {
+    "year": 2007,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "160.827",
+    "pct": "0.0339",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "20283.800",
+    "pct": "4.2816",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "48821.228",
+    "pct": "10.3055",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "154.388",
+    "pct": "0.0326",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "388686.100",
+    "pct": "82.0465",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "902.045",
+    "pct": "0.1904",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13133.796",
+    "pct": "2.7724",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2007,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1596.513",
+    "pct": "0.3370",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:15"
+  },
+  {
+    "year": 2008,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "20193.158",
+    "pct": "4.2625",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "164.114",
+    "pct": "0.0346",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1601.187",
+    "pct": "0.3380",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13890.912",
+    "pct": "2.9322",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "940.301",
+    "pct": "0.1985",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "385877.218",
+    "pct": "81.4539",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "140.216",
+    "pct": "0.0296",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2008,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "50929.999",
+    "pct": "10.7507",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:01:40"
+  },
+  {
+    "year": 2009,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "924.886",
+    "pct": "0.1952",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "51434.893",
+    "pct": "10.8576",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "158.662",
+    "pct": "0.0335",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "385631.980",
+    "pct": "81.4045",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13516.432",
+    "pct": "2.8532",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1607.703",
+    "pct": "0.3394",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "159.932",
+    "pct": "0.0338",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2009,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "20288.423",
+    "pct": "4.2828",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:05"
+  },
+  {
+    "year": 2010,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "143.059",
+    "pct": "0.0302",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "51251.362",
+    "pct": "10.8189",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "172.704",
+    "pct": "0.0365",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "386045.371",
+    "pct": "81.4921",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "888.269",
+    "pct": "0.1875",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13007.424",
+    "pct": "2.7458",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1610.850",
+    "pct": "0.3400",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2010,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "20602.094",
+    "pct": "4.3490",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:02:47"
+  },
+  {
+    "year": 2011,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "19842.073",
+    "pct": "4.1886",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "52136.010",
+    "pct": "11.0056",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "208.066",
+    "pct": "0.0439",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "385870.547",
+    "pct": "81.4552",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "910.049",
+    "pct": "0.1921",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "12975.268",
+    "pct": "2.7390",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1624.713",
+    "pct": "0.3430",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2011,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "154.589",
+    "pct": "0.0326",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:15"
+  },
+  {
+    "year": 2012,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "19956.542",
+    "pct": "4.2127",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "165.864",
+    "pct": "0.0350",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1635.426",
+    "pct": "0.3452",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13075.626",
+    "pct": "2.7602",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "896.337",
+    "pct": "0.1892",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "387474.844",
+    "pct": "81.7936",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "232.400",
+    "pct": "0.0491",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2012,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "50285.667",
+    "pct": "10.6150",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:03:41"
+  },
+  {
+    "year": 2013,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "181.624",
+    "pct": "0.0383",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "19813.594",
+    "pct": "4.1825",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "52119.988",
+    "pct": "11.0021",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "261.359",
+    "pct": "0.0552",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "385257.409",
+    "pct": "81.3248",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "908.577",
+    "pct": "0.1918",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13537.079",
+    "pct": "2.8576",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2013,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1647.261",
+    "pct": "0.3477",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:04:28"
+  },
+  {
+    "year": 2014,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "19648.954",
+    "pct": "4.1477",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "52584.314",
+    "pct": "11.1001",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "243.799",
+    "pct": "0.0515",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "384620.120",
+    "pct": "81.1901",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "876.043",
+    "pct": "0.1849",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13917.732",
+    "pct": "2.9379",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1652.639",
+    "pct": "0.3489",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2014,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "184.240",
+    "pct": "0.0389",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:00"
+  },
+  {
+    "year": 2015,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "223.624",
+    "pct": "0.0472",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "18586.845",
+    "pct": "3.9236",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "53208.850",
+    "pct": "11.2321",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "242.386",
+    "pct": "0.0512",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "385667.774",
+    "pct": "81.4122",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "826.606",
+    "pct": "0.1745",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13305.480",
+    "pct": "2.8087",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2015,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1660.693",
+    "pct": "0.3506",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:05:33"
+  },
+  {
+    "year": 2016,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "17641.735",
+    "pct": "3.7241",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "55546.437",
+    "pct": "11.7255",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "192.437",
+    "pct": "0.0406",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "384449.437",
+    "pct": "81.1550",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "803.403",
+    "pct": "0.1696",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13140.879",
+    "pct": "2.7740",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1667.344",
+    "pct": "0.3520",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2016,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "280.621",
+    "pct": "0.0592",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:06:54"
+  },
+  {
+    "year": 2017,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "17271.059",
+    "pct": "3.6459",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "56825.293",
+    "pct": "11.9957",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "181.183",
+    "pct": "0.0382",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "383427.752",
+    "pct": "80.9405",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "808.761",
+    "pct": "0.1707",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13215.044",
+    "pct": "2.7897",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1674.120",
+    "pct": "0.3534",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2017,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "312.592",
+    "pct": "0.0660",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:08:23"
+  },
+  {
+    "year": 2018,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "17099.013",
+    "pct": "3.6096",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "305.287",
+    "pct": "0.0644",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1680.273",
+    "pct": "0.3547",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13652.824",
+    "pct": "2.8821",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "799.623",
+    "pct": "0.1688",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "383166.902",
+    "pct": "80.8869",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "170.325",
+    "pct": "0.0360",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2018,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "56832.644",
+    "pct": "11.9974",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:02"
+  },
+  {
+    "year": 2019,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "281.458",
+    "pct": "0.0594",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "16205.738",
+    "pct": "3.4211",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "56462.658",
+    "pct": "11.9194",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "141.386",
+    "pct": "0.0298",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "384247.550",
+    "pct": "81.1156",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "878.284",
+    "pct": "0.1854",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13798.510",
+    "pct": "2.9129",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2019,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1687.904",
+    "pct": "0.3563",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:09:43"
+  },
+  {
+    "year": 2020,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "284.898",
+    "pct": "0.0601",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "57764.393",
+    "pct": "12.1942",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "130.201",
+    "pct": "0.0275",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "15902.319",
+    "pct": "3.3570",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "383491.474",
+    "pct": "80.9558",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "884.461",
+    "pct": "0.1867",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "13550.387",
+    "pct": "2.8605",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2020,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1696.393",
+    "pct": "0.3581",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 21:50:45"
+  },
+  {
+    "year": 2021,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "12710.521",
+    "pct": "2.6833",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "16509.644",
+    "pct": "3.4853",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "58993.386",
+    "pct": "12.4540",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "127.734",
+    "pct": "0.0270",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "382560.688",
+    "pct": "80.7617",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "804.447",
+    "pct": "0.1698",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1704.646",
+    "pct": "0.3599",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2021,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "279.630",
+    "pct": "0.0590",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:10"
+  },
+  {
+    "year": 2022,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "17175.561",
+    "pct": "3.6261",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "62361.563",
+    "pct": "13.1657",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "74.654",
+    "pct": "0.0158",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "378535.978",
+    "pct": "79.9159",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "863.925",
+    "pct": "0.1824",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "12666.069",
+    "pct": "2.6740",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1709.526",
+    "pct": "0.3609",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2022,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "280.805",
+    "pct": "0.0593",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:10:42"
+  },
+  {
+    "year": 2023,
+    "class": "耕地",
+    "class_code": 1,
+    "area_km2": "16781.528",
+    "pct": "3.5430",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "湿地",
+    "class_code": 9,
+    "area_km2": "318.495",
+    "pct": "0.0672",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "建设用地",
+    "class_code": 8,
+    "area_km2": "1715.683",
+    "pct": "0.3622",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "裸地",
+    "class_code": 7,
+    "area_km2": "12684.248",
+    "pct": "2.6780",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "冰雪",
+    "class_code": 6,
+    "area_km2": "881.712",
+    "pct": "0.1862",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "森林",
+    "class_code": 2,
+    "area_km2": "64079.973",
+    "pct": "13.5290",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "水体",
+    "class_code": 5,
+    "area_km2": "0.000",
+    "pct": "0.0000",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "草地",
+    "class_code": 4,
+    "area_km2": "377135.103",
+    "pct": "79.6231",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  },
+  {
+    "year": 2023,
+    "class": "灌木",
+    "class_code": 3,
+    "area_km2": "53.373",
+    "pct": "0.0113",
+    "source": "MODIS MCD12Q1 500m (IGBP->CLCD)",
+    "updated_at": "2026-11-24 22:11:23"
+  }
+]

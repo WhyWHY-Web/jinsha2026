@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金沙江流域生态环境 · 数据看板</title>
+<style>
+  :root{
+    --bg:#0f1419; --card:#161b22; --card2:#1c2230; --border:#2b3442;
+    --text:#c9d1d9; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding:20px}
+  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  header h1{font-size:20px;font-weight:600}
+  header .sub{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .card h2{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;display:flex;justify-content:space-between}
+  .card .note{font-size:12px;color:var(--muted);font-weight:normal}
+  .chart{width:100%;height:300px}
+  .empty{color:var(--muted);font-size:13px;padding:40px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>金沙江流域生态环境 · 数据看板</h1>
+  <span class="sub">数据源：GEE（Landsat/MCD12Q1/VIIRS/GHS-POP/WorldPop）· 本地 JSON</span>
+</header>
+<div class="grid">
+  <div class="card"><h2>RSEI 生态质量时序 <span class="note">1990–2025 每 5 年</span></h2><div id="rsei" class="chart"></div></div>
+  <div class="card"><h2>土地利用结构 <span class="note">逐年占比 %（MCD12Q1）</span></h2><div id="lulc" class="chart"></div></div>
+  <div class="card"><h2>夜间灯光强度 <span class="note">年均 nW/cm²/sr</span></h2><div id="nightlight" class="chart"></div></div>
+  <div class="card"><h2>流域总人口 <span class="note">GHS-POP / WorldPop</span></h2><div id="population" class="chart"></div></div>
+  <div class="card" style="grid-column:1/-1"><h2>空间自相关 Moran's I <span class="note">Queen 邻接 · HH/LL 聚集单元数</span></h2><div id="moran" class="chart"></div></div>
+</div>
+<script src="/echarts.min.js"></script>
+<script>
+const AXIS = {axisLine:{lineStyle:{color:'#30363d'}},axisLabel:{color:'#8b949e'},splitLine:{lineStyle:{color:'#21262d'}}};
+const LEGEND = {textStyle:{color:'#c9d1d9'},top:0};
+function base(dom){
+  if(!window.echarts){ dom.innerHTML='<div class="empty">ECharts 未加载</div>'; return null; }
+  return echarts.init(dom, null, {renderer:'canvas'});
+}
+async function fetchJSON(name){
+  try{ const r = await fetch('/api/data/'+name); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  catch(e){ return []; }
+}
+function empty(dom,msg){ dom.innerHTML='<div class="empty">'+(msg||'暂无数据')+'</div>'; }
+
+// 1) RSEI 时序
+(async()=>{
+  const dom=document.getElementById('rsei'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('rsei');
+  if(!d.length){ empty(dom); return; }
+  d.sort((a,b)=>a.year-b.year);
+  const years=d.map(x=>x.year);
+  const rsei=d.map(x=>x.rsei_mean);
+  const good=d.map(x=>+((x.class_3_pct||0)+(x.class_4_pct||0)).toFixed(1));
+  c.setOption({
+    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:44,top:32,bottom:26},
+    xAxis:{type:'category',data:years,...AXIS},
+    yAxis:[{type:'value',name:'RSEI',min:0,max:1,...AXIS},{type:'value',name:'良+优%',min:0,...AXIS}],
+    series:[
+      {name:'RSEI均值',type:'line',data:rsei,smooth:true,lineStyle:{width:3,color:'#3fb950'},itemStyle:{color:'#3fb950'}},
+      {name:'良+优占比%',type:'line',yAxisIndex:1,data:good,smooth:true,lineStyle:{width:2,color:'#58a6ff'},itemStyle:{color:'#58a6ff'}}
+    ]
+  });
+})();
+
+// 2) 土地利用堆叠柱
+(async()=>{
+  const dom=document.getElementById('lulc'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('lulc');
+  if(!d.length){ empty(dom); return; }
+  const years=[...new Set(d.map(x=>x.year))].sort();
+  const classes=[...new Set(d.map(x=>x.class))];
+  const colors=['#d4a24e','#2f8f46','#6aa84f','#a8c686','#3b82c4','#9ec8e0','#b5a48a','#d54a7a','#3ba8a0'];
+  const idx={}; classes.forEach((k,i)=>idx[k]=i);
+  const series=classes.map((k,i)=>({
+    name:k,type:'bar',stack:'total',barMaxWidth:36,itemStyle:{color:colors[i%colors.length]},
+    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.class===k); return r?+r.pct:0; })
+  }));
+  c.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}}, legend:LEGEND, grid:{left:40,right:20,top:40,bottom:26},
+    xAxis:{type:'category',data:years,...AXIS},
+    yAxis:{type:'value',name:'占比 %',...AXIS},
+    series
+  });
+})();
+
+// 3) 夜间灯光
+(async()=>{
+  const dom=document.getElementById('nightlight'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('nightlight');
+  if(!d.length){ empty(dom); return; }
+  d.sort((a,b)=>a.year-b.year);
+  c.setOption({
+    tooltip:{trigger:'axis'}, grid:{left:44,right:24,top:24,bottom:26},
+    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
+    yAxis:{type:'value',name:'nW/cm²/sr',...AXIS},
+    series:[{name:'年均灯光',type:'line',data:d.map(x=>x.mean_radiance),smooth:true,areaStyle:{opacity:0.15},lineStyle:{color:'#f0c541'},itemStyle:{color:'#f0c541'}}]
+  });
+})();
+
+// 4) 人口（按来源分系列）
+(async()=>{
+  const dom=document.getElementById('population'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('population');
+  if(!d.length){ empty(dom); return; }
+  const years=[...new Set(d.map(x=>x.year))].sort();
+  const srcs=[...new Set(d.map(x=>x.source))];
+  const series=srcs.map((s,i)=>({
+    name:s.includes('GHS')?'GHS-POP':'WorldPop',type:'line',smooth:true,
+    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.source===s); return r?+r.total_pop:null; }),
+    lineStyle:{width:3,color:i===0?'#58a6ff':'#3fb950'},itemStyle:{color:i===0?'#58a6ff':'#3fb950'}
+  }));
+  c.setOption({
+    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:56,right:24,top:32,bottom:26},
+    xAxis:{type:'category',data:years,...AXIS},
+    yAxis:{type:'value',name:'人口',axisLabel:{color:'#8b949e',formatter:v=>v>=1e4?(v/1e4)+'万':v},splitLine:{lineStyle:{color:'#21262d'}}},
+    series
+  });
+})();
+
+// 5) Moran's I
+(async()=>{
+  const dom=document.getElementById('moran'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('moran');
+  if(!d.length){ empty(dom,'空间自相关数据尚未计算（运行 tools/moran_lisa.py 后生成）'); return; }
+  d.sort((a,b)=>a.year-b.year);
+  c.setOption({
+    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:44,top:32,bottom:26},
+    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
+    yAxis:[{type:'value',name:'Moran I',...AXIS},{type:'value',name:'单元数',...AXIS}],
+    series:[
+      {name:"Moran's I",type:'line',data:d.map(x=>x.global_moran),smooth:true,lineStyle:{width:3,color:'#f85149'},itemStyle:{color:'#f85149'}},
+      {name:'HH 高-高',type:'bar',yAxisIndex:1,data:d.map(x=>x.hh),itemStyle:{color:'#f85149'}},
+      {name:'LL 低-低',type:'bar',yAxisIndex:1,data:d.map(x=>x.ll),itemStyle:{color:'#58a6ff'}}
+    ]
+  });
+})();
+
+window.addEventListener('resize',()=>{ ['rsei','lulc','nightlight','population','moran'].forEach(id=>{ const c=echarts.getInstanceByDom(document.getElementById(id)); if(c)c.resize(); }); });
+</script>
+</body>
+</html>

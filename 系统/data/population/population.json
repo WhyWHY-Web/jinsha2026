@@ -1,0 +1,152 @@
+[
+  {
+    "year": 1990,
+    "total_pop": "251757",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 1995,
+    "total_pop": "263827",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2000,
+    "total_pop": "270020",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2005,
+    "total_pop": "282375",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2010,
+    "total_pop": "296773",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2015,
+    "total_pop": "304579",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2015,
+    "total_pop": "187805",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2016,
+    "total_pop": "189299",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2017,
+    "total_pop": "190784",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2018,
+    "total_pop": "192135",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2019,
+    "total_pop": "193033",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2020,
+    "total_pop": "303443",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2020,
+    "total_pop": "193668",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2021,
+    "total_pop": "194060",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2022,
+    "total_pop": "194237",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2023,
+    "total_pop": "194229",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2024,
+    "total_pop": "194012",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2025,
+    "total_pop": "295983",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2025,
+    "total_pop": "193895",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2026,
+    "total_pop": "193761",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2027,
+    "total_pop": "193682",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2028,
+    "total_pop": "193507",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2029,
+    "total_pop": "193227",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  },
+  {
+    "year": 2030,
+    "total_pop": "289562",
+    "source": "GHS-POP P2023A (100m, 5-year)",
+    "updated_at": "2026-11-24 22:31:56"
+  },
+  {
+    "year": 2030,
+    "total_pop": "192973",
+    "source": "WorldPop R2025A (100m, 中国逐年)",
+    "updated_at": "2026-11-24 22:35:30"
+  }
+]

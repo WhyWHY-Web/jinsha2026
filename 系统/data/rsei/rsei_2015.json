@@ -1,0 +1,22 @@
+{
+  "year": 2015,
+  "sensor": "L8",
+  "n_scenes": 257,
+  "pc1_loadings": {
+    "ndvi": -0.593211,
+    "wet": -0.500911,
+    "ndsi": 0.608294,
+    "lst": 0.164823
+  },
+  "rsei_mean": 0.498054,
+  "ndvi_mean": 0.569934,
+  "wet_mean": 0.575113,
+  "ndsi_mean": 0.549609,
+  "lst_mean": 0.526144,
+  "total_area_km2": 391336.52,
+  "class_0_pct": 19.231,
+  "class_1_pct": 19.877,
+  "class_2_pct": 20.715,
+  "class_3_pct": 20.374,
+  "class_4_pct": 19.803
+}

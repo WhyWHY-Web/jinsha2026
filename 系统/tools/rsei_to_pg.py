@@ -8,7 +8,9 @@
 import json, os, sys, datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DSN = os.environ.get('JINSHA_DSN')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pg_util  # noqa: E402
+DSN = pg_util.dsn()
 
 DDL = """
 CREATE TABLE IF NOT EXISTS rsei_annual (
@@ -56,8 +58,6 @@ def load_rows(path):
     return [data]
 
 def main():
-    if not DSN:
-        sys.exit('未设置 JINSHA_DSN 环境变量')
     import psycopg2
     if len(sys.argv) > 2 and sys.argv[1] == '--file':
         path = sys.argv[2]

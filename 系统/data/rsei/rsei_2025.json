@@ -1,0 +1,22 @@
+{
+  "year": 2025,
+  "sensor": "L9",
+  "n_scenes": 281,
+  "pc1_loadings": {
+    "ndvi": -0.592485,
+    "wet": -0.511908,
+    "ndsi": 0.621787,
+    "lst": -0.01711
+  },
+  "rsei_mean": 0.521803,
+  "ndvi_mean": 0.608792,
+  "wet_mean": 0.565127,
+  "ndsi_mean": 0.512702,
+  "lst_mean": 0.50477,
+  "total_area_km2": 428175.37,
+  "class_0_pct": 17.597,
+  "class_1_pct": 19.132,
+  "class_2_pct": 19.058,
+  "class_3_pct": 20.446,
+  "class_4_pct": 23.766
+}

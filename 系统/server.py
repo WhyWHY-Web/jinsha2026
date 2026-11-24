@@ -1376,6 +1376,10 @@ class H(BaseHTTPRequestHandler):
             return self.file(os.path.join(WEB, 'cesium2.html'))
         if p in ('/login', '/login.html'):
             return self.file(os.path.join(WEB, 'login.html'))
+        if p in ('/dashboard', '/dashboard.html'):
+            return self.file(os.path.join(WEB, 'dashboard.html'))
+        if p == '/echarts.min.js':
+            return self.file(os.path.join(WEB, 'echarts.min.js'), 'public, max-age=86400')
         if p.startswith('/assets/'):
             safe = os.path.normpath(p).replace('\\', '/')
             if '..' in safe: return self.send(403, 'Forbidden')
@@ -1396,6 +1400,19 @@ class H(BaseHTTPRequestHandler):
 
         if p == '/api/data/version':
             return self.j(data_version())
+        # 新数据接口：/api/data/<name> 读 data/ 下 json（RSEI/土地利用/灯光/人口/空间自相关）
+        if p.startswith('/api/data/'):
+            name = p[len('/api/data/'):]
+            table = {
+                'rsei': os.path.join(DATA, 'rsei', 'rsei_all.json'),
+                'lulc': os.path.join(DATA, 'lulc', 'lulc.json'),
+                'nightlight': os.path.join(DATA, 'nightlight', 'nightlight.json'),
+                'population': os.path.join(DATA, 'population', 'population.json'),
+                'moran': os.path.join(DATA, 'rsei', 'moran_lisa.json'),
+            }
+            if name in table:
+                return self.j(load_json(table[name], []))
+            return self.j({'error': 'unknown dataset'}, 404)
         # 以下需登录
         tok, s = session_of(self)
         if not s: return self.j({'ok': False, 'error': '未登录或会话已过期'}, 401)

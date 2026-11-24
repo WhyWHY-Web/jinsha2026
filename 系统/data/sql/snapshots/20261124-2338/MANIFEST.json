@@ -1,0 +1,311 @@
+{
+  "generated_at": "2026-11-24T23:38:46",
+  "source": "cd-postgres-g3503ark.sql.tencentcdb.com",
+  "objects": [
+    {
+      "schema": "public",
+      "name": "lulc",
+      "type": "table",
+      "rows": 207,
+      "file": "public.lulc.csv.gz",
+      "bytes": 2661
+    },
+    {
+      "schema": "public",
+      "name": "moran_lisa",
+      "type": "table",
+      "rows": 8,
+      "file": "public.moran_lisa.csv.gz",
+      "bytes": 446
+    },
+    {
+      "schema": "public",
+      "name": "nightlight",
+      "type": "table",
+      "rows": 13,
+      "file": "public.nightlight.csv.gz",
+      "bytes": 288
+    },
+    {
+      "schema": "public",
+      "name": "pg_stat_statements",
+      "type": "view",
+      "rows": 125,
+      "file": "public.pg_stat_statements.csv.gz",
+      "bytes": 8629
+    },
+    {
+      "schema": "public",
+      "name": "pg_stat_statements_info",
+      "type": "view",
+      "rows": 1,
+      "file": "public.pg_stat_statements_info.csv.gz",
+      "bytes": 113
+    },
+    {
+      "schema": "public",
+      "name": "population",
+      "type": "table",
+      "rows": 25,
+      "file": "public.population.csv.gz",
+      "bytes": 352
+    },
+    {
+      "schema": "public",
+      "name": "rsei_annual",
+      "type": "table",
+      "rows": 8,
+      "file": "public.rsei_annual.csv.gz",
+      "bytes": 836
+    },
+    {
+      "schema": "public",
+      "name": "任务",
+      "type": "table",
+      "rows": 34,
+      "file": "public.任务.csv.gz",
+      "bytes": 1857
+    },
+    {
+      "schema": "public",
+      "name": "情景",
+      "type": "table",
+      "rows": 9,
+      "file": "public.情景.csv.gz",
+      "bytes": 533
+    },
+    {
+      "schema": "public",
+      "name": "数据源",
+      "type": "table",
+      "rows": 29,
+      "file": "public.数据源.csv.gz",
+      "bytes": 6838
+    },
+    {
+      "schema": "public",
+      "name": "数据源分类",
+      "type": "table",
+      "rows": 4,
+      "file": "public.数据源分类.csv.gz",
+      "bytes": 333
+    },
+    {
+      "schema": "public",
+      "name": "模型评估",
+      "type": "table",
+      "rows": 5,
+      "file": "public.模型评估.csv.gz",
+      "bytes": 238
+    },
+    {
+      "schema": "public",
+      "name": "模型详情",
+      "type": "table",
+      "rows": 5,
+      "file": "public.模型详情.csv.gz",
+      "bytes": 401
+    },
+    {
+      "schema": "public",
+      "name": "气候年值",
+      "type": "table",
+      "rows": 500,
+      "file": "public.气候年值.csv.gz",
+      "bytes": 6803
+    },
+    {
+      "schema": "public",
+      "name": "气候月值",
+      "type": "table",
+      "rows": 2700,
+      "file": "public.气候月值.csv.gz",
+      "bytes": 31473
+    },
+    {
+      "schema": "public",
+      "name": "气候趋势",
+      "type": "table",
+      "rows": 27,
+      "file": "public.气候趋势.csv.gz",
+      "bytes": 484
+    },
+    {
+      "schema": "public",
+      "name": "特征重要性",
+      "type": "table",
+      "rows": 18,
+      "file": "public.特征重要性.csv.gz",
+      "bytes": 322
+    },
+    {
+      "schema": "public",
+      "name": "生态服务",
+      "type": "view",
+      "rows": 20,
+      "file": "public.生态服务.csv.gz",
+      "bytes": 1050
+    },
+    {
+      "schema": "public",
+      "name": "生态评估",
+      "type": "table",
+      "rows": 20,
+      "file": "public.生态评估.csv.gz",
+      "bytes": 676
+    },
+    {
+      "schema": "public",
+      "name": "站点",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点.csv.gz",
+      "bytes": 632
+    },
+    {
+      "schema": "public",
+      "name": "站点实测",
+      "type": "table",
+      "rows": 560,
+      "file": "public.站点实测.csv.gz",
+      "bytes": 7702
+    },
+    {
+      "schema": "public",
+      "name": "站点植被",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点植被.csv.gz",
+      "bytes": 684
+    },
+    {
+      "schema": "public",
+      "name": "站点气候特征",
+      "type": "table",
+      "rows": 20,
+      "file": "public.站点气候特征.csv.gz",
+      "bytes": 632
+    },
+    {
+      "schema": "public",
+      "name": "遥感同步日志",
+      "type": "table",
+      "rows": 6,
+      "file": "public.遥感同步日志.csv.gz",
+      "bytes": 208
+    },
+    {
+      "schema": "public",
+      "name": "遥感年值",
+      "type": "table",
+      "rows": 2800,
+      "file": "public.遥感年值.csv.gz",
+      "bytes": 18651
+    },
+    {
+      "schema": "public",
+      "name": "遥感月值",
+      "type": "table",
+      "rows": 31240,
+      "file": "public.遥感月值.csv.gz",
+      "bytes": 188200
+    },
+    {
+      "schema": "public",
+      "name": "遥感概览",
+      "type": "view",
+      "rows": 20,
+      "file": "public.遥感概览.csv.gz",
+      "bytes": 494
+    },
+    {
+      "schema": "public",
+      "name": "遥感趋势",
+      "type": "table",
+      "rows": 140,
+      "file": "public.遥感趋势.csv.gz",
+      "bytes": 2011
+    },
+    {
+      "schema": "public",
+      "name": "遥感静态值",
+      "type": "table",
+      "rows": 20,
+      "file": "public.遥感静态值.csv.gz",
+      "bytes": 403
+    },
+    {
+      "schema": "public",
+      "name": "金沙江交叉验证",
+      "type": "table",
+      "rows": 80,
+      "file": "public.金沙江交叉验证.csv.gz",
+      "bytes": 1986
+    },
+    {
+      "schema": "public",
+      "name": "金沙江格点月值",
+      "type": "table",
+      "rows": 84240,
+      "file": "public.金沙江格点月值.csv.gz",
+      "bytes": 825926
+    },
+    {
+      "schema": "public",
+      "name": "金沙江格点面平均月值",
+      "type": "view",
+      "rows": 432,
+      "file": "public.金沙江格点面平均月值.csv.gz",
+      "bytes": 4065
+    },
+    {
+      "schema": "public",
+      "name": "金沙江气候年值",
+      "type": "table",
+      "rows": 756,
+      "file": "public.金沙江气候年值.csv.gz",
+      "bytes": 10825
+    },
+    {
+      "schema": "public",
+      "name": "金沙江气候月值",
+      "type": "table",
+      "rows": 9072,
+      "file": "public.金沙江气候月值.csv.gz",
+      "bytes": 113936
+    },
+    {
+      "schema": "public",
+      "name": "金沙江气候趋势",
+      "type": "table",
+      "rows": 63,
+      "file": "public.金沙江气候趋势.csv.gz",
+      "bytes": 1245
+    },
+    {
+      "schema": "public",
+      "name": "金沙江水文年值",
+      "type": "table",
+      "rows": 116,
+      "file": "public.金沙江水文年值.csv.gz",
+      "bytes": 1959
+    },
+    {
+      "schema": "public",
+      "name": "金沙江水文月值",
+      "type": "table",
+      "rows": 1392,
+      "file": "public.金沙江水文月值.csv.gz",
+      "bytes": 14845
+    },
+    {
+      "schema": "public",
+      "name": "金沙江流域年值",
+      "type": "view",
+      "rows": 36,
+      "file": "public.金沙江流域年值.csv.gz",
+      "bytes": 610
+    }
+  ],
+  "total_rows": 134791
+}

@@ -1,0 +1,22 @@
+{
+  "year": 2000,
+  "sensor": "L7",
+  "n_scenes": 169,
+  "pc1_loadings": {
+    "ndvi": -0.626176,
+    "wet": -0.456991,
+    "ndsi": 0.614965,
+    "lst": 0.144501
+  },
+  "rsei_mean": 0.535695,
+  "ndvi_mean": 0.559218,
+  "wet_mean": 0.584437,
+  "ndsi_mean": 0.517661,
+  "lst_mean": 0.498583,
+  "total_area_km2": 406636.33,
+  "class_0_pct": 14.954,
+  "class_1_pct": 16.638,
+  "class_2_pct": 21.59,
+  "class_3_pct": 26.489,
+  "class_4_pct": 20.329
+}

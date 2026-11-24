@@ -37,9 +37,18 @@ SKIP_SCHEMAS = ('pg_catalog', 'information_schema', 'pg_toast')
 
 
 def _host_of(dsn):
-    for part in dsn.split():
+    # key=value 形式：host=xxx
+    for part in (dsn or '').split():
         if part.startswith('host='):
             return part[5:]
+    # URL 形式：postgresql://user:pw@host:port/db
+    try:
+        from urllib.parse import urlparse
+        u = urlparse(dsn or '')
+        if u.hostname:
+            return u.hostname
+    except Exception:
+        pass
     return 'local'
 
 
@@ -131,6 +140,9 @@ def list_objects(db):
     out = []
     for schema, name, ttype in rows:
         if schema in SKIP_SCHEMAS:
+            continue
+        # 腾讯云拨测探针表：非业务数据且 DROP 后会被服务自动重建，快照中排除
+        if name.startswith('tencentdb_tbl_dial_test_'):
             continue
         out.append((schema, name, 'view' if 'VIEW' in (ttype or '').upper() else 'table'))
     return out
