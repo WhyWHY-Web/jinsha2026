@@ -67,7 +67,8 @@ class Db(object):
             self.conn = psycopg2.connect('host=127.0.0.1 port=5432 dbname=%s user=%s' % (db, user))
             self.mode = 'psycopg2'
             self.label = 'localhost:%s' % db
-            print('[DB] 已连接本地：%s' % self.label)
+            print('[!] 未检测到 JINSHA_DSN，回退到本机库 %s' % self.label)
+            print('    如果你要备份的是云库，请先设置环境变量 JINSHA_DSN（新开一个终端会自动带上）')
             return
         except Exception:
             pass
@@ -78,6 +79,9 @@ class Db(object):
             self.mode, self.label = 'docker', '%s (docker)' % container
         else:
             raise SystemExit('[DB] 找不到可用连接通道：装 psycopg2-binary，或确保 psql / docker 容器可用')
+        if not dsn:
+            print('[!] 未检测到 JINSHA_DSN，回退到本机通道 %s' % self.label)
+            print('    如果你要备份的是云库，请先设置环境变量 JINSHA_DSN（新开一个终端会自动带上）')
 
     @staticmethod
     def _ok(cmd):
