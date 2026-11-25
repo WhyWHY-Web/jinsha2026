@@ -971,12 +971,7 @@ body.dockhide #bottomRow{display:none!important}
   </div>
   <nav id="nav" class="rail"></nav>
   <div id="topRight">
-    <div class="chip" title="渲染引擎：Three.js r158 · WebGL2 自定义高度场 Shader"><span class="st" style="animation:none"></span>前端 <b>Three.js r158</b></div>
-    <div class="chip" title="智能体开发环境：WorkBuddy · Deepseek-V4-Pro（需求理解·代码生成·自动化验证）"><span class="st" style="animation:none;background:#c58aff;box-shadow:0 0 7px #c58aff"></span>智能体 <b>WorkBuddy · V4</b></div>
     <div class="chip" id="chipBackend" title="后端：内置数据服务（随 exe 自带，无需安装）"><span class="st"></span>后端 <b id="beVal">检测中</b></div>
-    <div class="chip" title="数据库：内置 jinsha 数据集（本地 JSON，免安装、离线可用）"><span class="st"></span>数据库 <b id="dbVal">jinsha</b></div>
-    <div class="chip"><span class="st" style="animation:none"></span><b class="fps" id="fpsVal">-- FPS</b></div>
-    <div class="chip"><b id="clockVal">--:--:--</b></div>
     <div class="chip" id="chipUser" style="cursor:pointer" title="点击退出登录">
       <span class="st" style="animation:none;background:#57e8c8;box-shadow:0 0 7px #57e8c8"></span><b id="userName">admin</b> · 退出
     </div>
@@ -994,13 +989,15 @@ body.dockhide #bottomRow{display:none!important}
     <div class="kpi"><div class="t">年均温趋势</div><div class="v" id="ksClim">--<small>°C/a</small></div><div class="s" id="ksClimS">Sen+MK 36 年</div></div>
   </div>
 
-  <!-- 右上角态势卡：一眼看到流域状况，点击展开总览 -->
+  <!-- 右上角：核心生态指标 + 快速入口 -->
   <div id="rightCol">
-    <div id="kpiCard" title="点击展开态势总览">
-      <div class="kc-t"><span>流域态势</span><span id="kcGrade" style="margin-left:auto"></span></div>
-      <div class="kc-v" id="kcEei">--</div>
-      <div class="kc-row"><span>风险 <b id="kcRisk">--</b></span><span>高风险 <b id="kcHigh">--</b></span>
-        <span>退化 <b id="kcDec">--</b></span></div>
+    <div id="ecoCard" style="background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));border:1px solid var(--line);border-radius:9px;padding:13px 14px">
+      <div style="font-size:9px;color:#7d979b;letter-spacing:1px">生态环境综合指数 · EEI</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
+        <span id="ecEei" style="font-family:Consolas,monospace;font-size:34px;line-height:1;color:#8df3de;text-shadow:0 0 16px rgba(53,224,184,.4)">--</span>
+        <span id="ecGrade" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px">--</span>
+      </div>
+      <div id="ecRows" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"></div>
     </div>
     <div id="rightMini" style="background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));
       border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:10px;color:#9fb8bb;line-height:1.9">
@@ -1170,14 +1167,9 @@ body.dockhide #bottomRow{display:none!important}
         <div class="hud-row">
           <span class="rl">图层控制</span>
           <span class="lchip on" data-layer="ramp"><i class="dt"></i>高程分层</span>
-          <span class="lchip on" data-layer="contour"><i class="dt"></i>等高线</span>
           <span class="lchip on" data-layer="hillshade"><i class="dt"></i>山体阴影</span>
           <span class="lchip on" data-layer="water"><i class="dt"></i>水系流光</span>
-          <span class="lchip on" data-layer="trib"><i class="dt"></i>支流网络</span>
           <span class="lchip on" data-layer="stations"><i class="dt"></i>站点标注</span>
-          <span class="lchip" data-layer="grid"><i class="dt"></i>经纬网格</span>
-          <span class="lchip on" data-layer="patrol"><i class="dt"></i>巡检路线</span>
-          <span class="lchip on" data-layer="deform"><i class="dt"></i>形变监测</span>
           <span id="dockBtn" title="展开/收起剖面与模拟面板">▴ 剖面 / 模拟</span>
         </div>
         <div class="hud-row">
@@ -1189,17 +1181,13 @@ body.dockhide #bottomRow{display:none!important}
           <span class="vchip" id="btnZoomIn" title="推近视角（也可用滚轮或 + 键）">🔍＋ 放大</span>
           <span class="vchip" id="btnZoomOut" title="拉远视角（也可用滚轮或 - 键）">🔍－ 缩小</span>
           <span class="vchip" id="btnMax" title="收起侧栏与底部面板，地图占满整个界面">⛶ 地图最大化</span>
-          <a class="vchip" id="btnPortal" href="/studio" title="打开评估工作台（数据与指标）">⌂ 评估工作台</a>
           <a class="vchip" id="btnDashboard" href="/dashboard" target="_blank" title="打开数据看板（RSEI/气候/水文/生态服务等图表）">📊 数据看板</a>
           <span class="vchip" id="btnSat" title="在真实卫星影像与高程着色之间切换">🛰 真实影像</span>
           <span class="vchip" id="btnWater" title="显示/隐藏水体（按水位淹没低洼河谷）">💧 水体</span>
           <span class="vchip" id="waterLvlBox" style="display:none"></span>
-          <span class="vchip" id="btnMap2d" title="切换二维底图：谷歌卫星 / Esri 影像">🗺 卫星影像</span>
           <span class="vchip" id="btnRoam" style="border-color:rgba(255,122,217,.45);color:#ffb3e8">▶ 沿江漫游</span>
-          <span class="vchip" id="btnRealScene" style="border-color:rgba(90,200,255,.45);color:#9fdcff" title="低空实景：先加载该区域高清块，到位后自动切视角">🏞 实景漫游</span>
           <span class="vchip" id="btnNdt" style="border-color:rgba(120,220,160,.45);color:#8fe9c7" title="按年份推演各站 NDVI，站点光柱随时间着色">📅 NDVI 时序</span>
           <span class="vchip" id="btnBox" style="border-color:rgba(255,180,90,.45);color:#ffd28a" title="框选子区域：拖拽矩形，高亮框内站点并统计风险">▭ 框选区域</span>
-          <span class="vchip" id="btnHiRes" style="display:none">🔍 超清影像</span>
         </div>
       </div>
 
@@ -3097,7 +3085,7 @@ function buildStations(){
     g2.fillStyle=rg;g2.fillRect(0,0,64,64);
     var glow=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),
       transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.5}));
-    glow.position.set(w.x,y+1.2,w.z);glow.scale.set(4.2,4.2,1);
+    glow.position.set(w.x,y+1.2,w.z);glow.scale.set(4.2,4.2,1);glow.renderOrder=15;
     glow.userData={st:s};
     stationGroup.add(glow);glow.userData.role='glow';
     // 标签
@@ -3113,6 +3101,7 @@ function buildStations(){
     ctx.fillText(s[0],pad,20);
     ctx.beginPath();ctx.arc(lc.width-pad-5,19,3.6,0,7);ctx.fillStyle='#'+riskCol.toString(16).padStart(6,'0');ctx.fill();
     var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(lc),transparent:true,depthTest:false}));
+    sp.renderOrder=20;
     sp.position.set(w.x,y+hgt+7,w.z);
     var sc=lc.width/9;sp.userData.baseScale=[sc,38/9];
     sp.scale.set(sc*G.labelScale,38/9*G.labelScale,1);
@@ -3130,7 +3119,7 @@ function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+
   ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
 /* ===== NDVI 时序推演时间轴（站点光柱按该年 NDVI 着色） ===== */
-var NDVI_T={data:null,on:false,play:false,timer:null,cur:2025};
+var NDVI_T={data:null,on:false,play:false,timer:null,cur:2025,pendingPlay:false};
 function ndviColor(v){
   v=Math.max(0.2,Math.min(0.65,v==null?0.4:v));
   var t=(v-0.2)/0.45;
@@ -3146,7 +3135,7 @@ function ndviColor(v){
 function ndviLoad(){
   if(NDVI_T.data)return;
   dhFetch('/api/ndvi/annual',10000).then(function(d){
-    if(d&&d.ok&&d.stations){NDVI_T.data=d.stations;NDVI_T.years=d.years||[];if(NDVI_T.on)ndviApply(NDVI_T.cur);}
+    if(d&&d.ok&&d.stations){NDVI_T.data=d.stations;NDVI_T.years=d.years||[];if(NDVI_T.on)ndviApply(NDVI_T.cur);if(NDVI_T.pendingPlay){NDVI_T.pendingPlay=false;ndviPlayToggle();}}
   }).catch(function(){});
 }
 function ndviApply(year){
@@ -3186,11 +3175,12 @@ function ndviStop(){
 }
 function ndviPlayToggle(){
   if(NDVI_T.play){ndviStop();return;}
+  if(!NDVI_T.data){NDVI_T.pendingPlay=true;ndviLoad();toast('NDVI 数据加载中，就绪后自动播放','ok','📅');return;}
   NDVI_T.play=true;
   var b=$('ndviPlay');if(b)b.textContent='⏸ 暂停';
   NDVI_T.timer=setInterval(function(){
     var y=NDVI_T.cur+1;if(y>2025)y=2000;ndviApply(y);
-  },800);
+  },500);
 }
 function ndviBind(){
   var btn=$('btnNdt');if(btn)btn.onclick=function(){ndviToggle();};
@@ -3669,7 +3659,7 @@ function animate(){
   var now=performance.now();
   if(now-fpsLast>600){
     var f=Math.round(fpsFrames*1000/(now-fpsLast));
-    $('fpsVal').textContent=f+' FPS';$('fpsVal2').textContent=f+' fps';
+    var _fv=$('fpsVal2');if(_fv)_fv.textContent=f+' fps';
     fpsFrames=0;fpsLast=now;
     /* 自适应分辨率（迟滞 + 2.5s 冷却，上限=当前画质档）：
        旧版每 0.6s 按瞬时帧率改像素比，帧率在阈值附近时反复重分配画布反而掉帧 */
@@ -3858,11 +3848,11 @@ function buildUI(){
     toggleRoam();
   };
   /* 超清：在线高清影像已停用（离线版不联网），仅提示 */
-  $('btnHiRes').onclick=function(){
+  var _bH=$('btnHiRes');if(_bH)_bH.onclick=function(){
     toast('在线超清影像已停用，本系统全程离线运行','warn','🛰');
   };
   /* 实景漫游：低空贴地视角 + 高清块，像到当地看风景 */
-  $('btnRealScene').onclick=function(){
+  var _bR=$('btnRealScene');if(_bR)_bR.onclick=function(){
     if(M2.on)m2Toggle(false);
     if(G.roaming)toggleRoam();
     var b=this;b.classList.toggle('on');
@@ -3891,7 +3881,7 @@ function buildUI(){
     if(M2.on){var b=$('map2d');m2ZoomAt(-1,b.clientWidth/2,b.clientHeight/2);return;}
     camCtl.zoomTo(1.43);
   };
-  $('btnMap2d').onclick=function(){ toast('在线卫星影像（谷歌/Esri）已停用，本系统全程离线，请使用三维「真实影像」','warn','🗺'); };
+  var _bM=$('btnMap2d');if(_bM)_bM.onclick=function(){ toast('在线卫星影像（谷歌/Esri）已停用，本系统全程离线，请使用三维「真实影像」','warn','🗺'); };
   window.addEventListener('keydown',function(e){
     if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
     if(e.key==='+'||e.key==='=')camCtl.zoomTo(0.78);
@@ -6470,7 +6460,6 @@ function dataHubStart(){
   simLog('高程范围 '+Math.round(G.hMin)+' ~ '+Math.round(G.hMax)+' m ｜ 河脊控制点 '+SPINE.length+' 个');
   simLog('站点层已挂载：20 站（双击站点定位飞行）');
   simLog('数据同步：每 '+DH.interval+'s 轮询内置数据服务（jinsha 数据集随程序自带，无需配置数据库）；失败指数退避 15→120s');
-  setInterval(function(){$('clockVal').textContent=new Date().toTimeString().slice(0,8);},1000);
 }
 
 /* 站点数据列：0名 1英 2经 3纬 4海拔 5类型 6风险 7滑坡敏感 8碳密度 9植被覆盖 10分区 11干流标记 */
@@ -8021,6 +8010,15 @@ try{ndviBind();boxBind();}catch(e){}
       if(sh)sh.innerHTML=k.high+'<small>站</small>';
       if(sd)sd.innerHTML=k.declining+'<small>站</small>';
       if(sg)sg.textContent='等级 '+k.grade+' · 改善 '+k.improving+' 站';
+      var ee=q('ecEei'),eg=q('ecGrade'),er=q('ecRows');
+      if(ee)ee.textContent=Number(k.eei||0).toFixed(1);
+      if(eg){eg.textContent=k.grade+' 级';var gc=window.gradeColOf?window.gradeColOf(k.grade):'#7fe3cd';
+        eg.style.cssText='color:'+gc+';border:1px solid '+gc+';background:'+gc+'18';}
+      if(er)er.innerHTML=
+        '<div><div style="font-size:8.5px;color:#7d979b">综合风险</div><b style="font-family:Consolas,monospace;font-size:15px;color:#dff7f1">'+(Number(k.risk||0).toFixed(1))+'</b></div>'+
+        '<div><div style="font-size:8.5px;color:#7d979b">高风险站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#ff8a8a">'+k.high+'</b></div>'+
+        '<div><div style="font-size:8.5px;color:#7d979b">退化站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#ffb03a">'+k.declining+'</b></div>'+
+        '<div><div style="font-size:8.5px;color:#7d979b">改善站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#4ade80">'+k.improving+'</b></div>';
     }).catch(function(){});
   }
   function loadClimateKpi(){
