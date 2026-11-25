@@ -2388,7 +2388,7 @@ function waterElevToY(m){return (m-G.hMin)/(G.hMax-G.hMin)*HSCALE*G.exag;}
 /* 河面几何：与河道同一条中线、同样的断面，但略微放大（覆盖河道并做出岸边过渡），
    抬升到水面高度；uv.y 用"横向位置 0→1"给水面着色器做深浅/岸边过渡。 */
 function buildRiverWaterGeo(){
-  var g=buildRiverRibbonNet(1.35,0.06,1);
+  var g=buildRiverRibbonNet(1.0,0.04,1);
   if(!g)return null;
   g.computeVertexNormals();
   return g;
@@ -2848,9 +2848,11 @@ function loadRiverNet(cb){
    主流 0.30–0.75 u（≈320–810 m 视觉），支流 0.18–0.42 u，仍然远小于河谷。 */
 function riverHalfWidth(r,i){
   var t=r.cum[i]/Math.max(1,r.tot);
-  if(r.lvl===1)return 1.20+1.40*t+0.60*t*t;   /* 1.20 → 3.20（上游峡谷窄、下游库区宽） */
-  if(r.lvl===2)return 0.60+0.50*t;
-  return 0.42+0.30*t;
+  /* 收窄：上一版 1.2–3.2u 在整流域视角下呈"湖面化"、水面压过两侧山坡穿模，
+     回到 0.42–0.95u（约 0.45–1.0 km 视觉半宽），上游窄、下游库区略宽但不再淹没河谷 */
+  if(r.lvl===1)return 0.42+0.38*t+0.15*t*t;   /* 0.42 → 0.95 */
+  if(r.lvl===2)return 0.26+0.18*t;
+  return 0.18+0.12*t;
 }
 /* ===== 把河线钉到地形上（关键一步） =====
    河网几何来自 4096² 原始 DEM，而显示地形是重建网格 + 一次低通平滑，
@@ -2897,7 +2899,7 @@ function buildRiverAxis(){
 function riverYBase(r,i){
   var a=r.axis[i];
   var y=(a.y!=null)?a.y:((a.e-G.hMin)/(G.hMax-G.hMin)*HSCALE);
-  return y+0.45;   /* 抬一点：河面略高于谷底，近景放大后不被地形坡面遮挡 */
+  return y+0.22;   /* 微抬避免与地形 z-fighting，但不过分抬高导致水面浮出河谷 */
 }
 function riverYAt(r,i){
   return riverYBase(r,i);   /* 基准高度：顶点着色器统一乘 exag */
@@ -5494,7 +5496,7 @@ function bindEvents(){
     if(!draggingH)return;
     /* 修复：原来写成 $('#layout')，$ 是 getElementById 包装，带 # 会取不到而抛异常 */
     var box=$('layout').getBoundingClientRect();
-    var h=clamp(box.bottom-e.clientY-5,84,Math.min(420,box.height*0.62));
+    var h=clamp(box.bottom-e.clientY-5,84,Math.min(620,box.height*0.80));
     br.style.flexBasis=h+'px';
     resize();
   });
