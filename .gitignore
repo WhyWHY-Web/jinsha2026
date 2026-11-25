@@ -1,5 +1,7 @@
 # ---------- 密钥 / 凭据（绝对不要提交） ----------
 系统/tools/gee-key.json
+系统/data/.secret
+系统/data/.power_cache.json
 *.pem
 .env
 .env.*
@@ -28,6 +30,9 @@ npm-debug.log*
 # RSEI/Moran 中间栅格与日志（体积大，可由脚本重生成；结果 JSON/CSV 仍纳入共享）
 系统/data/rsei/*.tif
 系统/data/rsei/*.log
+
+# 云库明文导出目录（重复数据，压缩快照 snapshots/ 已完整覆盖；脚本可再生成）
+系统/data/pg_export/
 
 # 注意：以下小数据 JSON 已纳入 Git 共享（三人同步的核心数据）——
 #   data/gee/  data/rsei/  data/basin/  data/streams.json  data/stations.json  data/climate.json 等

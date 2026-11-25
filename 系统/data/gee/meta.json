@@ -1,6 +1,6 @@
 {
- "version": "2026.11.24-1106",
- "updated": "2026-11-24 11:06:01",
+ "version": "2026.11.25-1211",
+ "updated": "2026-11-25 12:11:32",
  "source": "Google Earth Engine",
  "radius_m": 1000,
  "metrics": {

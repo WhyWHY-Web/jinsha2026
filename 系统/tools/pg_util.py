@@ -7,12 +7,12 @@ import os
 import datetime
 import psycopg2
 
-# 云库兜底连接串（密码结尾有个英文句点）
-CLOUD_DSN = 'postgresql://Jinsha_2026:Wanghaoyu666.@cd-postgres-g3503ark.sql.tencentcdb.com:29346/postgres'
-
-
+# 连接串统一从环境变量 JINSHA_DSN 读取，不再硬编码任何密码
 def dsn():
-    return os.environ.get('JINSHA_DSN') or CLOUD_DSN
+    d = os.environ.get('JINSHA_DSN')
+    if not d:
+        raise RuntimeError('未设置 JINSHA_DSN 环境变量；请在终端执行 setx JINSHA_DSN "postgresql://用户:密码@主机:端口/库" 后重开终端')
+    return d
 
 
 def get_conn(autocommit=False):

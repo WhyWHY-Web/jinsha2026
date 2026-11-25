@@ -8,7 +8,7 @@
 | --- | --- |
 | `系统/` | **主程序**：后端 `server.py` / `main.py` / `features.py`，前端 `web/`，数据构建脚本 `tools/`，文档 `docs/` |
 | `系统/docs/` | 方案文档：GEE 遥感数据接入、三人协作数据方案、**数据字典**、软著材料、技术说明 |
-| `系统/data/` | 数据：`*.json`（产品运行读取）、`pg_export/`（全表 CSV）、`rsei/`+`lulc/`+`nightlight/`+`population/`（分析结果）、`sql/snapshots/`（压缩快照） |
+| `系统/data/` | 数据：`*.json`（产品运行读取）、`rsei/`+`lulc/`+`nightlight/`+`population/`（分析结果）、`sql/snapshots/`（云库压缩快照） |
 | `截图/` | 界面截图（智能巡检、形变监测、登录页、Studio 页） |
 | `_fenzu_img/` | 论文/汇报用图（分组结果图） |
 | `homarr-portal/` | 门户面板配置 |
@@ -64,7 +64,7 @@ python tools/backup_to_repo.py --push     # 导出 + 自动提交推送
 | 夜间灯光 | 13 期 | VIIRS + DMSP | `data/nightlight/nightlight.json` |
 | 人口 | 25 行 | GHS-POP + WorldPop | `data/population/population.json` |
 
-完整字段说明与行数核对见 [系统/docs/数据字典.md](系统/docs/数据字典.md)。全部业务表 CSV 在 `系统/data/pg_export/`（32 表 / 134157 行）。
+完整字段说明与行数核对见 [系统/docs/数据字典.md](系统/docs/数据字典.md)。云库全部表+视图的压缩快照在 `系统/data/sql/snapshots/<时间戳>/`（38 对象 / 约 13.5 万行，含 MANIFEST 行数核对）。
 
 ## 协作约定
 

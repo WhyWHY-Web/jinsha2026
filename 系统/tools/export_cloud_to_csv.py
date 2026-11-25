@@ -9,8 +9,9 @@ import os, sys, json
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data', 'pg_export')
-DSN = os.environ.get('JINSHA_DSN') or \
-    'postgresql://Jinsha_2026:Wanghaoyu666.@cd-postgres-g3503ark.sql.tencentcdb.com:29346/postgres'
+DSN = os.environ.get('JINSHA_DSN')
+if not DSN:
+    raise SystemExit('未设置 JINSHA_DSN 环境变量；先执行 setx JINSHA_DSN "postgresql://用户:密码@主机:端口/库" 后重开终端')
 
 def main():
     import psycopg2
