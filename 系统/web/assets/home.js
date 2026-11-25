@@ -34,35 +34,23 @@
     }
   }
 
-  /* ---------- 结论卡 ---------- */
+  /* ---------- 核心结论卡（去重：EEI/风险大数字已由顶栏全局指标承担，这里只留结论） ---------- */
   function cardHtml(d) {
     var k = d.kpi;
-    return '<div style="position:relative;overflow:hidden;border-radius:10px;padding:12px 13px 11px;'
-      + 'background:linear-gradient(135deg,rgba(53,224,184,.13),rgba(53,224,184,.02) 62%,rgba(255,122,217,.06));'
-      + 'border:1px solid rgba(53,224,184,.30)">'
-      /* 右上角年份水位线装饰，不承载信息，只做视觉锚点 */
-      + '<div style="position:absolute;right:-18px;top:-24px;width:96px;height:96px;border-radius:50%;'
-      + 'background:radial-gradient(circle,rgba(53,224,184,.20),transparent 68%)"></div>'
-      + '<div style="display:flex;align-items:baseline;gap:9px">'
-      + '<span style="font-family:Consolas,monospace;font-size:34px;line-height:1;color:#8df3de;'
-      + 'text-shadow:0 0 18px rgba(53,224,184,.45)">' + num(k.eei, 1) + '</span>'
-      + '<span style="font-size:10px;color:#9fb8bb;letter-spacing:1px">EEI</span>'
-      + '<span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;'
+    var riskZone = (d.priority && d.priority.length) ? d.priority[0].name : '—';
+    return '<div style="border-radius:10px;padding:11px 13px;background:rgba(53,224,184,.05);'
+      + 'border:1px solid rgba(53,224,184,.20)">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<span style="font-size:9px;color:#7d979b;letter-spacing:.5px">流域总体</span>'
+      + '<span style="font-size:11px;font-weight:700;padding:1px 7px;border-radius:4px;'
       + 'color:' + gradeCol(k.grade) + ';border:1px solid ' + gradeCol(k.grade) + '55;'
       + 'background:' + gradeCol(k.grade) + '14">' + E(k.grade) + ' 级</span>'
-      + '<span style="margin-left:auto;font-size:9px;color:#7d979b">综合风险 '
-      + num(k.risk, 1) + '</span></div>'
-      + '<div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">'
-      + chip('高风险 ' + k.high + ' 站', '#ff8a8a')
-      + chip('退化 ' + k.declining + ' 站', '#ffb03a')
-      + chip('改善 ' + k.improving + ' 站', '#4ade80')
-      + chip('站点 20', '#7fe3cd') + '</div>'
-      + '<div style="font-size:10.5px;line-height:1.9;color:#cfe9e2;margin-top:9px">' + E(d.text) + '</div>'
-      + evStrip(d)
-      + '<div style="font-size:8.5px;color:#6f8f96;margin-top:7px;font-family:Consolas,monospace;'
-      + 'display:flex;gap:8px;flex-wrap:wrap">'
-      + '<span>' + E((d.generated || '').slice(5, 16)) + '</span>'
-      + '<span>指纹 #' + E(String(d.dataToken || '').slice(0, 8)) + '</span></div>'
+      + '<span style="margin-left:auto;font-size:9px;color:#6f8f96">风险集中 · ' + E(riskZone) + '</span></div>'
+      + '<div style="font-size:10px;line-height:1.9;color:#cfe9e2">' + E(d.text) + '</div>'
+      + '<div class="hx-ev" style="margin-top:7px;padding-top:6px;border-top:1px dashed rgba(53,224,184,.16);'
+      + 'font-size:8.5px;color:#7fe3cd;cursor:pointer">证据分级 A/B/C/D · 逐项出处 →</div>'
+      + '<div style="font-size:8.5px;color:#6f8f96;margin-top:4px;font-family:Consolas,monospace">'
+      + E((d.generated || '').slice(5, 16)) + ' · 指纹 #' + E(String(d.dataToken || '').slice(0, 8)) + '</div>'
       + '</div>';
   }
 
@@ -141,24 +129,38 @@
       + '单位：NDVI/年（‰）；仅列 MK 检验 p&lt;0.05 的显著下降站，点站点名可定位飞行。</div>';
   }
 
-  /* ---------- 优先核查 ---------- */
+  /* ---------- 优先核查（核心行动区，置顶） ---------- */
   function priHtml(d) {
     var ps = d.priority || [];
     if (!ps.length) return '';
-    return '<div class="sec-lab">优先核查（风险 0.55 + 趋势 0.28 + 待复核 0.17）</div>'
+    function riskCol(score) {
+      return score >= 0.7 ? '#ff8a8a' : score >= 0.55 ? '#ffb03a' : '#f5d76e';
+    }
+    return '<div class="sec-lab" style="font-size:10.5px;color:#e6fbf5;letter-spacing:.5px">'
+      + '⚠ 优先核查站点 <span style="color:#7d979b;font-weight:normal;font-size:8.5px">'
+      + '风险 0.55 + 趋势 0.28 + 待复核 0.17 · 点击定位</span></div>'
       + ps.map(function (p, i) {
+        var col = riskCol(p.score);
+        var reasons = (p.reasons || []);
+        var main = reasons[0] || '';
+        var more = reasons.length > 1 ? ' · ' + reasons.slice(1).join(' · ') : '';
         return '<div class="hx-pri" data-st="' + E(p.name) + '" style="cursor:pointer;'
-          + 'display:flex;gap:8px;padding:6px 8px;margin-bottom:4px;border-radius:6px;'
-          + 'background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.055)">'
-          + '<span style="font-family:Consolas,monospace;font-size:13px;color:#5f8c86;width:12px">'
+          + 'display:flex;gap:9px;padding:8px 9px;margin-bottom:5px;border-radius:8px;'
+          + 'background:rgba(255,255,255,.028);border:1px solid ' + col + '33;'
+          + 'border-left:2px solid ' + col + '">'
+          + '<span style="font-family:Consolas,monospace;font-size:14px;color:' + col + ';width:14px;flex:0 0 auto">'
           + (i + 1) + '</span>'
           + '<span style="flex:1;min-width:0">'
-          + '<span style="font-size:11px;color:#e6fbf5">' + E(p.name) + '</span>'
-          + '<span style="font-family:Consolas,monospace;font-size:9px;color:#7fe3cd;margin-left:6px">'
-          + num(p.score, 2) + '</span>'
-          + '<div style="font-size:8.5px;color:#7d979b;line-height:1.6;margin-top:2px">'
-          + E((p.reasons || []).join(' · ')) + '</div></span></div>';
-      }).join('');
+          + '<span style="display:flex;align-items:center;gap:7px">'
+          + '<span style="font-size:11.5px;color:#eafffa;font-weight:600">' + E(p.name) + '</span>'
+          + '<span style="font-family:Consolas,monospace;font-size:10px;color:' + col + '">'
+          + num(p.score, 2) + '</span></span>'
+          + '<div style="font-size:8.5px;color:#bcd6d2;line-height:1.65;margin-top:3px">'
+          + '<b style="color:' + col + ';font-weight:600">' + E(main) + '</b>'
+          + E(more) + '</div></span></div>';
+      }).join('')
+      + '<div style="font-size:8.5px;color:#6f8f96;line-height:1.7;margin-bottom:8px">'
+      + '红=高风险(≥0.7)、橙=中风险(≥0.55)、黄=关注；异常指标 + 变化趋势见右侧站点详情。</div>';
   }
 
   /* ---------- 分区聚合 ---------- */
@@ -466,7 +468,8 @@
       }
       H.d = d;
       H.token = d.dataToken;
-      B.innerHTML = cardHtml(d) + segHtml(d) + trendHtml(d) + priHtml(d)
+      /* 信息层级：优先核查站点是核心行动区，提到最上；结论卡去重后放其次 */
+      B.innerHTML = priHtml(d) + cardHtml(d) + trendHtml(d) + segHtml(d)
         + zoneHtml(d) + '<div id="hxNewData"></div>' + '<div id="hxDiag"></div>' + navHtml()
         + '<div style="font-size:8.5px;color:#5d7a80;margin-top:10px;line-height:1.75">'
         + '本页所有数字由 /api/conclusion 一次算出，与生态评估、风险预警、巡检建议同源；'

@@ -867,7 +867,7 @@ body.dockhide #demBadge{bottom:14px}
   transform:none!important;border-radius:9px;box-shadow:none}
 #mainArea{position:relative;grid-column:2;grid-row:2;inset:auto;display:block}
 #rightCol{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:10px;min-height:0;
-  overflow-y:auto;background:var(--bg)}
+  overflow-y:auto;background:var(--bg);position:relative}
 #nav.rail{position:static;transform:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:2px;
   max-height:none;overflow-x:auto;overflow-y:hidden;padding:0;margin:0 0 0 10px;border-radius:0;
   background:transparent;border:0;box-shadow:none;backdrop-filter:none;flex:1 1 auto;min-width:0;
@@ -933,7 +933,31 @@ body.dockhide #bottomRow{transform:translateY(calc(100% + 22px));opacity:0;point
 #hsplit{flex:0 0 8px!important;display:block!important;cursor:row-resize}
 body.dockhide #bottomRow{display:none!important}
 #rightCol{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:10px;min-height:0;
-  overflow-y:auto;background:var(--bg)}
+  overflow-y:auto;background:var(--bg);position:relative}
+
+/* 左右面板折叠：body 加 coll-l / coll-r，网格列收窄，地图自动铺满释放空间 */
+body.coll-l #layout{grid-template-columns:0 minmax(0,1fr) 300px!important}
+body.coll-l #sidebar{display:none!important}
+body.coll-r #layout{grid-template-columns:352px minmax(0,1fr) 0!important}
+body.coll-r #rightCol{display:none!important}
+body.coll-l.coll-r #layout{grid-template-columns:0 minmax(0,1fr) 0!important}
+/* 面板折叠钮（贴面板外缘的窄条） */
+.panel-fold{position:absolute;z-index:20;top:50%;transform:translateY(-50%);width:14px;height:44px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#7d979b;
+  background:rgba(9,22,29,.92);border:1px solid rgba(53,224,184,.28);border-radius:7px}
+.panel-fold:hover{color:#eafffa;background:rgba(53,224,184,.2)}
+#foldL{right:-8px}
+#foldR{left:-8px}
+/* 悬浮恢复入口 */
+.coll-restore{position:absolute;z-index:70;top:12px;display:none;align-items:center;gap:5px;height:28px;
+  padding:0 12px;border-radius:14px;cursor:pointer;font-size:11px;color:#9fe6d8;
+  background:rgba(9,22,29,.92);border:1px solid rgba(53,224,184,.4);box-shadow:0 3px 14px rgba(0,0,0,.4)}
+.coll-restore:hover{background:rgba(53,224,184,.2);color:#eafffa}
+#restoreL{left:12px}
+#restoreR{right:12px}
+body.coll-l #restoreL{display:inline-flex}
+body.coll-r #restoreR{display:inline-flex}
+
 @media(max-width:1100px){
   #layout{grid-template-columns:300px minmax(0,1fr)!important}
   #rightCol{display:none!important}
@@ -991,15 +1015,16 @@ body.dockhide #bottomRow{display:none!important}
     <div class="kpi"><div class="t">年均温趋势</div><div class="v" id="ksClim">--<small>°C/a</small></div><div class="s" id="ksClimS">Sen+MK 36 年</div></div>
   </div>
 
-  <!-- 右上角：核心生态指标 + 快速入口 -->
+  <!-- 右上角：数据状态 + 快捷操作 -->
   <div id="rightCol">
+    <div class="panel-fold" id="foldR" title="收起右栏">‹</div>
     <div id="ecoCard" style="background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));border:1px solid var(--line);border-radius:9px;padding:13px 14px">
-      <div style="font-size:9px;color:#7d979b;letter-spacing:1px">生态环境综合指数 · EEI</div>
-      <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
-        <span id="ecEei" style="font-family:Consolas,monospace;font-size:34px;line-height:1;color:#8df3de;text-shadow:0 0 16px rgba(53,224,184,.4)">--</span>
-        <span id="ecGrade" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px">--</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:9px;color:#7d979b;letter-spacing:1px">数据状态</div>
+        <span id="ecGrade" style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">--</span>
       </div>
-      <div id="ecRows" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"></div>
+      <div id="ecRows" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:11px;padding-top:10px;border-top:1px solid var(--line)"></div>
+      <div id="ecActions" style="display:flex;flex-direction:column;gap:7px;margin-top:11px"></div>
     </div>
     <div id="rightMini" style="background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));
       border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:10px;color:#9fb8bb;line-height:1.9">
@@ -1012,6 +1037,7 @@ body.dockhide #bottomRow{display:none!important}
   <!-- 侧栏 -->
   <aside id="sidebar">
     <div id="sidebarClose" title="收起面板（Esc）">✕</div>
+    <div class="panel-fold" id="foldL" title="收起左栏">›</div>
     <!-- 模块：模型资产库 -->
     <section class="mod" id="mod-lib">
       <div class="mod-head">
@@ -1110,6 +1136,8 @@ body.dockhide #bottomRow{display:none!important}
 
   <!-- 主区 -->
   <div id="mainArea">
+    <div class="coll-restore" id="restoreL" title="展开左栏">› 展开左栏</div>
+    <div class="coll-restore" id="restoreR" title="展开右栏">‹ 展开右栏</div>
     <div id="viewPane">
       <canvas id="glcanvas"></canvas>
       <div id="boxSel" style="position:absolute;display:none;border:1px dashed #37D9A0;background:rgba(53,224,184,.08);pointer-events:none;z-index:6"></div>
@@ -1149,6 +1177,15 @@ body.dockhide #bottomRow{display:none!important}
         <div class="t1">TERRAIN STUDIO</div>
         <div class="t2">金沙江流域三维地形 · 实时渲染引擎</div>
         <div class="t3">LOD <i>98m 融合</i> ｜ 垂直夸张 <i id="tbExag">12.0×</i> ｜ 等距距 <i id="tbCont">408km</i> ｜ 站点 <i>20</i></div>
+      </div>
+
+      <!-- 站点搜索定位 -->
+      <div class="hud" id="stationSearch" style="left:50%;top:12px;transform:translateX(-50%);pointer-events:auto;width:260px">
+        <input id="stSearchInput" autocomplete="off" placeholder="🔍 搜索站点 / 风险等级定位"
+          style="width:100%;height:30px;padding:0 12px;border-radius:15px;border:1px solid rgba(53,224,184,.35);
+          background:rgba(9,22,29,.9);color:#e6fbf5;font-size:11px;outline:none">
+        <div id="stSearchDrop" style="display:none;position:absolute;top:34px;left:0;right:0;max-height:280px;overflow:auto;
+          background:rgba(9,20,27,.97);border:1px solid rgba(53,224,184,.3);border-radius:9px;z-index:80"></div>
       </div>
 
       <div class="hud" id="hudCam">
@@ -8045,7 +8082,7 @@ try{ndviBind();boxBind();}catch(e){}
   };
 
   var cl=q('sidebarClose');
-  if(cl)cl.onclick=window.__closeDrawer;
+  if(cl)cl.onclick=function(){ toggleColl('l'); };
 
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape')window.__closeDrawer();
@@ -8060,6 +8097,49 @@ try{ndviBind();boxBind();}catch(e){}
   if(window.innerWidth>860 && location.search.indexOf('dock=1')<0){ document.body.classList.add('dockhide'); }
   syncDock();
   if(db)db.onclick=function(){ document.body.classList.toggle('dockhide'); syncDock(); };
+
+  /* 左右面板折叠：折叠后网格列收窄、地图铺满，悬浮钮恢复 */
+  function toggleColl(side){
+    document.body.classList.toggle('coll-'+side);
+    setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 140);
+  }
+  var fl=q('foldL'),fr=q('foldR'),rsl=q('restoreL'),rsr=q('restoreR');
+  if(fl)fl.onclick=function(){toggleColl('l');};
+  if(fr)fr.onclick=function(){toggleColl('r');};
+  if(rsl)rsl.onclick=function(){toggleColl('l');};
+  if(rsr)rsr.onclick=function(){toggleColl('r');};
+
+  /* 站点搜索定位：按名称/英文/风险等级过滤，点击飞行定位 */
+  var ssi=q('stSearchInput'),ssd=q('stSearchDrop');
+  if(ssi&&ssd){
+    function rc(r){ return r==='高风险'?'#ff8a8a':(r==='中风险'?'#ffb03a':'#4ade80'); }
+    ssi.addEventListener('input',function(){
+      var kw=(ssi.value||'').trim().toLowerCase();
+      if(!kw){ssd.style.display='none';ssd.innerHTML='';return;}
+      var out=[];
+      for(var i=0;i<STATIONS.length;i++){
+        var s=STATIONS[i],nm=s[0],en=s[1]||'',rk=s[6]||'';
+        if(nm.toLowerCase().indexOf(kw)>=0||en.toLowerCase().indexOf(kw)>=0||rk.indexOf(kw)>=0){
+          out.push('<div data-i="'+i+'" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:7px 12px;'
+            +'border-bottom:1px dashed rgba(255,255,255,.05);font-size:11px;color:#e6fbf5">'
+            +'<i style="width:8px;height:8px;border-radius:50%;background:'+rc(rk)+';flex:0 0 auto"></i>'
+            +'<span>'+esc(nm)+'</span><span style="color:#7d979b;font-size:9px">'+esc(en)+'</span>'
+            +'<span style="margin-left:auto;font-size:9px;color:'+rc(rk)+'">'+esc(rk)+'</span></div>');
+        }
+      }
+      if(!out.length)out.push('<div style="padding:8px 12px;font-size:10px;color:#7d979b">无匹配站点，试试「高风险」「石鼓」等</div>');
+      ssd.innerHTML=out.join('');ssd.style.display='block';
+    });
+    ssd.addEventListener('click',function(e){
+      var el=e.target.closest('[data-i]');if(!el)return;
+      var i=parseInt(el.getAttribute('data-i'),10);
+      if(window.flyToStationIdx)window.flyToStationIdx(i);
+      ssd.style.display='none';ssi.value='';ssi.blur();
+    });
+    document.addEventListener('click',function(e){
+      if(e.target!==ssi&&!ssd.contains(e.target))ssd.style.display='none';
+    });
+  }
 
   var rl=q('rightLinks');
   if(rl){
@@ -8097,15 +8177,26 @@ try{ndviBind();boxBind();}catch(e){}
       if(sh)sh.innerHTML=k.high+'<small>站</small>';
       if(sd)sd.innerHTML=k.declining+'<small>站</small>';
       if(sg)sg.textContent='等级 '+k.grade+' · 改善 '+k.improving+' 站';
-      var ee=q('ecEei'),eg=q('ecGrade'),er=q('ecRows');
-      if(ee)ee.textContent=Number(k.eei||0).toFixed(1);
+      var eg=q('ecGrade'),er=q('ecRows'),ea=q('ecActions');
       if(eg){eg.textContent=k.grade+' 级';var gc=window.gradeColOf?window.gradeColOf(k.grade):'#7fe3cd';
         eg.style.cssText='color:'+gc+';border:1px solid '+gc+';background:'+gc+'18';}
-      if(er)er.innerHTML=
-        '<div><div style="font-size:8.5px;color:#7d979b">综合风险</div><b style="font-family:Consolas,monospace;font-size:15px;color:#dff7f1">'+(Number(k.risk||0).toFixed(1))+'</b></div>'+
-        '<div><div style="font-size:8.5px;color:#7d979b">高风险站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#ff8a8a">'+k.high+'</b></div>'+
-        '<div><div style="font-size:8.5px;color:#7d979b">退化站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#ffb03a">'+k.declining+'</b></div>'+
-        '<div><div style="font-size:8.5px;color:#7d979b">改善站</div><b style="font-family:Consolas,monospace;font-size:15px;color:#4ade80">'+k.improving+'</b></div>';
+      if(er){
+        var conf=d.confidence||{};
+        var tot=(conf.A||0)+(conf.B||0)+(conf.C||0)+(conf.D||0);
+        er.innerHTML=
+          '<div><div style="font-size:8.5px;color:#7d979b">数据更新时间</div><b style="font-family:Consolas,monospace;font-size:12px;color:#dff7f1">'+esc(String(d.generated||'').slice(0,16))+'</b></div>'+
+          '<div><div style="font-size:8.5px;color:#7d979b">指标项数</div><b style="font-family:Consolas,monospace;font-size:12px;color:#dff7f1">'+tot+'</b></div>'+
+          '<div><div style="font-size:8.5px;color:#7d979b">实测/模型</div><b style="font-family:Consolas,monospace;font-size:12px;color:#4ade80">'+(conf.A||0)+' / '+(conf.B||0)+'</b></div>'+
+          '<div><div style="font-size:8.5px;color:#7d979b">遥感/代理</div><b style="font-family:Consolas,monospace;font-size:12px;color:#ffb03a">'+(conf.C||0)+' / '+(conf.D||0)+'</b></div>';
+      }
+      if(ea){
+        ea.innerHTML=
+          '<button id="ecTask" style="cursor:pointer;font-size:11px;padding:7px;border-radius:6px;color:#0a2018;background:linear-gradient(180deg,#43e8c0,#1fa487);border:0;font-weight:600">✓ 生成核查任务</button>'+
+          '<button id="ecReport" style="cursor:pointer;font-size:11px;padding:7px;border-radius:6px;color:#9fe6d8;background:rgba(53,224,184,.08);border:1px solid rgba(53,224,184,.28)">⬇ 导出评估报告</button>';
+        var tb=q('ecTask'),rb=q('ecReport');
+        if(tb)tb.onclick=function(){if(window.switchModule)switchModule('patrol');};
+        if(rb)rb.onclick=function(){if(window.switchModule)switchModule('assess');};
+      }
     }).catch(function(){});
   }
   function loadClimateKpi(){
