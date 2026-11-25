@@ -1015,9 +1015,18 @@ body.coll-r #restoreR{display:inline-flex}
     <div class="kpi"><div class="t">年均温趋势</div><div class="v" id="ksClim">--<small>°C/a</small></div><div class="s" id="ksClimS">Sen+MK 36 年</div></div>
   </div>
 
-  <!-- 右上角：数据状态 + 快捷操作 -->
+  <!-- 右上角：选中站点详情 / 数据状态 + 快捷操作 -->
   <div id="rightCol">
     <div class="panel-fold" id="foldR" title="收起右栏">‹</div>
+    <div id="stationBanner" style="display:none;background:rgba(53,224,184,.06);border:1px solid rgba(53,224,184,.32);border-radius:9px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;color:#7d979b">当前选中</span>
+        <b id="sbName" style="font-size:13px;color:#eafffa">—</b>
+        <span id="sbRisk" style="margin-left:auto;font-size:9px;padding:1px 6px;border-radius:4px">—</span>
+        <span id="sbBack" title="返回流域总览" style="cursor:pointer;color:#7fe3cd;font-size:12px">✕</span>
+      </div>
+      <div id="sbRows" style="font-size:9.5px;color:#bcd6d2;line-height:1.85;margin-top:6px"></div>
+    </div>
     <div id="ecoCard" style="background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));border:1px solid var(--line);border-radius:9px;padding:13px 14px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="font-size:9px;color:#7d979b;letter-spacing:1px">数据状态</div>
@@ -1112,6 +1121,7 @@ body.coll-r #restoreR{display:inline-flex}
           </div>
           <div class="ai-cfg-tip">配置只存本机浏览器；模型仅生成执行计划，实际执行由白名单校验 + 后端完成</div>
         </div>
+        <div id="aiStruct" style="padding:9px 11px;border-bottom:1px solid var(--line);font-size:10px;color:#bcd6d2;max-height:42%;overflow-y:auto"></div>
         <div id="aiMsgs"></div>
         <div id="aiQuick" class="ai-quick"></div>
         <div id="aiInputBar">
@@ -1195,38 +1205,58 @@ body.coll-r #restoreR{display:inline-flex}
       </div>
 
       <div class="hud" id="legendBox">
-        <div class="lt">高程/m</div>
-        <div style="display:flex;gap:5px;align-items:stretch">
-          <div id="legBar"></div>
-          <div class="ticks" id="legTicks"></div>
+        <div class="lt" id="legToggle" style="cursor:pointer;display:flex;align-items:center;gap:5px">
+          统一图例 <span style="font-size:8px;color:#7d979b">高程/m · 风险</span>
+          <span id="legCaret" style="margin-left:auto">▾</span>
+        </div>
+        <div id="legBody">
+          <div style="display:flex;gap:5px;align-items:stretch">
+            <div id="legBar"></div>
+            <div class="ticks" id="legTicks"></div>
+          </div>
+          <div style="font-size:8.5px;color:#9fb8bb;line-height:1.9;margin-top:6px;padding-top:5px;border-top:1px dashed rgba(53,224,184,.16)">
+            <div style="display:flex;align-items:center;gap:5px"><i style="width:8px;height:8px;border-radius:50%;background:#ff5a5a"></i>高风险站</div>
+            <div style="display:flex;align-items:center;gap:5px"><i style="width:8px;height:8px;border-radius:50%;background:#ffb03a"></i>中风险站</div>
+            <div style="display:flex;align-items:center;gap:5px"><i style="width:8px;height:8px;border-radius:50%;background:#4ade80"></i>低风险站</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:3px"><i style="width:14px;height:4px;border-radius:2px;background:#2a6f7d"></i>河流水系（宽度示意）</div>
+          </div>
         </div>
       </div>
 
       <div class="hud" id="hudLayers">
+        <!-- 图层管理 -->
         <div class="hud-row">
-          <span class="rl">图层控制</span>
+          <span class="rl">图层管理</span>
           <span class="lchip on" data-layer="ramp"><i class="dt"></i>高程分层</span>
           <span class="lchip on" data-layer="hillshade"><i class="dt"></i>山体阴影</span>
           <span class="lchip on" data-layer="water"><i class="dt"></i>水系流光</span>
           <span class="lchip on" data-layer="stations"><i class="dt"></i>站点标注</span>
           <span id="dockBtn" title="展开/收起剖面与模拟面板">▴ 剖面 / 模拟</span>
+          <span class="vchip" id="moreBtn" title="更多工具（真实影像 / 水体 / 沿江漫游 / 数据看板）"
+            style="border-color:rgba(150,175,200,.4);color:#b8cfe6">更多 ▾</span>
         </div>
+        <!-- 视角预设 + 视图控制 + 分析工具 -->
         <div class="hud-row">
-          <span class="rl">视角预览</span>
+          <span class="rl">视角 / 视图</span>
           <span class="vchip" data-view="overview">全域鸟瞰</span>
           <span class="vchip" data-view="upstream">上游雪峰</span>
           <span class="vchip" data-view="midstream">中游峡谷</span>
           <span class="vchip" data-view="downstream">下游河谷</span>
           <span class="vchip" id="btnZoomIn" title="推近视角（也可用滚轮或 + 键）">🔍＋ 放大</span>
           <span class="vchip" id="btnZoomOut" title="拉远视角（也可用滚轮或 - 键）">🔍－ 缩小</span>
-          <span class="vchip" id="btnMax" title="收起侧栏与底部面板，地图占满整个界面">⛶ 地图最大化</span>
-          <a class="vchip" id="btnDashboard" href="/dashboard" target="_blank" title="打开数据看板（RSEI/气候/水文/生态服务等图表）">📊 数据看板</a>
-          <span class="vchip" id="btnSat" title="在真实卫星影像与高程着色之间切换">🛰 真实影像</span>
-          <span class="vchip" id="btnWater" title="显示/隐藏水体（按水位淹没低洼河谷）">💧 水体</span>
-          <span class="vchip" id="waterLvlBox" style="display:none"></span>
-          <span class="vchip" id="btnRoam" style="border-color:rgba(255,122,217,.45);color:#ffb3e8">▶ 沿江漫游</span>
+          <span class="vchip" id="btnMax" title="收起侧栏与底部面板，地图占满整个界面">⛶ 最大化</span>
           <span class="vchip" id="btnNdt" style="border-color:rgba(120,220,160,.45);color:#8fe9c7" title="按年份推演各站 NDVI，站点光柱随时间着色">📅 NDVI 时序</span>
           <span class="vchip" id="btnBox" style="border-color:rgba(255,180,90,.45);color:#ffd28a" title="框选子区域：拖拽矩形，高亮框内站点并统计风险">▭ 框选区域</span>
+        </div>
+        <!-- 低频工具收纳 -->
+        <div id="moreMenu" style="display:none;position:absolute;right:0;bottom:calc(100% + 6px);flex-direction:column;gap:5px;
+          padding:8px;background:rgba(9,22,29,.97);border:1px solid rgba(53,224,184,.3);border-radius:9px;
+          z-index:40;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,.55)">
+          <span class="vchip" id="btnSat" title="在真实卫星影像与高程着色之间切换">🛰 真实影像</span>
+          <span class="vchip" id="btnWater" title="显示/隐藏水体">💧 水体</span>
+          <span class="vchip" id="btnRoam" style="border-color:rgba(255,122,217,.45);color:#ffb3e8">▶ 沿江漫游</span>
+          <a class="vchip" id="btnDashboard" href="/dashboard" target="_blank" title="打开数据看板">📊 数据看板</a>
+          <span class="vchip" id="waterLvlBox" style="display:none"></span>
         </div>
       </div>
 
@@ -1249,16 +1279,19 @@ body.coll-r #restoreR{display:inline-flex}
         </div>
       </div>
 
-      <!-- NDVI 时序推演时间轴 -->
-      <div class="hud" id="ndviTimeline" style="left:50%;transform:translateX(-50%);bottom:122px;display:none;padding:9px 14px;min-width:440px;pointer-events:auto">
+      <!-- 统一时间轴：驱动站点 NDVI 着色 + 气候读数（同一时间基准） -->
+      <div class="hud" id="ndviTimeline" style="left:50%;transform:translateX(-50%);bottom:122px;display:none;padding:9px 14px;min-width:480px;pointer-events:auto">
         <div style="display:flex;align-items:center;gap:9px">
+          <span style="font-size:9px;color:#7d979b;letter-spacing:.5px;white-space:nowrap">统一时间轴</span>
           <button class="rbtn" id="ndviPlay" style="border-color:rgba(53,224,184,.4)">▶ 播放</button>
           <input type="range" id="ndviYear" min="2000" max="2025" step="1" value="2025" style="flex:1;accent-color:#37D9A0">
-          <span id="ndviYearLbl" style="font-family:Consolas,monospace;color:#7fe3cd;font-size:13px;min-width:34px;text-align:center">2025</span>
+          <span id="ndviYearLbl" style="font-family:Consolas,monospace;color:#7fe3cd;font-size:15px;font-weight:700;min-width:38px;text-align:center">2025</span>
           <button class="rbtn" id="ndviClose">✕</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:9.5px;color:var(--dim)">
-          <span>流域 NDVI 均值 <b id="ndviMean" style="color:#7fe3cd;font-family:Consolas,monospace">--</b></span>
+          <span>NDVI 均值 <b id="ndviMean" style="color:#7fe3cd;font-family:Consolas,monospace">--</b></span>
+          <span>年均温 <b id="tlTemp" style="color:#ffb3a0;font-family:Consolas,monospace">--</b></span>
+          <span>年降水 <b id="tlPrecip" style="color:#8fd0ff;font-family:Consolas,monospace">--</b></span>
           <span style="flex:1"></span>
           <span style="display:flex;align-items:center;gap:4px">低 <i style="width:8px;height:8px;border-radius:2px;background:#d4a24e"></i><i style="width:8px;height:8px;border-radius:2px;background:#b8c25a"></i><i style="width:8px;height:8px;border-radius:2px;background:#4ade80"></i><i style="width:8px;height:8px;border-radius:2px;background:#1d9e40"></i> 高</span>
         </div>
@@ -1279,7 +1312,7 @@ body.coll-r #restoreR{display:inline-flex}
       </div>
       <div class="bpanel sim">
         <div class="panel-head"><div class="ic">⚡</div><b>模拟运行中心</b><span class="en">SIMULATION HUB</span>
-          <div class="tail"><span id="simState">空闲</span></div>
+          <div class="tail"><span id="simState">未接入</span><span id="simCancel" style="display:none;cursor:pointer;color:#ff8a8a;margin-left:9px;font-weight:600">✕ 取消</span></div>
         </div>
         <div id="simBody">
           <div class="sim-now">
@@ -3196,6 +3229,13 @@ function ndviColor(v){
   var bl=Math.round((a&255)+((b&255)-(a&255))*k);
   return (r<<16)|(g<<8)|bl;
 }
+var TL_CLIM=null;   /* 流域年值气候（统一时间轴读数用） */
+function tlClimLoad(){
+  if(TL_CLIM)return;
+  dhFetch('/api/data/basin_annual',10000).then(function(arr){
+    if(arr&&arr.length){TL_CLIM=arr;if(NDVI_T.on)ndviApply(NDVI_T.cur);}
+  }).catch(function(){});
+}
 function ndviLoad(){
   if(NDVI_T.data)return;
   dhFetch('/api/ndvi/annual',10000).then(function(d){
@@ -3233,6 +3273,14 @@ function ndviApply(year){
   var m=$('ndviMean');if(m)m.textContent=n?mean.toFixed(3):'--';
   var yl=$('ndviYearLbl');if(yl)yl.textContent=year;
   var yr=$('ndviYear');if(yr)yr.value=year;
+  /* 统一时间基准：同步该年气候读数 */
+  var et=$('tlTemp'),ep=$('tlPrecip');
+  if(et&&ep){
+    var c=null;
+    if(TL_CLIM){for(var q=0;q<TL_CLIM.length;q++){if(+TL_CLIM[q].year===+year){c=TL_CLIM[q];break;}}}
+    et.textContent=c?(+c['年均温_℃']).toFixed(2)+' ℃':'--';
+    ep.textContent=c?(+c['年降水_mm']).toFixed(0)+' mm':'--';
+  }
 }
 function ndviReset(){
   for(var i=0;i<pillars.length;i++){
@@ -3248,6 +3296,7 @@ function ndviReset(){
 }
 function ndviToggle(force){
   if(NDVI_T.data==null)ndviLoad();
+  tlClimLoad();
   NDVI_T.on=(force!=null?force:!NDVI_T.on);
   var tl=$('ndviTimeline');if(tl)tl.style.display=NDVI_T.on?'block':'none';
   if(NDVI_T.on){ndviApply(NDVI_T.cur);}else{ndviStop();ndviReset();}
@@ -4118,6 +4167,9 @@ function flyToStationIdx(i){
   var w=toWorld(s[2],s[3]);
   flyTo({tx:w.x,ty:terrainYAt(s[2],s[3])*G.exag+8,tz:w.z,r:90,th:.55,ph:.96});
   G.selStation=s;
+  /* 联动闭环：定位同时弹出站点详情卡 + 右侧详情，左右同步 */
+  try{fillStationCard(s);}catch(e){}
+  if(window.__onStationSelect)window.__onStationSelect(s);
   toast('定位：'+s[0]+'（'+s[4]+' m）','ok','✈');
 }
 
@@ -4776,6 +4828,20 @@ $('ldLoad')&&($('ldLoad').onclick=function(){
 
 /* ---------- 13. 模拟运行 ---------- */
 var simRunning=false;
+/* 模拟运行状态机：idle(未接入) / ready(可配置) / running(运行中) / done(已完成) / failed(失败) */
+var SIM_STATES={
+  idle:   {t:'未接入', c:'#7d979b', ic:'⏳'},
+  ready:  {t:'可配置', c:'#7fe3cd', ic:'⚙'},
+  running:{t:'运行中', c:'#ffd28a', ic:'⚡'},
+  done:   {t:'已完成', c:'#4ade80', ic:'✓'},
+  failed: {t:'失败',   c:'#ff8a8a', ic:'✗'}
+};
+function simSetState(s){
+  var d=SIM_STATES[s]||SIM_STATES.idle;
+  var el=$('simState');
+  if(el){ el.textContent=d.t; el.style.color=d.c; }
+  var cancel=$('simCancel'); if(cancel)cancel.style.display=(s==='running')?'inline':'none';
+}
 function simLog(msg,warn){
   var lg=$('simLog');
   var d=new Date();
@@ -4793,7 +4859,7 @@ function runModel(m){
 function runModelRemote(m){
   simRunning=true;G.curModel=m.id;
   $('simNm').textContent=m.nm;$('simEn').textContent=m.en+' · 后端运行';
-  $('simMi').textContent=m.ic;$('simState').textContent='后端运行中';
+  $('simMi').textContent=m.ic;simSetState('running');
   $('simProg').style.width='0%';
   simLog('派发后端任务：<b>'+m.nm+'</b> → POST /api/tasks');
   postJSON(dhBaseUrl()+'/api/tasks',{model:m.id,name:m.nm})
@@ -4806,7 +4872,7 @@ function runModelRemote(m){
         simRunning=false;
         if(t&&t.status==='done'){
           var r=t.result||{};
-          $('simState').textContent='完成';
+          simSetState('done');
           $('simEn').textContent=m.en+' · 后端完成';
           $('simStage').textContent=r.headline||'计算完成';
           simLog('后端结果：<b>'+(r.headline||'')+'</b>');
@@ -4843,7 +4909,7 @@ function runModelLocal(m){
   if(simRunning){toast('已有任务运行中，请稍候','warn');return;}
   simRunning=true;G.curModel=m.id;
   $('simNm').textContent=m.nm;$('simEn').textContent=m.en+' · 运行中';
-  $('simMi').textContent=m.ic;$('simState').textContent='运行中';
+  $('simMi').textContent=m.ic;simSetState('running');
   $('simProg').style.width='0%';
   simLog('任务派发：<b>'+m.nm+'</b> ('+m.en+')');
   var stages=[
@@ -4854,7 +4920,7 @@ function runModelLocal(m){
   var si=0;
   function step(){
     if(si>=stages.length){
-      simRunning=false;$('simState').textContent='完成';
+      simRunning=false;simSetState('done');
       $('simEn').textContent=m.en+' · 完成';
       applyOverlay(m);
       renderLibList();
@@ -5039,11 +5105,22 @@ $('simClear')&&($('simClear').onclick=function(){
   $('simDesc').classList.remove('show');
   $('simStations').classList.remove('show');
   clearHighlights();
-  $('simState').textContent='空闲';$('simProg').style.width='0%';
+  simSetState('idle');$('simProg').style.width='0%';
   $('simNm').textContent='未载入模型';$('simEn').textContent='IDLE · 等待任务派发';$('simMi').textContent='⏳';
   $('simStage').textContent='— 就绪 —';
   simLog('叠加层已清除，恢复原始地形渲染');
   renderLibList();toast('已清除分析叠加层','ok','🧹');
+});
+
+/* 运行中「取消任务」 */
+$('simCancel')&&($('simCancel').onclick=function(){
+  if(!simRunning){simSetState('idle');return;}
+  simRunning=false;
+  simSetState('idle');
+  $('simStage').textContent='已取消';
+  $('simProg').style.width='0%';
+  simLog('用户取消了当前模拟任务','warn');
+  toast('已取消当前模拟任务','warn','✕');
 });
 
 /* ---------- 14. 渲染控制台（设置） ---------- */
@@ -5521,7 +5598,13 @@ function pickStation(e,fly){
     var st=hits[0].object.userData.st;
     G.selStation=st;
     fillStationCard(st);
+    if(window.__onStationSelect)window.__onStationSelect(st);
     if(fly){var w=toWorld(st[2],st[3]);flyTo({tx:w.x,ty:terrainYAt(st[2],st[3])*G.exag+8,tz:w.z,r:90,th:.5,ph:.95});}
+  }else{
+    /* 点空白区域：收起站点卡，右侧恢复流域总览 */
+    G.selStation=null;
+    var sc=$('stationCard');if(sc)sc.classList.remove('show');
+    if(window.__onStationClear)window.__onStationClear();
   }
 }
 /* 站点卡填充：三维点选与二维地图共用 */
@@ -7936,6 +8019,33 @@ function probeOllama(){
     .catch(function(){window.__ollamaModels=null;aiCfgStatus();
       var tip2=$('aiCfgOllamaTip');if(tip2)tip2.textContent='未检测到 Ollama 服务。安装后运行 `ollama serve` 并 `ollama pull qwen2.5:7b`，再刷新本页。';});
 }
+/* AI 结构化评估：结论—依据—因子—置信度—建议，明确区分实测/推断 */
+function loadAiStruct(){
+  var box=document.getElementById('aiStruct');if(!box)return;
+  if(!window.dhFetch)return;
+  window.dhFetch('/api/conclusion',12000).then(function(d){
+    if(!d||!d.ok)return;
+    var k=d.kpi||{},conf=d.confidence||{};
+    var grade=k.grade||'—';
+    var gc=window.gradeColOf?window.gradeColOf(grade):'#7fe3cd';
+    var top=(d.priority&&d.priority[0])||{};
+    var reasons=(top.reasons||[]).join(' · ')||'多因子叠加';
+    var advice=(window.SC_ADVICE&&SC_ADVICE[grade])||'';
+    box.innerHTML=
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
+      +'<b style="font-size:11px;color:#eafffa">结构化评估</b>'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:4px;border:1px solid '+gc+';color:'+gc+'">'+grade+' 级</span>'
+      +'<span style="margin-left:auto;font-size:8.5px;color:#6f8f96">'+String(d.generated||'').slice(5,16)+'</span></div>'
+      +'<div style="line-height:1.9">'
+      +'<div><span style="color:#7d979b">评估结论</span>　'+esc(d.text||'')+'</div>'
+      +'<div><span style="color:#7d979b">指标依据</span>　EEI '+Number(k.eei||0).toFixed(1)+' · 综合风险 '+Number(k.risk||0).toFixed(1)+' · 高风险 '+k.high+' 站 · 退化 '+k.declining+' 站</div>'
+      +'<div><span style="color:#7d979b">影响因子</span>　'+esc(reasons)+'</div>'
+      +'<div><span style="color:#7d979b">数据完整度</span>　实测A '+(conf.A||0)+' / 模型B '+(conf.B||0)+' / 遥感C '+(conf.C||0)+' / 代理D '+(conf.D||0)+'</div>'
+      +'<div><span style="color:#7d979b">核查建议</span>　'+esc(advice)+'</div>'
+      +'</div>'
+      +'<div style="margin-top:5px;font-size:8.5px;color:#6f8f96;line-height:1.6">实测=A级站点观测；模型推断=B/C/D级（再分析/遥感/代理），引用须注明口径。</div>';
+  }).catch(function(){});
+}
 function aiInit(){
   /* 一次性迁移：旧配置默认模型 7b→3b（提速），之后以用户手动选择为准 */
   var c0=aiCfgLoad();
@@ -7975,6 +8085,8 @@ function aiInit(){
   $('aiInput').addEventListener('keydown',function(e){if(e.key==='Enter')aiSend(this.value);});
   var dm=$('aiDemo');
   if(dm)dm.onclick=function(){aiDemo();};
+  /* 结构化评估卡片（进 AI 模块即加载一次） */
+  loadAiStruct();
   /* 抽屉开关 */
   var dw=$('agWs');
   if(dw)dw.onclick=function(){
@@ -8141,6 +8253,57 @@ try{ndviBind();boxBind();}catch(e){}
     document.addEventListener('click',function(e){
       if(e.target!==ssi&&!ssd.contains(e.target))ssd.style.display='none';
     });
+  }
+
+  /* 更多工具菜单（低频工具收纳） */
+  var mb=q('moreBtn'),mm=q('moreMenu');
+  if(mb&&mm){
+    mb.onclick=function(e){
+      e.stopPropagation();
+      var open=mm.style.display==='flex';
+      mm.style.display=open?'none':'flex';
+      mb.textContent=open?'更多 ▾':'更多 ▴';
+    };
+    document.addEventListener('click',function(e){
+      if(!mm.contains(e.target)&&e.target!==mb){mm.style.display='none';mb.textContent='更多 ▾';}
+    });
+  }
+
+  /* 站点联动闭环：选中时右栏显示站点摘要，点空白 / ✕ 恢复流域总览 */
+  window.__onStationSelect=function(st){
+    var b=q('stationBanner'),nm=q('sbName'),rk=q('sbRisk'),rows=q('sbRows');
+    if(!b)return;
+    b.style.display='block';
+    if(nm)nm.textContent=st[0];
+    if(rk){
+      var col=st[6]==='高风险'?'#ff8a8a':st[6]==='中风险'?'#ffb03a':'#4ade80';
+      rk.textContent=st[6];
+      rk.style.cssText='margin-left:auto;font-size:9px;padding:1px 6px;border-radius:4px;color:'+col+';border:1px solid '+col;
+    }
+    if(rows){
+      rows.innerHTML=
+        '<div>类型 '+esc(st[5])+' · 海拔 '+st[4]+' m · '+esc(st[10])+'</div>'+
+        '<div>植被覆盖 '+Math.round(st[9]*100)+'% · 滑坡敏感 '+st[7]+' · 碳密度 '+st[8]+' t/ha</div>'+
+        '<div style="margin-top:5px;line-height:1.7;color:#7fe3cd">'+esc(SC_ADVICE[st[6]]||'')+'</div>';
+    }
+  };
+  window.__onStationClear=function(){
+    var b=q('stationBanner');if(b)b.style.display='none';
+  };
+  var sbk=q('sbBack');
+  if(sbk)sbk.onclick=function(){
+    window.__onStationClear();
+    var sc=q('stationCard');if(sc)sc.classList.remove('show');
+  };
+
+  /* 统一图例折叠 */
+  var lgt=q('legToggle'),lgb=q('legBody'),lgc=q('legCaret');
+  if(lgt&&lgb){
+    lgt.onclick=function(){
+      var open=lgb.style.display!=='none';
+      lgb.style.display=open?'none':'block';
+      if(lgc)lgc.textContent=open?'▸':'▾';
+    };
   }
 
   var rl=q('rightLinks');
