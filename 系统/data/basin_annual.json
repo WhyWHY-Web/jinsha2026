@@ -1,0 +1,290 @@
+[
+ {
+  "year": 1990,
+  "年均温_℃": 8.35,
+  "年降水_mm": 931.5,
+  "年蒸散_mm": 781.0,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1991,
+  "年均温_℃": 8.5,
+  "年降水_mm": 800.0,
+  "年蒸散_mm": 712.1,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1992,
+  "年均温_℃": 8.05,
+  "年降水_mm": 659.8,
+  "年蒸散_mm": 653.5,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1993,
+  "年均温_℃": 8.68,
+  "年降水_mm": 696.2,
+  "年蒸散_mm": 615.5,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1994,
+  "年均温_℃": 9.18,
+  "年降水_mm": 616.6,
+  "年蒸散_mm": 592.0,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1995,
+  "年均温_℃": 8.74,
+  "年降水_mm": 700.6,
+  "年蒸散_mm": 620.4,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1996,
+  "年均温_℃": 8.7,
+  "年降水_mm": 629.8,
+  "年蒸散_mm": 602.6,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1997,
+  "年均温_℃": 8.07,
+  "年降水_mm": 760.1,
+  "年蒸散_mm": 641.8,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1998,
+  "年均温_℃": 9.09,
+  "年降水_mm": 901.5,
+  "年蒸散_mm": 707.8,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 1999,
+  "年均温_℃": 9.06,
+  "年降水_mm": 930.4,
+  "年蒸散_mm": 745.3,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2000,
+  "年均温_℃": 8.25,
+  "年降水_mm": 856.0,
+  "年蒸散_mm": 757.7,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2001,
+  "年均温_℃": 8.71,
+  "年降水_mm": 905.0,
+  "年蒸散_mm": 729.4,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2002,
+  "年均温_℃": 8.72,
+  "年降水_mm": 853.9,
+  "年蒸散_mm": 750.8,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2003,
+  "年均温_℃": 8.95,
+  "年降水_mm": 802.2,
+  "年蒸散_mm": 704.5,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2004,
+  "年均温_℃": 8.33,
+  "年降水_mm": 895.2,
+  "年蒸散_mm": 739.2,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2005,
+  "年均温_℃": 8.85,
+  "年降水_mm": 840.9,
+  "年蒸散_mm": 733.7,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2006,
+  "年均温_℃": 9.39,
+  "年降水_mm": 743.8,
+  "年蒸散_mm": 691.3,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2007,
+  "年均温_℃": 8.91,
+  "年降水_mm": 824.7,
+  "年蒸散_mm": 688.5,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2008,
+  "年均温_℃": 8.51,
+  "年降水_mm": 886.9,
+  "年蒸散_mm": 749.3,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2009,
+  "年均温_℃": 9.25,
+  "年降水_mm": 784.8,
+  "年蒸散_mm": 722.7,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2010,
+  "年均温_℃": 8.89,
+  "年降水_mm": 919.9,
+  "年蒸散_mm": 714.9,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2011,
+  "年均温_℃": 8.61,
+  "年降水_mm": 689.9,
+  "年蒸散_mm": 683.9,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2012,
+  "年均温_℃": 8.55,
+  "年降水_mm": 890.8,
+  "年蒸散_mm": 692.8,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2013,
+  "年均温_℃": 8.98,
+  "年降水_mm": 847.3,
+  "年蒸散_mm": 741.1,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2014,
+  "年均温_℃": 9.0,
+  "年降水_mm": 858.7,
+  "年蒸散_mm": 718.0,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2015,
+  "年均温_℃": 9.07,
+  "年降水_mm": 882.3,
+  "年蒸散_mm": 725.0,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2016,
+  "年均温_℃": 9.07,
+  "年降水_mm": 952.9,
+  "年蒸散_mm": 787.8,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2017,
+  "年均温_℃": 9.17,
+  "年降水_mm": 928.5,
+  "年蒸散_mm": 778.1,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2018,
+  "年均温_℃": 8.87,
+  "年降水_mm": 1024.5,
+  "年蒸散_mm": 773.3,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2019,
+  "年均温_℃": 9.24,
+  "年降水_mm": 930.6,
+  "年蒸散_mm": 769.4,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2020,
+  "年均温_℃": 9.0,
+  "年降水_mm": 1109.9,
+  "年蒸散_mm": 819.5,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2021,
+  "年均温_℃": 9.32,
+  "年降水_mm": 982.4,
+  "年蒸散_mm": 785.2,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2022,
+  "年均温_℃": 9.03,
+  "年降水_mm": 953.5,
+  "年蒸散_mm": 826.4,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2023,
+  "年均温_℃": 9.66,
+  "年降水_mm": 866.6,
+  "年蒸散_mm": 729.3,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2024,
+  "年均温_℃": 9.65,
+  "年降水_mm": 976.1,
+  "年蒸散_mm": 790.6,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ },
+ {
+  "year": 2025,
+  "年均温_℃": 9.43,
+  "年降水_mm": 999.5,
+  "年蒸散_mm": 801.0,
+  "source": "NASA POWER MERRA-2 (T2M/PRECTOTCORR/EVLAND)",
+  "updated_at": "2026-11-24 21:11:44.979098"
+ }
+]

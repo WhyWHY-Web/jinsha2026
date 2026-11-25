@@ -33,6 +33,11 @@
   <div class="card"><h2>夜间灯光强度 <span class="note">年均 nW/cm²/sr</span></h2><div id="nightlight" class="chart"></div></div>
   <div class="card"><h2>流域总人口 <span class="note">GHS-POP / WorldPop</span></h2><div id="population" class="chart"></div></div>
   <div class="card" style="grid-column:1/-1"><h2>空间自相关 Moran's I <span class="note">Queen 邻接 · HH/LL 聚集单元数</span></h2><div id="moran" class="chart"></div></div>
+  <div class="card"><h2>流域气候年值趋势 <span class="note">1990–2025 · NASA POWER MERRA-2</span></h2><div id="climate" class="chart"></div></div>
+  <div class="card"><h2>气候趋势 Sen 斜率 <span class="note">流域面平均 · Mann-Kendall</span></h2><div id="climateTrend" class="chart"></div></div>
+  <div class="card"><h2>水文径流年值 <span class="note">GloFAS 模型 · 各站年均</span></h2><div id="hydro" class="chart"></div></div>
+  <div class="card"><h2>生态服务综合指数 <span class="note">20 站 · 综合等级</span></h2><div id="ecoServices" class="chart"></div></div>
+  <div class="card"><h2>站点气候分区 <span class="note">年均温 × 年降水 · 干湿类型</span></h2><div id="stationClimate" class="chart"></div></div>
 </div>
 <script src="/echarts.min.js"></script>
 <script>
@@ -141,7 +146,102 @@ function empty(dom,msg){ dom.innerHTML='<div class="empty">'+(msg||'暂无数据
   });
 })();
 
-window.addEventListener('resize',()=>{ ['rsei','lulc','nightlight','population','moran'].forEach(id=>{ const c=echarts.getInstanceByDom(document.getElementById(id)); if(c)c.resize(); }); });
+// 6) 流域气候年值趋势
+(async()=>{
+  const dom=document.getElementById('climate'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('basin_annual');
+  if(!d.length){ empty(dom); return; }
+  d.sort((a,b)=>a.year-b.year);
+  c.setOption({
+    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:48,top:32,bottom:26},
+    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
+    yAxis:[{type:'value',name:'气温 ℃',...AXIS},{type:'value',name:'降水/蒸散 mm',...AXIS}],
+    series:[
+      {name:'年均温 ℃',type:'line',data:d.map(x=>x['年均温_℃']),smooth:true,lineStyle:{width:3,color:'#f85149'},itemStyle:{color:'#f85149'}},
+      {name:'年降水 mm',type:'line',yAxisIndex:1,data:d.map(x=>x['年降水_mm']),smooth:true,lineStyle:{width:2,color:'#58a6ff'},itemStyle:{color:'#58a6ff'}},
+      {name:'年蒸散 mm',type:'line',yAxisIndex:1,data:d.map(x=>x['年蒸散_mm']),smooth:true,lineStyle:{width:2,color:'#3fb950'},itemStyle:{color:'#3fb950'}}
+    ]
+  });
+})();
+
+// 7) 气候趋势 Sen 斜率（流域面平均 3 指标）
+(async()=>{
+  const dom=document.getElementById('climateTrend'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('climate_trend');
+  if(!d.length){ empty(dom); return; }
+  const basin=d.filter(x=>x.station==='流域面平均');
+  if(!basin.length){ empty(dom); return; }
+  const names={temp_c:'年均温',precip_mm:'年降水',et_mm:'年蒸散'};
+  const labels=basin.map(x=>names[x.metric]||x.metric);
+  const slopes=basin.map(x=>+x.slope);
+  const sigs=basin.map(x=>(x.trend||'').includes('显著')?'显著':'不显著');
+  c.setOption({
+    tooltip:{trigger:'axis',formatter:ps=>{ const i=ps[0].dataIndex; return labels[i]+'<br/>Sen 斜率 '+slopes[i]+'<br/>MK '+sigs[i]+'（p='+(basin[i].p_value)+'）'; }},
+    grid:{left:60,right:20,top:24,bottom:30},
+    xAxis:{type:'category',data:labels,...AXIS},
+    yAxis:{type:'value',name:'Sen 斜率',...AXIS},
+    series:[{name:'Sen 斜率',type:'bar',barMaxWidth:60,data:slopes.map(v=>({value:v,itemStyle:{color:v>=0?'#f85149':'#3fb950'}}))}]
+  });
+})();
+
+// 8) 水文径流年值（各站）
+(async()=>{
+  const dom=document.getElementById('hydro'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('hydro_annual');
+  if(!d.length){ empty(dom); return; }
+  const sts=[...new Set(d.map(x=>x.station))];
+  const years=[...new Set(d.map(x=>x.year))].sort();
+  const colors=['#f85149','#58a6ff','#3fb950','#f0c541','#d2a8ff','#ff7b72'];
+  const series=sts.map((s,i)=>({
+    name:s,type:'line',smooth:true,
+    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.station===s); return r?+r.discharge_mean:null; }),
+    lineStyle:{width:2,color:colors[i%colors.length]},itemStyle:{color:colors[i%colors.length]}
+  }));
+  c.setOption({
+    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:52,right:20,top:32,bottom:26},
+    xAxis:{type:'category',data:years,...AXIS},
+    yAxis:{type:'value',name:'m³/s',...AXIS},
+    series
+  });
+})();
+
+// 9) 生态服务综合指数（20 站）
+(async()=>{
+  const dom=document.getElementById('ecoServices'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('eco_services');
+  if(!d.length){ empty(dom); return; }
+  d.sort((a,b)=>(b['生态环境综合指数']||0)-(a['生态环境综合指数']||0));
+  c.setOption({
+    tooltip:{trigger:'axis',formatter:p=>{ const r=d[p[0].dataIndex]; return r['名称']+'<br/>综合指数 '+r['生态环境综合指数']+' · 等级 '+r['综合等级']+'<br/>水源涵养 '+r['水源涵养量']+' · 生境质量 '+r['生境质量']; }},
+    grid:{left:52,right:20,top:24,bottom:30},
+    xAxis:{type:'category',data:d.map(x=>x['名称']),axisLabel:{color:'#8b949e',rotate:45},axisLine:{lineStyle:{color:'#30363d'}}},
+    yAxis:{type:'value',name:'综合指数',...AXIS},
+    series:[{name:'生态环境综合指数',type:'bar',barMaxWidth:18,data:d.map(x=>x['生态环境综合指数']),itemStyle:{color:'#58a6ff'}}]
+  });
+})();
+
+// 10) 站点气候分区（散点）
+(async()=>{
+  const dom=document.getElementById('stationClimate'), c=base(dom); if(!c) return;
+  const d=await fetchJSON('station_climate');
+  if(!d.length){ empty(dom); return; }
+  const zones=[...new Set(d.map(x=>x['干湿类型']))];
+  const colors={湿润:'#3fb950',半湿润:'#58a6ff',半干旱:'#f0c541',干旱:'#f85149'};
+  const series=zones.map(z=>({
+    name:z,type:'scatter',symbolSize:11,
+    data:d.filter(x=>x['干湿类型']===z).map(x=>({value:[x['多年年均温'],x['多年年降水']],name:x['名称']})),
+    itemStyle:{color:colors[z]||'#d2a8ff'}
+  }));
+  c.setOption({
+    tooltip:{trigger:'item',formatter:p=>p.name+'<br/>年均温 '+p.value[0]+' ℃ · 年降水 '+p.value[1]+' mm'},
+    legend:LEGEND, grid:{left:52,right:24,top:32,bottom:40},
+    xAxis:{type:'value',name:'年均温 ℃',scale:true,...AXIS},
+    yAxis:{type:'value',name:'年降水 mm',scale:true,...AXIS},
+    series
+  });
+})();
+
+window.addEventListener('resize',()=>{ ['rsei','lulc','nightlight','population','moran','climate','climateTrend','hydro','ecoServices','stationClimate'].forEach(id=>{ const c=echarts.getInstanceByDom(document.getElementById(id)); if(c)c.resize(); }); });
 </script>
 </body>
 </html>

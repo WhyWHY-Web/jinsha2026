@@ -648,6 +648,141 @@ def _sen_mk(vals):
              '显著下降' if (sen < 0 and p < 0.05) else '无显著趋势')
     return {'sen': round(sen, 5), 'z': round(z, 3), 'p': round(p, 4), 'trend': trend, 'n': n}
 
+def seasonal_mk(by_season):
+    """季节化 Mann-Kendall（Hirsch–Slack 简化式，忽略季节间协方差）。
+
+    只在同一日历月内部比较（1 月比 1 月……），避免月度序列的季节起伏被误判为趋势。
+    每个季节至少 2 个年份、总共至少 2 个季节，否则不给结论。返回 None 表示样本不足。
+    """
+    seasons = {k: [float(v) for v in vs if v is not None] for k, vs in (by_season or {}).items()}
+    seasons = {k: vs for k, vs in seasons.items() if len(vs) >= 2}
+    if len(seasons) < 2:
+        return None
+    s_total, var_total, denom, n_total = 0, 0.0, 0, 0
+    for vs in seasons.values():
+        n = len(vs)
+        n_total += n
+        denom += n * (n - 1) // 2
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                s_total += (1 if vs[j] > vs[i] else (-1 if vs[j] < vs[i] else 0))
+        var_g = n * (n - 1) * (2 * n + 5)
+        counts = {}
+        for v in vs:
+            counts[v] = counts.get(v, 0) + 1
+        for t in counts.values():
+            if t > 1:
+                var_g -= t * (t - 1) * (2 * t + 5)
+        var_total += var_g / 18.0
+    if denom <= 0:
+        return None
+    tau = s_total / denom
+    if var_total <= 0:
+        return {'n': n_total, 'seasons': len(seasons), 'S': s_total, 'tau': 0.0,
+                'z': 0.0, 'p': 1.0, 'trend': '无显著趋势', 'method': 'seasonal'}
+    z = ((s_total - 1) / math.sqrt(var_total)) if s_total > 0 else \
+        ((s_total + 1) / math.sqrt(var_total)) if s_total < 0 else 0.0
+    p = 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2))))
+    trend = ('显著上升' if (p < 0.05 and s_total > 0) else
+             '显著下降' if (p < 0.05 and s_total < 0) else '无显著趋势')
+    return {'n': n_total, 'seasons': len(seasons), 'S': s_total, 'tau': round(tau, 3),
+            'z': round(z, 3), 'p': round(p, 4), 'trend': trend, 'method': 'seasonal'}
+
+def tennant_baseline(rows):
+    """从 hydro_monthly（GloFAS 月径流）按站构建季节化生态流量基准（各月 Q50）。
+
+    行结构：station / year / month / discharge_m3s / ...。输出每站 12 个月的
+    mean / median(Q50) / q20 / q80 / min / max / n。这是生态流量参照，非保证率真值。
+    """
+    from collections import OrderedDict
+    st = OrderedDict()
+    for r in rows:
+        if r.get('discharge_m3s') in (None, ''):
+            continue
+        try:
+            q = float(r['discharge_m3s']); m = int(r['month']); nm = r.get('station') or r.get('站点')
+        except (ValueError, TypeError):
+            continue
+        if m < 1 or m > 12 or nm is None:
+            continue
+        st.setdefault(nm, {i: [] for i in range(1, 13)})[m].append(q)
+    out = []
+    for nm, months in st.items():
+        entry = {'station': nm, 'months': {}}
+        for m in range(1, 13):
+            vs = sorted(months.get(m, []))
+            if not vs:
+                entry['months']['%02d' % m] = {'n': 0}
+                continue
+            n = len(vs)
+            def q(x):
+                return vs[min(n - 1, max(0, int(round(x * (n - 1)))))]
+            entry['months']['%02d' % m] = {
+                'n': n, 'mean': round(sum(vs) / n, 1), 'median': round(q(0.5), 1),
+                'q20': round(q(0.2), 1), 'q80': round(q(0.8), 1),
+                'min': round(vs[0], 1), 'max': round(vs[-1], 1)}
+        out.append(entry)
+    return out
+
+def _hav_km(a, b):
+    """两点球面距离（km），a/b 为 [lon, lat]。"""
+    lon1, lat1, lon2, lat2 = a[0], a[1], b[0], b[1]
+    R = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(h))
+
+def _mean_nn_dist(poly_a, poly_b, step=25):
+    """两条折线间的平均最近邻距离（km）。抽样降低复杂度。"""
+    if not poly_a or not poly_b:
+        return None
+    sa = poly_a[::step] or poly_a[:1]
+    sb = poly_b[::step] or poly_b[:1]
+    ds = []
+    for p in sa:
+        ds.append(min(_hav_km(p, q) for q in sb))
+    return sum(ds) / len(ds)
+
+def river_compare():
+    """河网交叉验证：DEM D8 派生（hydro.json） vs Natural Earth 10m（reference/river_naturalearth.json）。"""
+    hydro = load_json(os.path.join(DATA, 'hydro.json'), {})
+    ref = load_json(os.path.join(DATA, 'reference', 'river_naturalearth.json'), {})
+    rivers = (hydro or {}).get('rivers') or []
+    main_mine = None
+    for r in rivers:
+        if r.get('lvl') == 1:
+            main_mine = r
+            break
+    main_ref = (ref or {}).get('main')
+    meta = (hydro or {}).get('meta') or {}
+    out = {
+        'mine': {
+            'source': meta.get('note', 'DEM D8 派生河网'),
+            'main_len_km': (main_mine or {}).get('len'),
+            'main_points': len((main_mine or {}).get('p') or []),
+            'tributaries': meta.get('nTrib'),
+            'src_lines': meta.get('srcLines'),
+        },
+        'reference': {
+            'source': (ref or {}).get('source', 'Natural Earth 10m 河网'),
+            'main_len_km': (ref or {}).get('length_km'),
+            'main_points': len(main_ref or []),
+        },
+    }
+    mine_p = (main_mine or {}).get('p')
+    if mine_p and main_ref:
+        d = _mean_nn_dist(mine_p, main_ref)
+        # 主河道平均最近邻距离口径：< 10 km 一致，10–25 km 接近，> 25 km 偏离
+        status = '一致' if d <= 10 else ('接近' if d <= 25 else '偏离')
+        out['agreement'] = {'mean_nn_km': round(d, 2), 'status': status,
+                            'method': '主河道抽样点对另一河网的平均最近邻距离（球面距离）'}
+    else:
+        out['agreement'] = None
+    out['note'] = 'DEM D8 派生主河道覆盖 98–105°E 段，Natural Earth 主河含通天河上游（92.99°E 起），' \
+                   '长度口径不同，交叉验证仅看空间走向一致性，不用于长度替换。'
+    return out
+
 # ------------------------------------------------------------------ 证据级别（A/B/C/D）
 # 每一行都要经得起追问：这个数是什么、从哪来、有没有被独立数据检验过。
 # A 实测（站点观测）／B 模型（再分析或物理/统计模型，可复算）／C 遥感（卫星反演）／D 代理（无验证的经验系数）
@@ -1400,7 +1535,9 @@ class H(BaseHTTPRequestHandler):
 
         if p == '/api/data/version':
             return self.j(data_version())
-        # 新数据接口：/api/data/<name> 读 data/ 下 json（RSEI/土地利用/灯光/人口/空间自相关）
+        # 数据接口：/api/data/<name> 读 data/ 下 json
+        # 前 5 类：RSEI/土地利用/灯光/人口/空间自相关（GEE 生产）
+        # 后 10 类：云库快照离线还原的气候/水文/生态分析表（tools/snapshot_to_json.py）
         if p.startswith('/api/data/'):
             name = p[len('/api/data/'):]
             table = {
@@ -1409,10 +1546,46 @@ class H(BaseHTTPRequestHandler):
                 'nightlight': os.path.join(DATA, 'nightlight', 'nightlight.json'),
                 'population': os.path.join(DATA, 'population', 'population.json'),
                 'moran': os.path.join(DATA, 'rsei', 'moran_lisa.json'),
+                'climate_monthly': os.path.join(DATA, 'climate_monthly.json'),
+                'climate_annual': os.path.join(DATA, 'climate_annual.json'),
+                'climate_trend': os.path.join(DATA, 'climate_trend.json'),
+                'basin_monthly': os.path.join(DATA, 'basin_monthly.json'),
+                'basin_annual': os.path.join(DATA, 'basin_annual.json'),
+                'climate_crosscheck': os.path.join(DATA, 'climate_crosscheck.json'),
+                'hydro_monthly': os.path.join(DATA, 'hydro_monthly.json'),
+                'hydro_annual': os.path.join(DATA, 'hydro_annual.json'),
+                'eco_services': os.path.join(DATA, 'eco_services.json'),
+                'station_climate': os.path.join(DATA, 'station_climate.json'),
             }
             if name in table:
                 return self.j(load_json(table[name], []))
             return self.j({'error': 'unknown dataset'}, 404)
+        if p == '/api/scope':
+            return self.j(load_json(os.path.join(DATA, 'scope.json'), {}))
+        if p == '/api/tennant':
+            rows = load_json(os.path.join(DATA, 'hydro_monthly.json'), [])
+            return self.j({'ok': True, 'method': '季节化生态流量基准：各站逐月径流中位数 Q50（GloFAS 模型派生，非实测保证率）',
+                           'source': 'GloFAS v4（Open-Meteo Flood API）',
+                           'stations': tennant_baseline(rows)})
+        if p == '/api/trend/hydro':
+            rows = load_json(os.path.join(DATA, 'hydro_monthly.json'), [])
+            by_st = {}
+            for r in rows:
+                nm = r.get('station'); m = r.get('month'); q = r.get('discharge_m3s')
+                if nm is None or m is None or q in (None, ''):
+                    continue
+                by_st.setdefault(nm, {}).setdefault(int(m), []).append(float(q))
+            items = []
+            for nm, months in by_st.items():
+                res = seasonal_mk(months)
+                if res:
+                    res['station'] = nm
+                    items.append(res)
+            items.sort(key=lambda x: x['tau'])
+            return self.j({'ok': True, 'metric': 'discharge', 'method': '季节化 Mann-Kendall（Hirsch–Slack）',
+                           'unit': 'm³/s/月', 'items': items})
+        if p == '/api/river/compare':
+            return self.j({'ok': True, **river_compare()})
         # 以下需登录
         tok, s = session_of(self)
         if not s: return self.j({'ok': False, 'error': '未登录或会话已过期'}, 401)
