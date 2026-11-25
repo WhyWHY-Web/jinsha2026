@@ -5,7 +5,8 @@
 职责：
 1. 定位外部数据目录 data/（用 JINSHA_DATA 注入，server.py 已支持）
 2. 启动后端服务（server.py，纯标准库 ThreadingHTTPServer）
-3. 服务起来后自动打开浏览器 → 数据看板 /dashboard（无需登录）
+3. 服务起来后自动免密登录并打开浏览器 → 三维数字孪生主界面（/）
+   （数据看板 /dashboard 仍可通过主界面右上角「数据看板」入口访问）
 
 设计说明：
 - data/ 目录（含地图瓦片/遥感图/分析 JSON，约 500MB）外置、与 exe 同目录，
@@ -58,15 +59,22 @@ def main():
         print('[启动器] 未找到 data/ 目录，将使用空数据目录（部分功能不可用）。')
 
     port = _parse_port()
+    os.environ['PORT'] = str(port)
 
-    # 服务启动后自动打开浏览器（数据看板，无需登录）
+    # 先确保账号文件存在，再生成一次性免密登录令牌
+    import server
+    server.init_users()
+    auto_tok = server.auto_login_token()
+
+    # 服务启动后自动打开浏览器 → 免密登录 → 三维主界面
     def _open():
         time.sleep(2.0)
-        webbrowser.open('http://127.0.0.1:%d/dashboard' % port)
+        url = ('http://127.0.0.1:%d/auto?t=%s' % (port, auto_tok)) if auto_tok \
+            else 'http://127.0.0.1:%d/' % port
+        webbrowser.open(url)
     threading.Thread(target=_open, daemon=True).start()
 
     # 运行后端
-    import server
     try:
         server.main()
     except OSError as e:

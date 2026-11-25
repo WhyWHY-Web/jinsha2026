@@ -1437,6 +1437,20 @@ def session_of(handler):
             SESS.pop(tok, None)
     return None, None
 
+# 一次性免密登录令牌：token -> user。仅供打包 exe 启动时用，用完即焚。
+_AUTO = {}
+
+def auto_login_token():
+    """桌面版（打包 exe）：为第一个账号生成一次性免密登录令牌。
+    浏览器访问 /auto?t=<token> 会自动登录并跳转三维主界面（用完即失效）。"""
+    db = load_json(USERS, {"users": []})
+    users = db.get('users', [])
+    if not users:
+        return None
+    tok = secrets.token_urlsafe(32)
+    _AUTO[tok] = users[0]
+    return tok
+
 def client_ip(h):
     xf = h.headers.get('X-Forwarded-For')
     return (xf.split(',')[0].strip() if xf else h.client_address[0])
@@ -1509,6 +1523,16 @@ class H(BaseHTTPRequestHandler):
             tok, s2 = session_of(self)
             if not s2: return self.send(302, b'', headers={'Location': '/login'})
             return self.file(os.path.join(WEB, 'cesium2.html'))
+        if p == '/auto':
+            # 桌面版免密自动登录：/auto?t=<token> → 建立会话并跳转三维主界面
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            t = (q.get('t') or [''])[0]
+            user = _AUTO.pop(t, None)
+            if user:
+                tok = new_session(user, SESSION_TTL)
+                cookie = 'sid=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d' % (tok, SESSION_TTL)
+                return self.send(302, b'', headers={'Location': '/', 'Set-Cookie': cookie})
+            return self.send(302, b'', headers={'Location': '/login'})
         if p in ('/login', '/login.html'):
             return self.file(os.path.join(WEB, 'login.html'))
         if p in ('/dashboard', '/dashboard.html'):
