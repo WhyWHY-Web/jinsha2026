@@ -1113,6 +1113,7 @@ body.dockhide #bottomRow{display:none!important}
   <div id="mainArea">
     <div id="viewPane">
       <canvas id="glcanvas"></canvas>
+      <div id="boxSel" style="position:absolute;display:none;border:1px dashed #37D9A0;background:rgba(53,224,184,.08);pointer-events:none;z-index:6"></div>
 
     <!-- 智能体抽屉：项目文件 + 数据库表（覆盖在地图左上） -->
     <div id="agDrawer" style="display:none">
@@ -1196,6 +1197,8 @@ body.dockhide #bottomRow{display:none!important}
           <span class="vchip" id="btnMap2d" title="切换二维底图：谷歌卫星 / Esri 影像">🗺 卫星影像</span>
           <span class="vchip" id="btnRoam" style="border-color:rgba(255,122,217,.45);color:#ffb3e8">▶ 沿江漫游</span>
           <span class="vchip" id="btnRealScene" style="border-color:rgba(90,200,255,.45);color:#9fdcff" title="低空实景：先加载该区域高清块，到位后自动切视角">🏞 实景漫游</span>
+          <span class="vchip" id="btnNdt" style="border-color:rgba(120,220,160,.45);color:#8fe9c7" title="按年份推演各站 NDVI，站点光柱随时间着色">📅 NDVI 时序</span>
+          <span class="vchip" id="btnBox" style="border-color:rgba(255,180,90,.45);color:#ffd28a" title="框选子区域：拖拽矩形，高亮框内站点并统计风险">▭ 框选区域</span>
           <span class="vchip" id="btnHiRes" style="display:none">🔍 超清影像</span>
         </div>
       </div>
@@ -1216,6 +1219,21 @@ body.dockhide #bottomRow{display:none!important}
           <button class="abtn" id="scDetail">🔍 实景</button>
           <button class="abtn" id="scFly">✈ 定位飞行</button>
           <button class="abtn" id="scClose">关闭</button>
+        </div>
+      </div>
+
+      <!-- NDVI 时序推演时间轴 -->
+      <div class="hud" id="ndviTimeline" style="left:50%;transform:translateX(-50%);bottom:122px;display:none;padding:9px 14px;min-width:440px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <button class="rbtn" id="ndviPlay" style="border-color:rgba(53,224,184,.4)">▶ 播放</button>
+          <input type="range" id="ndviYear" min="2000" max="2025" step="1" value="2025" style="flex:1;accent-color:#37D9A0">
+          <span id="ndviYearLbl" style="font-family:Consolas,monospace;color:#7fe3cd;font-size:13px;min-width:34px;text-align:center">2025</span>
+          <button class="rbtn" id="ndviClose">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:9.5px;color:var(--dim)">
+          <span>流域 NDVI 均值 <b id="ndviMean" style="color:#7fe3cd;font-family:Consolas,monospace">--</b></span>
+          <span style="flex:1"></span>
+          <span style="display:flex;align-items:center;gap:4px">低 <i style="width:8px;height:8px;border-radius:2px;background:#d4a24e"></i><i style="width:8px;height:8px;border-radius:2px;background:#b8c25a"></i><i style="width:8px;height:8px;border-radius:2px;background:#4ade80"></i><i style="width:8px;height:8px;border-radius:2px;background:#1d9e40"></i> 高</span>
         </div>
       </div>
 
@@ -2310,16 +2328,16 @@ void main(){
   float fres=pow(1.0-ndv,3.0);
 
   /* 金沙江真实水色：高含沙（年输沙约 2.4 亿 t），雨季黄褐、旱季青灰 */
-  vec3 shallow=vec3(0.30,0.42,0.40);
-  vec3 midC=vec3(0.15,0.30,0.33);
-  vec3 deepC=vec3(0.05,0.14,0.19);
+  vec3 shallow=vec3(0.40,0.54,0.50);
+  vec3 midC=vec3(0.20,0.38,0.42);
+  vec3 deepC=vec3(0.08,0.20,0.26);
   float dk=clamp(across,0.0,1.0);
   vec3 col=mix(shallow,midC,smoothstep(0.05,0.55,dk));
   col=mix(col,deepC,smoothstep(0.55,1.0,dk));
   col=mix(col,vec3(0.42,0.36,0.24),uTurbid*(0.25+0.25*ripple));
 
   /* 天空反射 */
-  col=mix(col,uSkyCol*1.35+vec3(0.04,0.09,0.12),fres*0.66);
+  col=mix(col,uSkyCol*1.45+vec3(0.05,0.10,0.13),fres*0.78);
 
   /* 太阳高光：窄镜面 + 宽碎波 */
   vec3 Hv=normalize(uSunDir+V);
@@ -2803,9 +2821,9 @@ function loadRiverNet(cb){
    主流 0.30–0.75 u（≈320–810 m 视觉），支流 0.18–0.42 u，仍然远小于河谷。 */
 function riverHalfWidth(r,i){
   var t=r.cum[i]/Math.max(1,r.tot);
-  if(r.lvl===1)return 0.30+0.20*t+0.25*t*t;   /* 0.30 → 0.75 */
-  if(r.lvl===2)return 0.18+0.18*t;
-  return 0.15+0.13*t;
+  if(r.lvl===1)return 1.20+1.40*t+0.60*t*t;   /* 1.20 → 3.20（上游峡谷窄、下游库区宽） */
+  if(r.lvl===2)return 0.60+0.50*t;
+  return 0.42+0.30*t;
 }
 /* ===== 把河线钉到地形上（关键一步） =====
    河网几何来自 4096² 原始 DEM，而显示地形是重建网格 + 一次低通平滑，
@@ -2819,24 +2837,33 @@ function buildRiverAxis(){
     var yArr=[];
     for(var i=0;i<r.axis.length;i++){
       var a=r.axis[i];
-      /* 在地形网格坐标系里取 3×3 邻域最小高程 */
+      /* 在地形网格坐标系里取 5×5 邻域最小高程：河网坐标与显示地形存在 1–2 栅格偏移，
+         窗口太小会取到山坡值，导致河流"浮在半山腰" */
       var u=(a.lon-LON_MIN)/(LON_MAX-LON_MIN)*(N-1);
       var v=(a.lat-LAT_MIN)/(LAT_MAX-LAT_MIN)*(N-1);
       var ci=Math.round(u),cj=Math.round(v),best=1e9;
-      for(var dj=-1;dj<=1;dj++)for(var di=-1;di<=1;di++){
+      for(var dj=-2;dj<=2;dj++)for(var di=-2;di<=2;di++){
         var ii=Math.max(0,Math.min(N-1,ci+di)),jj=Math.max(0,Math.min(N-1,cj+dj));
         var e=elevM[jj*N+ii];
         if(e<best)best=e;
       }
       yArr.push((best-G.hMin)/(G.hMax-G.hMin)*HSCALE);
     }
-    /* 沿程两次 1-2-1 平滑，去掉栅格台阶 */
-    for(var p=0;p<2;p++){
+    /* 沿程三次 1-2-1 平滑，去掉栅格台阶与毛刺 */
+    for(var p=0;p<3;p++){
       var s=yArr.slice();
       for(var k=1;k<yArr.length-1;k++)s[k]=(yArr[k-1]+yArr[k]*2+yArr[k+1])/4;
       yArr=s;
     }
-    r.axis.forEach(function(a,k){a.y=yArr[k];});
+    /* 河道经纬度做一次轻量平滑，消除相邻点折线转折（整体走向保持不变） */
+    var lon0=r.axis.map(function(a){return a.lon;});
+    var lat0=r.axis.map(function(a){return a.lat;});
+    var lonS=lon0.slice(),latS=lat0.slice();
+    for(var k2=1;k2<r.axis.length-1;k2++){
+      lonS[k2]=(lon0[k2-1]+lon0[k2]*2+lon0[k2+1])/4;
+      latS[k2]=(lat0[k2-1]+lat0[k2]*2+lat0[k2+1])/4;
+    }
+    r.axis.forEach(function(a,k){a.y=yArr[k];a.lon=lonS[k];a.lat=latS[k];});
   });
   RIVER.pinned=true;
 }
@@ -2919,13 +2946,19 @@ function buildMainStreamLine(){
   if(!RIVER.net)return;
   mainLineGroup=new THREE.Group();
   var r=RIVER.net[0],P=r.axis;
+  /* 先按谷底高度建控制点，再用 CatmullRom 密化，消除折线段转折 */
+  var ctrl=[];
+  for(var i=0;i<P.length;i++){
+    var a=P[i],w=toWorld(a.lon,a.lat);
+    var y=(a.y!=null?a.y:((a.e||0)-G.hMin)/(G.hMax-G.hMin)*HSCALE);
+    ctrl.push(new THREE.Vector3(w.x,y,w.z));
+  }
+  var curve=new THREE.CatmullRomCurve3(ctrl,false,'catmullrom',0.5);
+  var dense=curve.getSpacedPoints(Math.max(64,Math.min(2200,P.length*3)));
   var pos=[];
-  for(var i=0;i<P.length-1;i++){
-    var a=P[i],b=P[i+1];
-    var wa=toWorld(a.lon,a.lat),wb=toWorld(b.lon,b.lat);
-    var ya=(a.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;
-    var yb=(b.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;
-    pos.push(wa.x,ya,wa.z,wb.x,yb,wb.z);
+  for(var k=0;k<dense.length-1;k++){
+    var A=dense[k],B=dense[k+1];
+    pos.push(A.x,A.y+0.06,A.z,B.x,B.y+0.06,B.z);
   }
   var g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
@@ -2997,7 +3030,7 @@ function buildRiver(){
     var r=net[0],A=r.axis;
     for(var i=0;i<A.length;i++){
       var w=toWorld(A.lon,A.lat);
-      var y=(A.e-G.hMin)/(G.hMax-G.hMin)*HSCALE+0.06;   /* 基准高度，随 exag 一起拉伸 */
+      var y=(A.y!=null?A.y:((A.e||0)-G.hMin)/(G.hMax-G.hMin)*HSCALE)+0.06;   /* 基准高度：用谷底实测 a.y，随 exag 一起拉伸 */
       pts.push(new THREE.Vector3(w.x,y,w.z));
       srcLatLon.push([A.lon,A.lat]);
     }
@@ -3044,7 +3077,7 @@ function buildStations(){
     var s=STATIONS[i],w=toWorld(s[2],s[3]);
     var y=terrainYAt(s[2],s[3])*G.exag+0.5;
     var _startIdx=stationGroup.children.length;
-    var riskCol=s[6]==="高风险"?0xff5a5a:(s[6]==="中风险"?0xffb03a:0x4ade80);
+    var riskCol=parseInt((window.riskColOf?window.riskColOf(s[6]):(s[6]==="高风险"?'#ff5a5a':(s[6]==="中风险"?'#ffb03a':'#4ade80'))).slice(1),16);
     var hgt=3.5+s[7]*6;
     /* 隐形命中球：拾取热区远大于视觉元素，方便点击 */
     var hit=new THREE.Mesh(new THREE.SphereGeometry(8,8,8),
@@ -3095,6 +3128,144 @@ function buildStations(){
 }
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
   ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+/* ===== NDVI 时序推演时间轴（站点光柱按该年 NDVI 着色） ===== */
+var NDVI_T={data:null,on:false,play:false,timer:null,cur:2025};
+function ndviColor(v){
+  v=Math.max(0.2,Math.min(0.65,v==null?0.4:v));
+  var t=(v-0.2)/0.45;
+  var stops=[0,0.33,0.66,1],cols=[0xd4a24e,0xb8c25a,0x4ade80,0x1d9e40];
+  var a=cols[0],b=cols[1],lt=0,ht=0.33;
+  for(var i=0;i<stops.length-1;i++){ if(t>=stops[i]&&t<=stops[i+1]){a=cols[i];b=cols[i+1];lt=stops[i];ht=stops[i+1];break;} }
+  var k=(t-lt)/(ht-lt||1);
+  var r=Math.round(((a>>16)&255)+(((b>>16)&255)-((a>>16)&255))*k);
+  var g=Math.round(((a>>8)&255)+(((b>>8)&255)-((a>>8)&255))*k);
+  var bl=Math.round((a&255)+((b&255)-(a&255))*k);
+  return (r<<16)|(g<<8)|bl;
+}
+function ndviLoad(){
+  if(NDVI_T.data)return;
+  dhFetch('/api/ndvi/annual',10000).then(function(d){
+    if(d&&d.ok&&d.stations){NDVI_T.data=d.stations;NDVI_T.years=d.years||[];if(NDVI_T.on)ndviApply(NDVI_T.cur);}
+  }).catch(function(){});
+}
+function ndviApply(year){
+  NDVI_T.cur=year;
+  var mean=0,n=0;
+  for(var i=0;i<pillars.length;i++){
+    var p=pillars[i],st=p.userData&&p.userData.st;if(!st)continue;
+    var arr=(NDVI_T.data||{})[st[0]],v=null;
+    if(arr){for(var j=0;j<arr.length;j++){if(String(arr[j][0])===String(year)){v=arr[j][1];break;}}}
+    if(v==null)continue;
+    mean+=v;n++;
+    if(p.material)p.material.color.setHex(ndviColor(v));
+  }
+  if(n)mean/=n;
+  var m=$('ndviMean');if(m)m.textContent=n?mean.toFixed(3):'--';
+  var yl=$('ndviYearLbl');if(yl)yl.textContent=year;
+  var yr=$('ndviYear');if(yr)yr.value=year;
+}
+function ndviReset(){
+  for(var i=0;i<pillars.length;i++){
+    var p=pillars[i],st=p.userData&&p.userData.st;if(!st)continue;
+    var c=parseInt((window.riskColOf?window.riskColOf(st[6]):(st[6]==="高风险"?'#ff5a5a':(st[6]==="中风险"?'#ffb03a':'#4ade80'))).slice(1),16);
+    if(p.material)p.material.color.setHex(c);
+  }
+  var m=$('ndviMean');if(m)m.textContent='--';
+}
+function ndviToggle(force){
+  if(NDVI_T.data==null)ndviLoad();
+  NDVI_T.on=(force!=null?force:!NDVI_T.on);
+  var tl=$('ndviTimeline');if(tl)tl.style.display=NDVI_T.on?'block':'none';
+  if(NDVI_T.on){ndviApply(NDVI_T.cur);}else{ndviStop();ndviReset();}
+}
+function ndviStop(){
+  if(NDVI_T.timer){clearInterval(NDVI_T.timer);NDVI_T.timer=null;}
+  NDVI_T.play=false;
+  var b=$('ndviPlay');if(b)b.textContent='▶ 播放';
+}
+function ndviPlayToggle(){
+  if(NDVI_T.play){ndviStop();return;}
+  NDVI_T.play=true;
+  var b=$('ndviPlay');if(b)b.textContent='⏸ 暂停';
+  NDVI_T.timer=setInterval(function(){
+    var y=NDVI_T.cur+1;if(y>2025)y=2000;ndviApply(y);
+  },800);
+}
+function ndviBind(){
+  var btn=$('btnNdt');if(btn)btn.onclick=function(){ndviToggle();};
+  var pl=$('ndviPlay');if(pl)pl.onclick=ndviPlayToggle;
+  var cl=$('ndviClose');if(cl)cl.onclick=function(){ndviToggle(false);};
+  var yr=$('ndviYear');if(yr)yr.oninput=function(){ndviStop();ndviApply(parseInt(yr.value,10));};
+}
+
+/* ===== 框选子区域：拖拽矩形 → 经纬度 bbox → 高亮框内站点并统计 ===== */
+var BOX={on:false,x0:0,y0:0,x1:0,y1:0,dragging:false};
+function screenToLonLat(sx,sy){
+  var cv=$('glcanvas');if(!cv||!camera)return null;
+  var rect=cv.getBoundingClientRect();
+  var v=new THREE.Vector3(((sx-rect.left)/rect.width)*2-1,-((sy-rect.top)/rect.height)*2+1,0.5).unproject(camera);
+  var dir=v.sub(camera.position).normalize();
+  if(Math.abs(dir.y)<1e-6)return null;
+  var t=-camera.position.y/dir.y;
+  if(t<=0)return null;
+  var wx=camera.position.x+dir.x*t, wz=camera.position.z+dir.z*t;
+  return [LON0+wx/SX, LAT0-wz/SZ];
+}
+function boxClear(){
+  BOX.dragging=false;
+  var s=$('boxSel');if(s)s.style.display='none';
+}
+function boxToggle(){
+  BOX.on=!BOX.on;
+  var b=$('btnBox');
+  if(b){b.style.background=BOX.on?'rgba(255,180,90,.22)':'';b.textContent=BOX.on?'▭ 框选中（Esc 退出）':'▭ 框选区域';}
+  if(!BOX.on)boxClear();
+}
+function boxFinish(){
+  BOX.dragging=false;
+  var s=$('boxSel');if(s)s.style.display='none';
+  var a=screenToLonLat(BOX.x0,BOX.y0), b=screenToLonLat(BOX.x1,BOX.y1);
+  if(!a||!b){toast('框选无效（超出地图范围）','warn','!');return;}
+  var minLon=Math.min(a[0],b[0]),maxLon=Math.max(a[0],b[0]);
+  var minLat=Math.min(a[1],b[1]),maxLat=Math.max(a[1],b[1]);
+  var inBox=STATIONS.filter(function(st){return st[2]>=minLon&&st[2]<=maxLon&&st[3]>=minLat&&st[3]<=maxLat;});
+  var hi=inBox.filter(function(st){return st[6]==='高风险';}).length;
+  var mid=inBox.filter(function(st){return st[6]==='中风险';}).length;
+  var lo=inBox.filter(function(st){return st[6]==='低风险';}).length;
+  var inNames={};inBox.forEach(function(st){inNames[st[0]]=1;});
+  for(var i=0;i<pillars.length;i++){
+    var p=pillars[i],st=p.userData&&p.userData.st;if(!st)continue;
+    var c=inNames[st[0]]?0xffe08a:parseInt((window.riskColOf?window.riskColOf(st[6]):(st[6]==="高风险"?'#ff5a5a':(st[6]==="中风险"?'#ffb03a':'#4ade80'))).slice(1),16);
+    if(p.material)p.material.color.setHex(c);
+  }
+  toast('框选 '+inBox.length+' 站：高风险 '+hi+' · 中风险 '+mid+' · 低风险 '+lo+'（'+minLon.toFixed(2)+'~'+maxLon.toFixed(2)+'°E）','ok','▭');
+}
+function boxBind(){
+  var cv=$('glcanvas');if(!cv)return;
+  var bb=$('btnBox');if(bb)bb.onclick=boxToggle;
+  cv.addEventListener('mousedown',function(e){
+    if(!BOX.on)return;
+    e.stopPropagation();e.preventDefault();
+    var r=cv.getBoundingClientRect();
+    BOX.dragging=true;BOX.x0=BOX.x1=e.clientX;BOX.y0=BOX.y1=e.clientY;
+    var s=$('boxSel');if(s){s.style.display='block';s.style.left=(e.clientX-r.left)+'px';s.style.top=(e.clientY-r.top)+'px';s.style.width='0';s.style.height='0';}
+  },true);
+  window.addEventListener('mousemove',function(e){
+    if(!BOX.on||!BOX.dragging)return;
+    BOX.x1=e.clientX;BOX.y1=e.clientY;
+    var s=$('boxSel'),r=cv.getBoundingClientRect();
+    if(s){s.style.left=Math.min(BOX.x0,BOX.x1)-r.left+'px';s.style.top=Math.min(BOX.y0,BOX.y1)-r.top+'px';s.style.width=Math.abs(BOX.x1-BOX.x0)+'px';s.style.height=Math.abs(BOX.y1-BOX.y0)+'px';}
+  },true);
+  window.addEventListener('mouseup',function(e){
+    if(!BOX.on||!BOX.dragging)return;
+    e.stopPropagation();
+    boxFinish();
+  },true);
+  window.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&BOX.on)boxToggle();
+  });
+}
 
 /* 分析叠加层 */
 /* 巡检路线：沿干流平滑曲线 + 段中点标记球（绿=已完成 / 黄=进行中 / 灰=待巡检） */
@@ -3975,6 +4146,10 @@ function renderPh(id){
     h+='<button class="abtn mbtn" id="phGoLib">🧩 前往模型中心派发任务</button>';
     h+='<button class="abtn mbtn" id="phDemo">🎬 一键演示打通链路</button>';
   }else if(id==='assess'){
+    h+='<div class="as-steps" style="display:flex;gap:4px;margin-bottom:10px">'+
+      ['① 选区域','② 选指标','③ 触发评估','④ 看结果','⑤ 导报告'].map(function(s,i){
+        return '<span class="as-step" data-step="'+i+'" style="flex:1;text-align:center;font-size:10px;padding:6px 2px;border-radius:6px;color:'+(i===0?'#8fe9c7':'#5c7a80')+';background:'+(i===0?'rgba(53,224,184,.12)':'rgba(255,255,255,.03)')+';border:1px solid '+(i===0?'rgba(53,224,184,.4)':'var(--line)')+';cursor:pointer;white-space:nowrap">'+s+'</span>';
+      }).join('')+'</div>';
     h+='<div class="mod-note" style="margin-bottom:8px"><b>生态环境智能评估</b>　8 个维度实时派生（数据库视图「生态服务」）'
       +'，加权合成 <b>生态环境综合指数 EEI</b>（0–100，A/B/C/D 四级）；'
       +'机器学习部分<b>尚未训练</b>（缺标注样本），仅保留方法入口。</div>';
@@ -7288,6 +7463,19 @@ function loadAssess(){
   asLoadMl();
 }
 function loadAssessBind(){
+  /* 向导步骤条：点击高亮（视觉引导），④看结果联动雷达面板 */
+  document.querySelectorAll('.as-step').forEach(function(s){
+    s.onclick=function(){
+      var i=parseInt(s.dataset.step,10);
+      document.querySelectorAll('.as-step').forEach(function(x,j){
+        var on=j<=i;
+        x.style.color=on?'#8fe9c7':'#5c7a80';
+        x.style.background=on?'rgba(53,224,184,.12)':'rgba(255,255,255,.03)';
+        x.style.borderColor=on?'rgba(53,224,184,.4)':'var(--line)';
+      });
+      if(i===3){var t=document.querySelector('.as-tab[data-t=radar]');if(t)t.click();}
+    };
+  });
   /* 面板切换 */
   document.querySelectorAll('.as-tab').forEach(function(t){
     t.onclick=function(){
@@ -7742,7 +7930,9 @@ var __SAT_URI='/assets/img/satellite-3d.jpg';
 })();
 /* 由本地服务端提供 /api，启用实时数据轮询（file:// 打开时自动退回快照） */
 if(typeof DH!=='undefined'){DH.enabled=(location.protocol==='http:'||location.protocol==='https:');}
+try{ndviBind();boxBind();}catch(e){}
 </script>
+<script src="/assets/palette.js"></script>
 <script src="/assets/home.js"></script>
 <script src="/assets/metrics.js"></script>
 <script src="/assets/patrol.js"></script>

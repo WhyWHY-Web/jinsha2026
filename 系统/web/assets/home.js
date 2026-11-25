@@ -20,7 +20,7 @@
     return isFinite(x) ? x.toFixed(n == null ? 1 : n) : '—';
   }
   function gradeCol(g) {
-    return g === 'A' ? '#4ade80' : g === 'B' ? '#a3e635' : g === 'C' ? '#ffd48a' : '#ff8a8a';
+    return window.gradeColOf ? window.gradeColOf(g) : ((window.PALETTE && window.PALETTE.grade[g]) || '#7fe3cd');
   }
 
   /* 站点飞行：与「生态评估」「风险预警」共用同一个函数，保证定位一致 */
@@ -70,7 +70,7 @@
   function evStrip(d) {
     var c = d.confidence || {};
     var tot = (c.A || 0) + (c.B || 0) + (c.C || 0) + (c.D || 0) || 1;
-    var cols = { A: '#4ade80', B: '#7fe3cd', C: '#7ab8ff', D: '#ffb03a' };
+    var cols = (window.PALETTE && window.PALETTE.grade) || { A: '#4ade80', B: '#7fe3cd', C: '#ffb03a', D: '#ff8a8a' };
     var nms = { A: '实测', B: '模型', C: '遥感', D: '代理' };
     var bar = ['A', 'B', 'C', 'D'].map(function (k) {
       var n = c[k] || 0;
@@ -358,7 +358,7 @@
       if (!box || !arr || !arr.length) return;
       var grades = { A: 0, B: 0, C: 0, D: 0 };
       arr.forEach(function (x) { var g = x['综合等级']; if (grades[g] != null) grades[g]++; });
-      var cols = { A: '#4ade80', B: '#a3e635', C: '#ffd48a', D: '#ff8a8a' };
+      var cols = (window.PALETTE && window.PALETTE.grade) || { A: '#4ade80', B: '#7fe3cd', C: '#ffb03a', D: '#ff8a8a' };
       var bar = ['A', 'B', 'C', 'D'].map(function (g) {
         return '<span style="font-size:9px;color:' + cols[g] + '">' + g + ' ' + grades[g] + ' 站</span>';
       }).join('<span style="color:#5f8c86;margin:0 5px">·</span>');
@@ -385,7 +385,7 @@
     var old = q('hxEvMask');
     if (old) old.parentNode.removeChild(old);
     var items = H.d.evidence || [];
-    var cols = { A: '#4ade80', B: '#7fe3cd', C: '#7ab8ff', D: '#ffb03a' };
+    var cols = (window.PALETTE && window.PALETTE.grade) || { A: '#4ade80', B: '#7fe3cd', C: '#ffb03a', D: '#ff8a8a' };
     var mask = document.createElement('div');
     mask.id = 'hxEvMask';
     mask.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(3,10,14,.72);'

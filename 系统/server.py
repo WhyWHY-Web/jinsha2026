@@ -1698,6 +1698,12 @@ class H(BaseHTTPRequestHandler):
                         years.setdefault(y, []).append(v)
                 out[k] = [[y, round(sum(v) / len(v), 4)] for y, v in sorted(years.items()) if v]
             return self.j({'ok': True, 'metrics': out})
+        if p == '/api/ndvi/annual':
+            # 各站 NDVI 年值矩阵（供三维时间轴逐站着色）
+            annual = (rs_load('annual.json') or {}).get('ndvi') or {}
+            out = {nm: [[y, round(v, 4)] for y, v in arr] for nm, arr in annual.items() if arr}
+            years = sorted({y for arr in annual.values() for y, _ in arr})
+            return self.j({'ok': True, 'stations': out, 'years': years})
 
         # ---------- 数据治理（区域口径）
         if p == '/api/regions':
