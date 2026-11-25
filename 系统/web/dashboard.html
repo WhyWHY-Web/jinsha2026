@@ -197,7 +197,7 @@ async function renderNightlight(){
   d.sort((a,b)=>a.year-b.year);
   c.setOption({ tooltip:{trigger:'axis'}, grid:{left:44,right:24,top:24,bottom:26},
     xAxis:{type:'category',data:d.map(x=>x.year),...AXIS}, yAxis:{type:'value',name:'nW/cm²/sr',...AXIS},
-    series:[{name:'年均灯光',type:'line',data:d.map(x=>x.mean_radiance),smooth:true,areaStyle:{opacity:0.15},lineStyle:{color:'#f0c541'},itemStyle:{color:'#f0c541'}}] });
+    series:[{name:'年均灯光',type:'line',data:d.map(x=>+x.mean_radiance),smooth:true,areaStyle:{opacity:0.15},lineStyle:{color:'#f0c541'},itemStyle:{color:'#f0c541'}}] });
 }
 
 /* ---------- 4) 人口 ---------- */

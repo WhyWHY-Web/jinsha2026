@@ -2690,6 +2690,25 @@ def main():
     elif os.environ.get('PORT'): PORT = int(os.environ['PORT'])
     if '--host' in args: HOST = args[args.index('--host') + 1]
 
+    # 端口自愈：若被旧实例占用，自动顺延，避免"双击无反应/看到旧界面"
+    try:
+        _probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _probe.settimeout(0.5)
+        _probe.connect((HOST if HOST not in ('0.0.0.0', '') else '127.0.0.1', PORT))
+        _probe.close()
+        for _p in range(PORT + 1, PORT + 50):
+            _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _s.settimeout(0.5)
+            try:
+                _s.connect(('127.0.0.1', _p))
+                _s.close()
+            except OSError:
+                _s.close()
+                PORT = _p
+                break
+    except OSError:
+        pass
+
     os.makedirs(DATA, exist_ok=True)
     init_users()
     _auto_sync_start()

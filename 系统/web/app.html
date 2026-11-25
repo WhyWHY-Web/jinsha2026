@@ -887,6 +887,8 @@ body.dockhide #demBadge{bottom:14px}
 #nav.rail .nav-btn.on:before{content:'';position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);
   width:16px;height:2px;border-radius:2px;background:var(--gc,#35e0b8)}
 #kpiCard{position:static;width:auto;right:auto;top:auto;transform:none!important}
+#ecoCard{transition:transform .18s,box-shadow .18s,border-color .18s}
+#ecoCard:hover{transform:translateY(-2px);border-color:rgba(53,224,184,.5)!important;box-shadow:0 6px 20px rgba(53,224,184,.16)}
 #dockBtn{display:none}
 #demBadge{left:12px;bottom:170px}
 
@@ -972,9 +974,6 @@ body.dockhide #bottomRow{display:none!important}
   <nav id="nav" class="rail"></nav>
   <div id="topRight">
     <div class="chip" id="chipBackend" title="后端：内置数据服务（随 exe 自带，无需安装）"><span class="st"></span>后端 <b id="beVal">检测中</b></div>
-    <div class="chip" id="chipUser" style="cursor:pointer" title="点击退出登录">
-      <span class="st" style="animation:none;background:#57e8c8;box-shadow:0 0 7px #57e8c8"></span><b id="userName">admin</b> · 退出
-    </div>
   </div>
 </div>
 
@@ -1211,7 +1210,7 @@ body.dockhide #bottomRow{display:none!important}
       </div>
 
       <!-- NDVI 时序推演时间轴 -->
-      <div class="hud" id="ndviTimeline" style="left:50%;transform:translateX(-50%);bottom:122px;display:none;padding:9px 14px;min-width:440px">
+      <div class="hud" id="ndviTimeline" style="left:50%;transform:translateX(-50%);bottom:122px;display:none;padding:9px 14px;min-width:440px;pointer-events:auto">
         <div style="display:flex;align-items:center;gap:9px">
           <button class="rbtn" id="ndviPlay" style="border-color:rgba(53,224,184,.4)">▶ 播放</button>
           <input type="range" id="ndviYear" min="2000" max="2025" step="1" value="2025" style="flex:1;accent-color:#37D9A0">
@@ -3043,14 +3042,34 @@ function buildRiver(){
       pts=curve.getSpacedPoints(_n);
     }catch(e){}
   }
-  /* 漫游曲线：沿干流、贴水面上方 4.5 个世界单位（≈4.8 km 航高），5 点滑动平均去抖动 */
-  var rp=[],ys=pts.map(function(p){return p.y;});
-  for(var k2=0;k2<pts.length;k2++){
-    var sum=0,n=0;
-    for(var q=-2;q<=2;q++){var kk=k2+q;if(kk>=0&&kk<ys.length){sum+=ys[kk];n++;}}
-    rp.push(new THREE.Vector3(pts[k2].x,(sum/n)*G.exag+4.5,pts[k2].z));
+  /* 漫游曲线：沿干流中心线，逐点采样「真实地形高度 + 净空」，杜绝穿模。
+     关键改进：对曲线（尤其下游直线补齐段切弯处）重采样真实地形，越岭时自动抬升。 */
+  if(pts.length>3 && elevM){
+    var _flat=pts.map(function(p){return new THREE.Vector3(p.x,0,p.z);});
+    var _fc=new THREE.CatmullRomCurve3(_flat,false,'catmullrom',0.5);
+    var _fl=0,_fn=0;
+    try{ _fl=_fc.getLength(); _fn=Math.max(180,Math.min(2600,Math.round(_fl/0.20))); }catch(e){_fn=Math.max(180,pts.length*4);}
+    var rp=[];
+    for(var _i=0;_i<=_fn;_i++){
+      var _pt=_fc.getPointAt(_i/_fn);
+      var _lon=LON0+_pt.x/SX, _lat=LAT0-_pt.z/SZ;
+      var _ty=terrainYAt(_lon,_lat)*G.exag+5.0;   /* 真实地形 + 净空（约 5.4 km 航高） */
+      rp.push(new THREE.Vector3(_pt.x,_ty,_pt.z));
+    }
+    /* 高度 1-2-1 平滑去栅格台阶；再强制不低于邻域均值，抹掉个别塌陷点 */
+    for(var _k=1;_k<rp.length-1;_k++){ rp[_k].y=(rp[_k-1].y+rp[_k].y*2+rp[_k+1].y)/4; }
+    for(var _k2=1;_k2<rp.length-1;_k2++){ rp[_k2].y=Math.max(rp[_k2].y,(rp[_k2-1].y+rp[_k2+1].y)/2-1.5); }
+    roamCurve=new THREE.CatmullRomCurve3(rp,false,'catmullrom',0.5);
+  }else if(pts.length>3){
+    /* elevM 未就绪时的兜底：用谷底高度（loadRiverNet 回调会重建） */
+    var rp0=[],ys0=pts.map(function(p){return p.y;});
+    for(var _k3=0;_k3<pts.length;_k3++){
+      var _sum=0,_n=0;
+      for(var _q=-2;_q<=2;_q++){var _kk=_k3+_q;if(_kk>=0&&_kk<ys0.length){_sum+=ys0[_kk];_n++;}}
+      rp0.push(new THREE.Vector3(pts[_k3].x,(_sum/_n)*G.exag+4.5,pts[_k3].z));
+    }
+    if(rp0.length>2)roamCurve=new THREE.CatmullRomCurve3(rp0,false,'catmullrom',0.35);
   }
-  if(rp.length>2)roamCurve=new THREE.CatmullRomCurve3(rp,false,'catmullrom',0.35);
   if(riverMesh){scene.remove(riverMesh);riverMesh.geometry.dispose();riverMesh=null;riverU=null;}
   if(DET.cur)riverOnPatch();
 }
@@ -7974,8 +7993,6 @@ try{ndviBind();boxBind();}catch(e){}
   fetch('/api/session',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(d&&d.ok&&d.user){ var n=document.getElementById('userName'); if(n)n.textContent=d.user.name||d.user.u; }
   }).catch(function(){});
-  var u=document.getElementById('chipUser');
-  if(u)u.onclick=function(){ if(confirm('确定退出登录？')){ fetch('/api/logout',{method:'POST'}).then(function(){location.href='/login';}); } };
 })();
 </script>
 
@@ -8031,6 +8048,9 @@ try{ndviBind();boxBind();}catch(e){}
   }
   var kc=q('kpiCard');
   if(kc)kc.onclick=function(){switchModule('home');};
+  /* 右栏 EEI 核心指标卡：点击进入智能评估，悬浮抬升反馈 */
+  var eco=q('ecoCard');
+  if(eco){ eco.style.cursor='pointer'; eco.title='点击进入智能评估'; eco.onclick=function(){switchModule('assess');}; }
 
   function loadKpi(){
     if(!window.dhFetch)return;

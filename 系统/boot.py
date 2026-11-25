@@ -15,6 +15,7 @@
 """
 import os
 import sys
+import socket
 import threading
 import time
 import webbrowser
@@ -49,6 +50,27 @@ def _parse_port():
     return 8080
 
 
+def _port_taken(port, host='127.0.0.1'):
+    """TCP 连接探测：能连上说明已有服务在监听（旧实例占着端口）。"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.5)
+    try:
+        s.connect((host, port))
+        s.close()
+        return True
+    except OSError:
+        s.close()
+        return False
+
+
+def _find_free_port(preferred, span=50):
+    """优先用 preferred；被占则向后顺延，保证双击即用、永不因端口冲突而启动失败。"""
+    for p in range(preferred, preferred + span):
+        if not _port_taken(p):
+            return p
+    return preferred
+
+
 def main():
     base = _base_dir()
     data_dir = _resolve_data_dir(base)
@@ -58,7 +80,7 @@ def main():
     else:
         print('[启动器] 未找到 data/ 目录，将使用空数据目录（部分功能不可用）。')
 
-    port = _parse_port()
+    port = _find_free_port(_parse_port())
     os.environ['PORT'] = str(port)
 
     # 先确保账号文件存在，再生成一次性免密登录令牌
