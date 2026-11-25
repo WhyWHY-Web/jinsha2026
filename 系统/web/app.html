@@ -1320,7 +1320,7 @@ function loadDEM(cb){
         var qs=new URLSearchParams(location.search);
         var dm=qs.get('mod');
         if(dm&&PH_MODULES[dm])setTimeout(function(){switchModule(dm);},600);
-        if(qs.get('map')==='2d')setTimeout(function(){if(!M2.on)m2Toggle(true);},900);
+        /* 二维底图（在线谷歌/Esri）已停用，?map=2d 深链不再生效 */
         if(qs.get('mode')==='realistic')setTimeout(function(){if(!SAT.on)toggleSat(true);},900);
       }catch(e){}
     })
@@ -2057,71 +2057,9 @@ void main(){
 }`;
 
 
-/* ===== 真实卫星影像贴图（Esri World Imagery，带 CORS，可直连） ===== */
-function mercYt(lat,z){
-  var n=Math.pow(2,z),r=lat*Math.PI/180;
-  return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n;
-}
 var SAT={tex:null,on:false,loading:false,done:0,total:0};
-function buildSatTex(z,onProgress,cb){
-  if(SAT.loading)return;
-  SAT.loading=true;SAT.done=0;
-  var n=Math.pow(2,z);
-  var x0=Math.floor((LON_MIN+180)/360*n), x1=Math.floor((LON_MAX+180)/360*n);
-  var y0=Math.floor(mercYt(LAT_MAX,z)), y1=Math.floor(mercYt(LAT_MIN,z));
-  var cols=x1-x0+1, rows=y1-y0+1;
-  SAT.total=cols*rows;
-  var cw=cols*256, ch=rows*256;
-  var cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
-  var ctx=cv.getContext('2d');
-  ctx.fillStyle='#12222a';ctx.fillRect(0,0,cw,ch);
-  var list=[];
-  for(var i=0;i<cols;i++)for(var j=0;j<rows;j++)list.push([x0+i,y0+j,i,j]);
-  var CONC=8, idx=0, running=0;
-  function pump(){
-    while(running<CONC&&idx<list.length){
-      var it=list[idx++];running++;
-      (function(tx,ty,ox,oy){
-        var img=new Image();
-        img.crossOrigin='anonymous';
-        img.onload=function(){
-          try{ctx.drawImage(img,ox*256,oy*256,256,256);}catch(e){}
-          done();
-        };
-        img.onerror=function(){done();};
-        img.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+ty+'/'+tx;
-      })(it[0],it[1],it[2],it[3]);
-    }
-  }
-  function done(){
-    running--;SAT.done++;
-    if(onProgress)onProgress(SAT.done,SAT.total);
-    if(idx<list.length)pump();
-    else if(running===0)finish();
-  }
-  function finish(){
-    /* 大图降到 2048 以内，省显存又不明显损失 */
-    var max=2048, out=cv;
-    if(cw>max||ch>max){
-      var k=max/Math.max(cw,ch);
-      out=document.createElement('canvas');
-      out.width=Math.round(cw*k);out.height=Math.round(ch*k);
-      var c2=out.getContext('2d');
-      c2.imageSmoothingQuality='high';
-      c2.drawImage(cv,0,0,out.width,out.height);
-    }
-    var tex=new THREE.CanvasTexture(out);
-    tex.flipY=true;
-    tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
-    tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
-    tex.needsUpdate=true;
-    SAT.tex=tex;SAT.loading=false;
-    if(cb)cb(tex);
-  }
-  pump();
-}
 /* 本地全域正射影像（4096²，z12 拼接，离线可用）。
-   比在线 z9 拼图清晰 2.7 倍，且不依赖网络——答辩断网也不会退回高程着色。 */
+   在线卫星影像（Esri/谷歌）已停用，本系统全程离线、不联网拼图。 */
 function loadLocalSat(cb){
   var img=new Image();
   img.onload=function(){
@@ -2249,12 +2187,7 @@ function requestDetailSat(){
           step();
         };
         img.onerror=function(){
-          /* 本地瓦片缺失时回退到 Esri 在线；断网也至少能显示本地已缓存的部分 */
-          if(!img.__triedNet){
-            img.__triedNet=true;img.crossOrigin='anonymous';
-            img.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+ty+'/'+tx;
-            return;
-          }
+          /* 本地瓦片缺失：在线影像已停用，直接计失败（大面积失败则整块放弃，回退全域底图） */
           fail++;step();
         };
         img.src='/data/tiles/'+z+'/'+tx+'/'+ty+'.jpg';
@@ -2910,7 +2843,7 @@ function buildRiverAxis(){
 function riverYBase(r,i){
   var a=r.axis[i];
   var y=(a.y!=null)?a.y:((a.e-G.hMin)/(G.hMax-G.hMin)*HSCALE);
-  return y+0.30;   /* 抬一点：河面略高于谷底，避免与地形同高被遮住 */
+  return y+0.45;   /* 抬一点：河面略高于谷底，近景放大后不被地形坡面遮挡 */
 }
 function riverYAt(r,i){
   return riverYBase(r,i);   /* 基准高度：顶点着色器统一乘 exag */
@@ -3423,9 +3356,11 @@ function animate(){
   terrainU.uTime.value=t;
   if(riverU)riverU.uTime.value=t;
   if(waterU)waterU.uTime.value=t;         /* 水面波纹：全局时钟，避免停滞感 */
-  /* 河网显隐：远观看整体水系，非常近时才让位于卫星影像里的真实河道。
-     旧版门槛是 r>120，等于放大后河流直接消失，"只剩影像里一条细缝"。 */
+  /* 河网显隐：远景看整体水系，放大到近景时也保留河网线（不消失）。
+     旧版 r<34 时河网全隐，等于"放大后河流直接消失"——改为下限 0.35，
+     近景河网以约 35% 强度显示，配合下方"河道宽度自适应"收窄，不显杂乱。 */
   var _rf=clamp((camCtl.r-34)/60,0,1);
+  _rf=Math.max(_rf,0.35);
   if(riverU)riverU.uOn.value=(G.layers.water&&_rf>0.02)?1:0;
   if(tribGroup)tribGroup.visible=!!G.layers.trib&&_rf>0.02;
   if(riverNetGroup)riverNetGroup.visible=!!G.layers.water&&_rf>0.01;
@@ -3751,14 +3686,9 @@ function buildUI(){
     if(M2.on){toast('沿江漫游仅三维模式可用','warn','▶');return;}
     toggleRoam();
   };
-  /* 超清：当前视野拉 4096 像素影像（一次性，约 40–60 s） */
+  /* 超清：在线高清影像已停用（离线版不联网），仅提示 */
   $('btnHiRes').onclick=function(){
-    var lon=camCtl.target.x/SX+LON0, lat=LAT0-camCtl.target.z/SZ;
-    var span=Math.min(6,Math.max(2,camCtl.r*1.2));
-    var key=lon.toFixed(3)+'_'+lat.toFixed(3)+'_'+Math.round(span);
-    if(PATCH.busy){toast('正在加载，请稍候','warn');return;}
-    toast('正在拉取超清影像（2560 px，约 20–30 秒）…','ok');
-    loadPatch(lon,lat,span,key,true);
+    toast('在线超清影像已停用，本系统全程离线运行','warn','🛰');
   };
   /* 实景漫游：低空贴地视角 + 高清块，像到当地看风景 */
   $('btnRealScene').onclick=function(){
@@ -3790,7 +3720,7 @@ function buildUI(){
     if(M2.on){var b=$('map2d');m2ZoomAt(-1,b.clientWidth/2,b.clientHeight/2);return;}
     camCtl.zoomTo(1.43);
   };
-  $('btnMap2d').onclick=function(){m2Toggle();};
+  $('btnMap2d').onclick=function(){ toast('在线卫星影像（谷歌/Esri）已停用，本系统全程离线，请使用三维「真实影像」','warn','🗺'); };
   window.addEventListener('keydown',function(e){
     if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
     if(e.key==='+'||e.key==='=')camCtl.zoomTo(0.78);
@@ -5406,95 +5336,9 @@ function detAuto(){
 }
 
 function loadPatch(lon,lat,span,key,hi){
-  if(PATCH.cache[key]){
-    PATCH.key=key;
-    detShow('view',PATCH.cache[key].mesh,PATCH.cache[key].meta);
-    return;
-  }
-  PATCH.busy=true;PATCH.t0=performance.now();
-  if(!PATCH.tipShown){PATCH.tipShown=true;toast('正在加载该区域的高清地形…','ok');}
-  var dlat=span/111/2, dlon=span/(111*Math.cos(lat*Math.PI/180))/2;
-  var b=[lon-dlon,lat-dlat,lon+dlon,lat+dlat];
-  var z=(span<=14?14:13);
-  while(z>9&&(b[2]-b[0])/(360/Math.pow(2,z))>3)z--;
-  var x0=Math.floor(lon2tileF(b[0],z)),x1=Math.floor(lon2tileF(b[2],z));
-  var y0=Math.floor(lat2tileF(b[3],z)),y1=Math.floor(lat2tileF(b[1],z));
-  var nx=x1-x0+1, ny=y1-y0+1;
-  var cv=document.createElement('canvas');cv.width=nx*256;cv.height=ny*256;
-  var ctx=cv.getContext('2d',{willReadFrequently:true});
-  var jobs=[];
-  for(var ty=y0;ty<=y1;ty++){
-    for(var tx=x0;tx<=x1;tx++){
-      jobs.push(new Promise(function(res){
-        var im=new Image();
-        im.onload=function(){
-          ctx.drawImage(im,(this.__tx-x0)*256,(this.__ty-y0)*256);
-          res();
-        };
-        im.onerror=function(){res();};
-        im.__tx=tx;im.__ty=ty;
-        im.src='/api/tile?z='+z+'&x='+tx+'&y='+ty;
-      }));
-    }
-  }
-  Promise.all(jobs).then(function(){
-    var N=512;
-    var data;
-    try{ data=ctx.getImageData(0,0,cv.width,cv.height).data; }catch(e){ PATCH.busy=false; return; }
-    var dem=new Float32Array(N*N);
-    for(var j=0;j<N;j++){
-      var latv=b[3]-(b[3]-b[1])*j/(N-1);
-      var py=lat2tileF(latv,z)*256-y0*256;
-      for(var i=0;i<N;i++){
-        var lonv=b[0]+(b[2]-b[0])*i/(N-1);
-        var px=lon2tileF(lonv,z)*256-x0*256;
-        var xi=Math.max(0,Math.min(cv.width-1,Math.round(px)));
-        var yi=Math.max(0,Math.min(cv.height-1,Math.round(py)));
-        var o=(yi*cv.width+xi)*4;
-        dem[j*N+i]=data[o]*256+data[o+1]+data[o+2]/256-32768;
-      }
-    }
-    var isz=hi?4096:(span<=14?2560:2048);
-    var url=hi
-      ? ('/api/hi?lon0='+b[0]+'&lat0='+b[1]+'&lon1='+b[2]+'&lat1='+b[3])
-      : ('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
-         +'?bbox='+b.join(',')+'&bboxSR=4326&imageSR=4326&size='+isz+','+isz+'&format=jpg&f=image');
-    var im2=new Image();im2.crossOrigin='anonymous';
-    var _to=setTimeout(function(){ if(PATCH.busy){PATCH.busy=false;} },hi?150000:22000);
-    im2.onload=function(){
-      clearTimeout(_to);
-      var meta={bbox:b};
-      var mesh=detBuild(dem,im2,meta,N);
-      if(!mesh){
-        PATCH.busy=false;
-        try{detExit();}catch(e){}
-        toast('该区域实景补丁不可用（高程或影像缺失），已回到全域地形','warn','⚠');
-        return;
-      }
-      var ks=Object.keys(PATCH.cache);
-      if(ks.length>=3){
-        var v=ks[0];scene.remove(PATCH.cache[v].mesh);
-        PATCH.cache[v].mesh.geometry.dispose();delete PATCH.cache[v];
-      }
-      PATCH.cache[hi?key+'_hi':key]={mesh:mesh,meta:meta};
-      PATCH.key=hi?key+'_hi':key;
-      if(hi){PATCH.hiKey=key;PATCH.hiAt=performance.now();}
-      detShow('view',mesh,meta);
-      PATCH.busy=false;
-      if(hi)toast('超清影像已应用（2560 px）','ok');
-    };
-    im2.onerror=function(){
-      clearTimeout(_to);
-      if(isz>2048){                       /* 大图失败时降级重试 */
-        isz=2048;
-        url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
-          +'?bbox='+b.join(',')+'&bboxSR=4326&imageSR=4326&size=2048,2048&format=jpg&f=image';
-        im2.src=url;return;
-      }
-      PATCH.busy=false;
-    };
-    im2.src=url;
-  }).catch(function(){PATCH.busy=false;});
+  /* 在线高清地形/影像下载已停用（原依赖外网 ArcGIS / AWS terrarium，离线版不联网）。
+     查看某站点实景请用站点卡片里的「实景」按钮（本地缓存 data/detail/）。 */
+  toast('在线高清影像已停用，本系统全程离线运行','warn','🛰');
 }
 
 function detInit(){
@@ -5751,12 +5595,9 @@ var M2={on:false,lon:100.1,lat:27.3,zf:7,target:7,z:7,prov:'esri',cache:{},cool:
 var M2_MIN=3,M2_MAX=17,M2_TILE=256,M2_CACHEMAX=320,M2_PAR=10,M2_K=16,M2_BG='#0a141c';
 var M2_Q=[];
 var M2_PROV={
-  'google-sat':{nm:'谷歌卫星',url:'https://mt{s}.google.com/vt/lyrs=s&hl=zh-CN&x={x}&y={y}&z={z}',
-    subs:['0','1','2','3'],attr:'© Google · 卫星影像',fb:'esri',maxNative:17},
-  'esri'      :{nm:'Esri 影像',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    subs:[],attr:'© Esri · Maxar · Earthstar',fb:null,maxNative:17},
-  /* 底图仅保留 Esri / 谷歌两项：其余影像源分辨率低或仅单日快照，已移除
-     250–500 m 分辨率远低于谷歌/Esri，且"每日重访"优势未做时间轴无法体现 */
+  /* 在线卫星影像（谷歌/Esri）已停用：二维底图模式整体下线，url 置空，不再联网。 */
+  'google-sat':{nm:'谷歌卫星（已停用）',url:'',subs:[],attr:'在线卫星影像已停用',fb:null,maxNative:17},
+  'esri'      :{nm:'Esri 影像（已停用）',url:'',subs:[],attr:'在线卫星影像已停用',fb:null,maxNative:17}
 };
 var M2_VIEWS={overview:[100.1,27.3,6],upstream:[99.4,30.0,7],midstream:[101.6,26.7,9],downstream:[103.6,28.3,9]};
 
@@ -6338,8 +6179,6 @@ function renderTrace(){
 /* 数据加载中 / 失败 / 成功的统一状态反馈 */
 /* 数据源可达性实测：只展示此刻真能取到数据的源 */
 var DS_SRC=[
-  {k:'google',nm:'谷歌卫星影像',d:'Google Maps Tiles · z17',u:'https://mt1.google.com/vt/lyrs=s&x=84&y=39&z=7',t:'实时影像'},
-  {k:'esri',nm:'Esri World Imagery',d:'Maxar · Earthstar · 0.3–1 m',u:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/7/39/84',t:'实时影像'},
   {k:'pg',nm:'内置数据库 · jinsha',d:'20 站 · 13 张表 · 4 表关联 · 免安装',u:'/api/health',t:'已入库'},
   {k:'ml',nm:'scikit-learn 模型引擎',d:'接口就绪 · 无标注样本，未训练',u:'/api/ml/results',t:'接口就绪'},
   {k:'view',nm:'生态服务评估视图',d:'8 维指标实时派生 · EEI 综合指数',u:'/api/eco-services',t:'实时派生'}
@@ -7863,7 +7702,6 @@ function aiInit(){
    注意：必须由本服务提供，file:// 直接打开会取不到图。 */
 var __SAT_URI='/assets/img/satellite-3d.jpg';
 (function(){
-  var buildSatTexTiles=buildSatTex;   /* 原瓦片拼接版：本地大图失败时的在线兜底 */
   buildSatTex=function(z,onProgress,cb){
     if(SAT.loading)return;
     SAT.loading=true;SAT.total=1;SAT.done=0;
@@ -7895,11 +7733,9 @@ var __SAT_URI='/assets/img/satellite-3d.jpg';
       }
     };
     img.onerror=function(){
-      /* 本地大图失败：在线时回退到瓦片拼接版；彻底失败交由 toggleSat 提示 */
+      /* 本地大图失败：在线影像已停用，不再联网回退；交由 toggleSat 提示 */
       SAT.loading=false;
-      if(navigator.onLine!==false){
-        buildSatTexTiles(z,onProgress,cb);
-      }else if(cb)cb(null);
+      if(cb)cb(null);
     };
     img.src=__SAT_URI;
   };

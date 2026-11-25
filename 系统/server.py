@@ -1457,7 +1457,6 @@ def client_ip(h):
 
 # ------------------------------------------------------------------ HTTP
 GZ_CACHE = {}
-TILE_CACHE = {}
 MIME = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
         '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
         '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml',
@@ -1814,61 +1813,6 @@ class H(BaseHTTPRequestHandler):
             if os.path.exists(AUDIT):
                 with open(AUDIT, encoding='utf-8') as f: rows = [json.loads(l) for l in f if l.strip()][-40:][::-1]
             return self.j({'ok': True, 'rows': rows})
-        if p == '/api/tile':
-            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            try:
-                z, x, y = int(q['z'][0]), int(q['x'][0]), int(q['y'][0])
-            except Exception:
-                return self.send(400, 'bad tile')
-            key = (z, x, y)
-            data = TILE_CACHE.get(key)
-            if data is None:
-                u = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/%d/%d/%d.png' % (z, x, y)
-                try:
-                    req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
-                    with urllib.request.urlopen(req, timeout=12) as r:
-                        data = r.read()
-                except Exception:
-                    return self.send(502, 'tile fail')
-                if len(TILE_CACHE) > 300: TILE_CACHE.clear()
-                TILE_CACHE[key] = data
-            return self.send(200, data, 'image/png', {'Cache-Control': 'public, max-age=86400'})
-        if p == '/api/hi':
-            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            try:
-                b = [float(q['lon0'][0]), float(q['lat0'][0]), float(q['lon1'][0]), float(q['lat1'][0])]
-            except Exception:
-                return self.send(400, 'bad bbox')
-            key = 'hi_%.4f_%.4f_%.4f_%.4f.jpg' % tuple(b)
-            fp = os.path.join(DATA, 'patch', key)
-            if os.path.exists(fp):
-                with open(fp, 'rb') as f:
-                    return self.send(200, f.read(), 'image/jpeg', {'Cache-Control': 'public, max-age=86400'})
-            os.makedirs(os.path.join(DATA, 'patch'), exist_ok=True)
-            u = ('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
-                 '?bbox=%.6f,%.6f,%.6f,%.6f&bboxSR=4326&imageSR=4326&size=2560,2560&format=jpg&f=image&dpi=96' % tuple(b))
-            try:
-                req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=120) as r:
-                    data = r.read()
-                with open(fp, 'wb') as f:
-                    f.write(data)
-                return self.send(200, data, 'image/jpeg', {'Cache-Control': 'public, max-age=86400'})
-            except Exception as e:
-                return self.send(504, 'hi failed: %s' % e)
-        if p == '/api/patch':
-            try:
-                lon = float(urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)['lon'][0])
-                lat = float(urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)['lat'][0])
-                span = float(urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)['span'][0])
-            except Exception:
-                return self.j({'ok': False, 'error': 'bad params'}, 400)
-            span = max(4.0, min(90.0, span))
-            try:
-                d = build_patch(lon, lat, span)
-                return self.j(d)
-            except Exception as e:
-                return self.j({'ok': False, 'error': str(e)[:120]}, 500)
         if p in ('/cesium', '/cesium.html'):
             tok, s = session_of(self)
             if not s: return self.send(302, b'', headers={'Location': '/login'})
@@ -2557,91 +2501,6 @@ def fs_read(path):
             'truncated': len(lines) > 200}, None
 
 
-
-# ------------------------------------------------------------------ 视野高清块（30 m DEM + 高清影像）
-PATCH_DIR = os.path.join(DATA, 'patch')
-
-def _merc(lon, lat, z):
-    n = 2 ** z
-    x = (lon + 180) / 360 * n
-    r = math.radians(lat)
-    y = (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n
-    return x, y
-
-def build_patch(lon, lat, span_km):
-    os.makedirs(PATCH_DIR, exist_ok=True)
-    key = '%.3f_%.3f_%d' % (lon, lat, int(round(span_km)))
-    fp = os.path.join(PATCH_DIR, key + '.json')
-    if os.path.exists(fp):
-        try:
-            with open(fp, encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            pass
-
-    dlat = span_km / 111.0 / 2
-    dlon = span_km / (111.0 * math.cos(math.radians(lat))) / 2
-    lon0, lon1 = lon - dlon, lon + dlon
-    lat0, lat1 = lat - dlat, lat + dlat
-
-    # 选瓦片层级：控制 3~6 块
-    z = 13
-    while z > 9 and (lon1 - lon0) / (360.0 / (2 ** z)) > 5:
-        z -= 1
-    x0f, y0f = _merc(lon0, lat1, z)   # 左上
-    x1f, y1f = _merc(lon1, lat0, z)   # 右下
-    x0, x1, y0, y1 = int(x0f), int(x1f), int(y0f), int(y1f)
-    nx, ny = x1 - x0 + 1, y1 - y0 + 1
-
-    import numpy as np
-    mos = np.zeros((ny * 256, nx * 256), dtype=np.float32)
-    for ty in range(y0, y1 + 1):
-        for tx in range(x0, x1 + 1):
-            u = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/%d/%d/%d.png' % (z, tx, ty)
-            try:
-                req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=12) as r:
-                    from PIL import Image
-                    import io as _io
-                    a = np.asarray(Image.open(_io.BytesIO(r.read())).convert('RGB')).astype(np.float32)
-                e = a[..., 0] * 256 + a[..., 1] + a[..., 2] / 256 - 32768
-                mos[(ty - y0) * 256:(ty - y0) * 256 + 256, (tx - x0) * 256:(tx - x0) * 256 + 256] = e
-            except Exception:
-                pass
-
-    N = 512
-    lons = lon0 + (np.arange(N) + .5) / N * (lon1 - lon0)
-    lats = lat1 - (np.arange(N) + .5) / N * (lat1 - lat0)
-    px = np.array([_merc(v, lat, z)[0] for v in lons]) * 256 - x0 * 256
-    py = np.array([_merc(lon, v, z)[1] for v in lats]) * 256 - y0 * 256
-    pxi = np.clip(px.astype(int), 0, mos.shape[1] - 2)
-    pyi = np.clip(py.astype(int), 0, mos.shape[0] - 2)
-    sub = mos[np.ix_(pyi, pxi)]
-    dem = np.clip(sub, 0, 9000).astype('<i2')
-
-    # 高清影像
-    img_uri = ''
-    u = ('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
-         '?bbox=%.6f,%.6f,%.6f,%.6f&bboxSR=4326&imageSR=4326&size=1600,1600&format=jpg&f=image&dpi=96'
-         % (lon0, lat0, lon1, lat1))
-    try:
-        req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=25) as r:
-            b = r.read()
-        img_uri = 'data:image/jpeg;base64,' + base64.b64encode(b).decode()
-    except Exception:
-        pass
-
-    out = {'ok': True, 'bbox': [round(lon0, 6), round(lat0, 6), round(lon1, 6), round(lat1, 6)],
-           'n': N, 'z': z,
-           'dem': base64.b64encode(dem.tobytes()).decode(),
-           'img': img_uri}
-    try:
-        with open(fp, 'w', encoding='utf-8') as f:
-            json.dump(out, f)
-    except Exception:
-        pass
-    return out
 
 def report_html():
     st = load_json(STATIONS, {'stations': []})['stations']
