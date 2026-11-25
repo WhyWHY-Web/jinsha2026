@@ -764,8 +764,10 @@ body.maxmap #sidebar,body.maxmap #vsplit,body.maxmap #hsplit,body.maxmap #bottom
   overflow:hidden;min-height:0}
 #viewPane{position:relative;inset:auto;flex:1 1 auto;min-height:0;
   border:1px solid var(--line);border-radius:9px;padding:0;background:#04080c}
-#vsplit,#hsplit{display:none!important}
-#bottomRow{position:static;left:auto;right:auto;bottom:auto;height:auto;flex:0 0 158px;
+#vsplit{display:none!important}
+#hsplit{flex:0 0 8px;cursor:row-resize;background:rgba(53,224,184,.10);border-radius:4px;position:relative;z-index:6}
+#hsplit:hover,#hsplit.on{background:rgba(53,224,184,.55)}
+#bottomRow{position:static;left:auto;right:auto;bottom:auto;height:auto;flex:0 0 190px;
   z-index:auto;transition:none}
 body.dockhide #bottomRow{display:none}
 
@@ -927,7 +929,8 @@ body.dockhide #bottomRow{transform:translateY(calc(100% + 22px));opacity:0;point
   min-height:0;overflow:hidden;gap:8px}
 #viewPane{flex:1 1 auto!important;position:relative!important;inset:auto!important;min-height:0}
 #bottomRow{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;
-  height:auto!important;flex:0 0 158px!important;z-index:auto!important;display:flex}
+  height:auto!important;flex:0 0 190px!important;z-index:auto!important;display:flex}
+#hsplit{flex:0 0 8px!important;display:block!important;cursor:row-resize}
 body.dockhide #bottomRow{display:none!important}
 #rightCol{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:10px;min-height:0;
   overflow-y:auto;background:var(--bg)}
@@ -3138,10 +3141,13 @@ function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+
   ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
 /* ===== NDVI 时序推演时间轴（站点光柱按该年 NDVI 着色） ===== */
-var NDVI_T={data:null,on:false,play:false,timer:null,cur:2025,pendingPlay:false};
+var NDVI_T={data:null,on:false,play:false,timer:null,cur:2025,pendingPlay:false,min:null,max:null};
 function ndviColor(v){
-  v=Math.max(0.2,Math.min(0.65,v==null?0.4:v));
-  var t=(v-0.2)/0.45;
+  /* 用数据真实范围归一化，放大年份间色差（原固定 0.2–0.65 在窄区间里几乎看不出变化） */
+  var mn=NDVI_T.min!=null?NDVI_T.min:0.2, mx=NDVI_T.max!=null?NDVI_T.max:0.65;
+  if(v==null)v=mn+(mx-mn)*0.5;
+  v=Math.max(mn,Math.min(mx,v));
+  var t=(v-mn)/((mx-mn)||1);
   var stops=[0,0.33,0.66,1],cols=[0xd4a24e,0xb8c25a,0x4ade80,0x1d9e40];
   var a=cols[0],b=cols[1],lt=0,ht=0.33;
   for(var i=0;i<stops.length-1;i++){ if(t>=stops[i]&&t<=stops[i+1]){a=cols[i];b=cols[i+1];lt=stops[i];ht=stops[i+1];break;} }
@@ -3154,11 +3160,21 @@ function ndviColor(v){
 function ndviLoad(){
   if(NDVI_T.data)return;
   dhFetch('/api/ndvi/annual',10000).then(function(d){
-    if(d&&d.ok&&d.stations){NDVI_T.data=d.stations;NDVI_T.years=d.years||[];if(NDVI_T.on)ndviApply(NDVI_T.cur);if(NDVI_T.pendingPlay){NDVI_T.pendingPlay=false;ndviPlayToggle();}}
+    if(d&&d.ok&&d.stations){
+      NDVI_T.data=d.stations;NDVI_T.years=d.years||[];
+      /* 计算实际 NDVI 范围，放大色差与光柱伸缩幅度 */
+      var mn=1e9,mx=-1e9;
+      for(var k in d.stations){var arr=d.stations[k];for(var j=0;j<arr.length;j++){var v=arr[j][1];if(v==null)continue;if(v<mn)mn=v;if(v>mx)mx=v;}}
+      NDVI_T.min=(mn===1e9)?0.2:mn;NDVI_T.max=(mx===-1e9)?0.65:mx;
+      if(NDVI_T.max-NDVI_T.min<0.04){var mid=(NDVI_T.max+NDVI_T.min)/2;NDVI_T.min=mid-0.02;NDVI_T.max=mid+0.02;}
+      if(NDVI_T.on)ndviApply(NDVI_T.cur);
+      if(NDVI_T.pendingPlay){NDVI_T.pendingPlay=false;ndviPlayToggle();}
+    }
   }).catch(function(){});
 }
 function ndviApply(year){
   NDVI_T.cur=year;
+  var mn=NDVI_T.min!=null?NDVI_T.min:0.2, mx=NDVI_T.max!=null?NDVI_T.max:0.65;
   var mean=0,n=0;
   for(var i=0;i<pillars.length;i++){
     var p=pillars[i],st=p.userData&&p.userData.st;if(!st)continue;
@@ -3167,6 +3183,12 @@ function ndviApply(year){
     if(v==null)continue;
     mean+=v;n++;
     if(p.material)p.material.color.setHex(ndviColor(v));
+    /* 光柱高度随 NDVI 伸缩（低矮→高耸），年份变化一眼可见 */
+    var t=(v-mn)/((mx-mn)||1);
+    var f=0.55+1.05*t;                 /* 0.55 ~ 1.60 */
+    var ground=(p.position.y-(p.userData.rel||0));
+    p.scale.y=f;
+    p.position.y=ground+(p.userData.rel||0)*f;
   }
   if(n)mean/=n;
   var m=$('ndviMean');if(m)m.textContent=n?mean.toFixed(3):'--';
@@ -3178,6 +3200,10 @@ function ndviReset(){
     var p=pillars[i],st=p.userData&&p.userData.st;if(!st)continue;
     var c=parseInt((window.riskColOf?window.riskColOf(st[6]):(st[6]==="高风险"?'#ff5a5a':(st[6]==="中风险"?'#ffb03a':'#4ade80'))).slice(1),16);
     if(p.material)p.material.color.setHex(c);
+    /* 恢复光柱原始高度 */
+    p.scale.y=1;
+    var ground=(p.position.y-(p.userData.rel||0));
+    p.position.y=ground+(p.userData.rel||0);
   }
   var m=$('ndviMean');if(m)m.textContent='--';
 }
