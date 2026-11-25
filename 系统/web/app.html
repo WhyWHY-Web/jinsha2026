@@ -1198,6 +1198,13 @@ body.coll-r #restoreR{display:inline-flex}
           background:rgba(9,20,27,.97);border:1px solid rgba(53,224,184,.3);border-radius:9px;z-index:80"></div>
       </div>
 
+      <!-- 实景模式提示（点击返回全域） -->
+      <div id="detBadge" style="display:none;position:absolute;left:50%;top:52px;transform:translateX(-50%);z-index:25;
+        pointer-events:auto;background:rgba(9,22,29,.92);border:1px solid rgba(255,180,90,.5);border-radius:15px;
+        padding:5px 14px;font-size:11px;color:#ffd28a;cursor:pointer;white-space:nowrap">
+        🏞 实景模式 · <b id="detBadgeName">—</b> · <span style="color:#7fe3cd">点击返回全域</span>
+      </div>
+
       <div class="hud" id="hudCam">
         <div>方位角 <b id="cvHeading">000°</b> ｜ 俯仰 <b id="cvPitch">00°</b></div>
         <div>视高 <b id="cvAlt">--</b> ｜ 比例尺 <b id="cvScale">1 : --</b></div>
@@ -3656,11 +3663,13 @@ function animate(){
   var _rf=clamp((camCtl.r-34)/60,0,1);
   _rf=Math.max(_rf,0.35);
   if(riverU)riverU.uOn.value=(G.layers.water&&_rf>0.02)?1:0;
-  if(tribGroup)tribGroup.visible=!!G.layers.trib&&_rf>0.02;
-  if(riverNetGroup)riverNetGroup.visible=!!G.layers.water&&_rf>0.01;
-  if(mainLineGroup)mainLineGroup.visible=!!G.layers.trib&&_rf>0.01;
-  if(waterMesh)waterMesh.visible=!!G.layers.water&&_rf>0.01;
-  if(waterU)waterU.uOn.value=(G.layers.water&&_rf>0.01)?1:0;
+  if(tribGroup)tribGroup.visible=!!G.layers.trib&&_rf>0.02&&!DET.cur;
+  /* 实景模式（30m 局部块）下主地形被隐藏，全域河网/主流水线/水面必须一起隐藏，
+     否则会看到"河在全景范围漂浮、脱离地形"的穿模——之前每帧只看 layers.water 漏判了 DET.cur */
+  if(riverNetGroup)riverNetGroup.visible=!!G.layers.water&&_rf>0.01&&!DET.cur;
+  if(mainLineGroup)mainLineGroup.visible=!!G.layers.trib&&_rf>0.01&&!DET.cur;
+  if(waterMesh)waterMesh.visible=!!G.layers.water&&_rf>0.01&&!DET.cur;
+  if(waterU)waterU.uOn.value=(G.layers.water&&_rf>0.01&&!DET.cur)?1:0;
   /* 地台是"看模型"的舞台道具：视距拉到 300 单位以内就逐步淡出。
      否则贴近边界时，一堵十几公里厚的岩壁会占满屏幕，变成一块纯黑的墙。 */
   if(slabMesh&&!DET.cur){
@@ -3763,7 +3772,9 @@ function animate(){
     if(b){
       var ref=600, lo=0.002;
       var k=clamp(d3/ref,lo,2.6);
-      sp2.scale.set(b[0]*G.labelScale*k,b[1]*G.labelScale*k,1);
+      /* 实景模式相机贴近 30m 局部块，标签按全域比例会显得巨大，单独缩小 */
+      var detK=DET.cur?0.22:1;
+      sp2.scale.set(b[0]*G.labelScale*k*detK,b[1]*G.labelScale*k*detK,1);
     }
     /* 实景模式下只保留相机附近的站名，避免满屏标签 */
     if(DET.cur){
@@ -5123,6 +5134,9 @@ $('simCancel')&&($('simCancel').onclick=function(){
   toast('已取消当前模拟任务','warn','✕');
 });
 
+/* 实景模式提示条：点击返回全域 */
+$('detBadge')&&($('detBadge').onclick=function(){ detExit(); });
+
 /* ---------- 14. 渲染控制台（设置） ---------- */
 function buildSettings(){
   var B=$('setBody');
@@ -5682,6 +5696,7 @@ function detExit(){
   if(DET.hidden){DET.hidden.forEach(function(o){o.visible=true;});DET.hidden=null;}
   if(typeof terrainMesh!=='undefined'&&terrainMesh)terrainMesh.visible=true;
   DET.cur=null;
+  var _db=$('detBadge');if(_db)_db.style.display='none';
   if(typeof PATCH!=='undefined')PATCH.key='';
   try{ buildRiver(); }catch(e){}
   if(typeof stationGroup!=='undefined'&&stationGroup){
@@ -5795,6 +5810,7 @@ function detShow(name,mesh,meta){
     });
   }
   DET.cur=name;
+  var _db=$('detBadge');if(_db){_db.style.display='block';var _dn=$('detBadgeName');if(_dn)_dn.textContent=name;}
   var b=$('scDetail');if(b)b.textContent='↩ 退出实景';
   if(!DET.lights){                             // Lambert 需要光源，只加一次
     /* 按金沙江纬度（约 27°N）秋季正午的真实太阳高度角布光：

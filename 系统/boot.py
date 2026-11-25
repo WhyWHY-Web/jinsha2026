@@ -29,10 +29,16 @@ def _base_dir():
 
 
 def _resolve_data_dir(base):
-    """优先找外部 data 目录；找不到返回 None（交给 server 用默认值）。"""
+    """找 data 目录（优先级）：
+    1) JINSHA_DATA 环境变量（开发覆盖）
+    2) exe 同目录 data/（用户本机有外置数据时用最新的，便于迭代）
+    3) exe 内置 _MEIPASS/data（单文件分发到别人电脑时用这里）
+    """
+    meipass = getattr(sys, '_MEIPASS', None)
     cands = [
         os.environ.get('JINSHA_DATA'),
         os.path.join(base, 'data'),
+        os.path.join(meipass, 'data') if meipass else None,
         os.path.join(base, '系统', 'data'),
         os.path.join(base, '..', 'data'),
     ]

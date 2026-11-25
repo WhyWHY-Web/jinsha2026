@@ -40,6 +40,9 @@ npm-debug.log*
 # ---------- 构建产物 / 打包 ----------
 系统/dist/
 系统/tools/bin/
+系统/_dist/
+系统/_dist_data/
+系统/_pybuild/
 dist/
 build/
 *.exe
