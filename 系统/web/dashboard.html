@@ -7,241 +7,349 @@
 <style>
   :root{
     --bg:#0f1419; --card:#161b22; --card2:#1c2230; --border:#2b3442;
-    --text:#c9d1d9; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149;
+    --text:#c9d1d9; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85149; --cyan:#3fb5a5;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding:20px}
-  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-  header h1{font-size:20px;font-weight:600}
-  header .sub{color:var(--muted);font-size:13px}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding:18px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .topbar .tt h1{font-size:20px;font-weight:600}
+  .topbar .tt .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .topbar .actions{display:flex;gap:8px;align-items:center}
+  .btn{cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text);
+       padding:7px 14px;border-radius:8px;font-size:13px;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn.primary:hover{filter:brightness(1.1)}
+  /* KPI 卡 */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .kpi .t{font-size:12px;color:var(--muted)}
+  .kpi .v{font-size:22px;font-weight:700;margin:4px 0 2px}
+  .kpi .s{font-size:11px;color:var(--muted)}
+  .kpi.up .v{color:var(--red)} .kpi.down .v{color:var(--green)} .kpi.info .v{color:var(--accent)}
+  /* 筛选栏 */
+  .filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--card);
+           border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+  .filters .lab{font-size:12px;color:var(--muted);white-space:nowrap}
+  .filters .range-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:220px}
+  .filters input[type=range]{flex:1;accent-color:var(--accent)}
+  .filters .yr-val{font-size:12px;color:var(--accent);min-width:44px;text-align:center;font-weight:600}
+  .filters select{background:var(--card2);color:var(--text);border:1px solid var(--border);
+                  border-radius:8px;padding:6px 10px;font-size:12px;max-width:180px}
+  .filters .chipset{display:flex;flex-wrap:wrap;gap:6px}
+  .filters .chip{cursor:pointer;font-size:11px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);color:var(--muted)}
+  .filters .chip.on{background:rgba(88,166,255,.15);border-color:var(--accent);color:var(--accent)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-  .card h2{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;display:flex;justify-content:space-between}
+  .card h2{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
   .card .note{font-size:12px;color:var(--muted);font-weight:normal}
   .chart{width:100%;height:300px}
   .empty{color:var(--muted);font-size:13px;padding:40px 0;text-align:center}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  /* 详情弹层 */
+  #detail{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50}
+  #detail.show{display:flex;align-items:center;justify-content:center}
+  #detail .box{background:var(--card);border:1px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:82vh;overflow:auto;padding:18px}
+  #detail .dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  #detail .dh b{font-size:15px;color:var(--accent)}
+  #detail .close{cursor:pointer;font-size:18px;color:var(--muted)}
+  #detail .close:hover{color:#fff}
+  #dbody{font-size:13px;line-height:1.8}
+  #dbody table{width:100%;border-collapse:collapse;margin-top:6px}
+  #dbody th,#dbody td{border:1px solid var(--border);padding:6px 8px;text-align:right;font-size:12px}
+  #dbody th{background:var(--card2);color:var(--muted);text-align:center}
+  #dbody td:first-child,#dbody th:first-child{text-align:left}
 </style>
 </head>
 <body>
-<header>
-  <h1>金沙江流域生态环境 · 数据看板</h1>
-  <span class="sub">数据源：GEE（Landsat/MCD12Q1/VIIRS/GHS-POP/WorldPop）· 本地 JSON</span>
-</header>
+<div class="topbar">
+  <div class="tt">
+    <h1>金沙江流域生态环境 · 数据看板</h1>
+    <div class="sub">数据源：GEE（Landsat/MCD12Q1/VIIRS/GHS-POP/WorldPop）+ NASA POWER + GloFAS · 本地 JSON · 实时联动</div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btnReset" title="重置筛选">↺ 重置</button>
+    <button class="btn primary" id="btnBack" title="返回三维数字孪生主界面">🌐 返回三维主界面</button>
+  </div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="filters">
+  <span class="lab">年份范围</span>
+  <div class="range-wrap">
+    <span class="yr-val" id="yrMinL">1990</span>
+    <input type="range" id="yrMin" min="1990" max="2025" step="1">
+    <input type="range" id="yrMax" min="1990" max="2025" step="1">
+    <span class="yr-val" id="yrMaxL">2025</span>
+  </div>
+  <span class="lab">站点</span>
+  <div class="chipset" id="stChips"></div>
+</div>
+
 <div class="grid">
-  <div class="card"><h2>RSEI 生态质量时序 <span class="note">1990–2025 每 5 年</span></h2><div id="rsei" class="chart"></div></div>
+  <div class="card"><h2>RSEI 生态质量时序 <span class="note">点击查看逐年分量</span></h2><div id="rsei" class="chart"></div></div>
   <div class="card"><h2>土地利用结构 <span class="note">逐年占比 %（MCD12Q1）</span></h2><div id="lulc" class="chart"></div></div>
   <div class="card"><h2>夜间灯光强度 <span class="note">年均 nW/cm²/sr</span></h2><div id="nightlight" class="chart"></div></div>
   <div class="card"><h2>流域总人口 <span class="note">GHS-POP / WorldPop</span></h2><div id="population" class="chart"></div></div>
   <div class="card" style="grid-column:1/-1"><h2>空间自相关 Moran's I <span class="note">Queen 邻接 · HH/LL 聚集单元数</span></h2><div id="moran" class="chart"></div></div>
   <div class="card"><h2>流域气候年值趋势 <span class="note">1990–2025 · NASA POWER MERRA-2</span></h2><div id="climate" class="chart"></div></div>
   <div class="card"><h2>气候趋势 Sen 斜率 <span class="note">流域面平均 · Mann-Kendall</span></h2><div id="climateTrend" class="chart"></div></div>
-  <div class="card"><h2>水文径流年值 <span class="note">GloFAS 模型 · 各站年均</span></h2><div id="hydro" class="chart"></div></div>
-  <div class="card"><h2>生态服务综合指数 <span class="note">20 站 · 综合等级</span></h2><div id="ecoServices" class="chart"></div></div>
+  <div class="card"><h2>水文径流年值 <span class="note">GloFAS 模型 · 各站年均 · 点击站点看月值</span></h2><div id="hydro" class="chart"></div></div>
+  <div class="card"><h2>生态服务综合指数 <span class="note">20 站 · 综合等级 · 点击站点看 8 维明细</span></h2><div id="ecoServices" class="chart"></div></div>
   <div class="card"><h2>站点气候分区 <span class="note">年均温 × 年降水 · 干湿类型</span></h2><div id="stationClimate" class="chart"></div></div>
 </div>
+
+<div id="detail"><div class="box"><div class="dh"><b id="dTitle">详情</b><span class="close" id="dClose">✕</span></div><div id="dbody"></div></div></div>
+
 <script src="/echarts.min.js"></script>
 <script>
 const AXIS = {axisLine:{lineStyle:{color:'#30363d'}},axisLabel:{color:'#8b949e'},splitLine:{lineStyle:{color:'#21262d'}}};
 const LEGEND = {textStyle:{color:'#c9d1d9'},top:0};
-function base(dom){
-  if(!window.echarts){ dom.innerHTML='<div class="empty">ECharts 未加载</div>'; return null; }
-  return echarts.init(dom, null, {renderer:'canvas'});
-}
+const COLORS=['#f85149','#58a6ff','#3fb950','#f0c541','#d2a8ff','#ff7b72','#3fb5a5','#ffa657'];
+
+/* 全局状态：年份范围 + 选中站点 */
+const S={yrMin:1990,yrMax:2025,st:new Set()};
+const CACHE={};
+const charts={};
+
+function base(dom){ if(!window.echarts){ dom.innerHTML='<div class="empty">ECharts 未加载</div>'; return null; } return echarts.init(dom,null,{renderer:'canvas'}); }
+function empty(dom,msg){ dom.innerHTML='<div class="empty">'+(msg||'暂无数据')+'</div>'; }
+function yr(d){ return d.filter(x=>+x.year>=S.yrMin && +x.year<=S.yrMax); }
+function yrOf(x){ return +x.year; }
 async function fetchJSON(name){
-  try{ const r = await fetch('/api/data/'+name); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  if(CACHE[name]) return CACHE[name];
+  try{ const r=await fetch('/api/data/'+name); if(!r.ok) throw new Error(r.status); const j=await r.json(); CACHE[name]=j; return j; }
   catch(e){ return []; }
 }
-function empty(dom,msg){ dom.innerHTML='<div class="empty">'+(msg||'暂无数据')+'</div>'; }
+async function fetchApi(path){
+  try{ const r=await fetch(path); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  catch(e){ return null; }
+}
+function stFilter(d){ return S.st.size? d.filter(x=>S.st.has(x.station||x['名称'])) : d; }
 
-// 1) RSEI 时序
-(async()=>{
-  const dom=document.getElementById('rsei'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('rsei');
-  if(!d.length){ empty(dom); return; }
+/* ---------- KPI 汇总卡 ---------- */
+async function renderKpis(){
+  const box=document.getElementById('kpis');
+  const [rsei, clim, hydro, eco, pop] = await Promise.all([fetchJSON('rsei'),fetchJSON('climate_trend'),fetchJSON('hydro_monthly'),fetchJSON('eco_services'),fetchJSON('population')]);
+  const r=sorted(rsei); const last=r[r.length-1]||{};
+  const rFirst=r[0]||{};
+  const rseiDelta=(last.rsei_mean!=null&&rFirst.rsei_mean!=null)?(last.rsei_mean-rFirst.rsei_mean):null;
+  const tc=(clim||[]).find(x=>x.metric==='temp_c'&&x.station==='流域面平均');
+  const hyd=await fetchApi('/api/trend/hydro') || {items:[]};
+  const sigDown=(hyd.items||[]).filter(x=>(x.trend||'').includes('下降')).length;
+  const ecoArr=(eco||[]); const aCnt=ecoArr.filter(x=>x['综合等级']==='A').length;
+  const kpis=[
+    {t:'RSEI 2025 均值',v:(last.rsei_mean!=null?last.rsei_mean.toFixed(3):'--'),s:'1990→2025 '+(rseiDelta!=null?(rseiDelta>=0?'+':'')+rseiDelta.toFixed(3):'--'),cls:rseiDelta>=0?'up':'down'},
+    {t:'年均温趋势',v:tc?(+tc.slope).toFixed(3)+' ℃/a':'--',s:tc?(tc.trend||''):'',cls:tc&&+tc.slope>0?'up':'down'},
+    {t:'水文显著下降站',v:sigDown,s:hyd.method?hyd.method.split('（')[0]:'',cls:'info'},
+    {t:'生态等级 A 站',v:aCnt,s:'共 '+ecoArr.length+' 站',cls:'info'},
+    {t:'数据期数',v:(r.length||'--'),s:'RSEI 1990–2025 每5年',cls:'info'},
+    {t:'站点总数',v:20,s:'GEE 8 指标 · 20 站',cls:'info'}
+  ];
+  box.innerHTML=kpis.map(k=>'<div class="kpi '+(k.cls||'')+'"><div class="t">'+k.t+'</div><div class="v">'+k.v+'</div><div class="s">'+k.s+'</div></div>').join('');
+}
+function sorted(a){ return a.slice().sort((x,y)=>yrOf(x)-yrOf(y)); }
+
+/* ---------- 1) RSEI ---------- */
+async function renderRsei(){
+  const dom=document.getElementById('rsei'), c=charts.rsei||(charts.rsei=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('rsei')); if(!d.length){ empty(dom); return; }
   d.sort((a,b)=>a.year-b.year);
-  const years=d.map(x=>x.year);
-  const rsei=d.map(x=>x.rsei_mean);
-  const good=d.map(x=>+((x.class_3_pct||0)+(x.class_4_pct||0)).toFixed(1));
   c.setOption({
     tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:44,top:32,bottom:26},
-    xAxis:{type:'category',data:years,...AXIS},
+    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
     yAxis:[{type:'value',name:'RSEI',min:0,max:1,...AXIS},{type:'value',name:'良+优%',min:0,...AXIS}],
     series:[
-      {name:'RSEI均值',type:'line',data:rsei,smooth:true,lineStyle:{width:3,color:'#3fb950'},itemStyle:{color:'#3fb950'}},
-      {name:'良+优占比%',type:'line',yAxisIndex:1,data:good,smooth:true,lineStyle:{width:2,color:'#58a6ff'},itemStyle:{color:'#58a6ff'}}
+      {name:'RSEI均值',type:'line',data:d.map(x=>x.rsei_mean),smooth:true,lineStyle:{width:3,color:'#3fb950'},itemStyle:{color:'#3fb950'}},
+      {name:'良+优占比%',type:'line',yAxisIndex:1,data:d.map(x=>+((x.class_3_pct||0)+(x.class_4_pct||0)).toFixed(1)),smooth:true,lineStyle:{width:2,color:'#58a6ff'},itemStyle:{color:'#58a6ff'}}
     ]
   });
-})();
+  c.off('click'); c.on('click',p=>{ if(p.dataIndex==null)return; const r=d[p.dataIndex]; showDetail('RSEI '+r.year+' 期', rseiTable(r)); });
+}
+function rseiTable(r){
+  const pc=r.pc1_loadings||{};
+  return '<table><tr><th>分量</th><th>PC1 载荷</th></tr>'+
+    [['NDVI',pc.ndvi],['湿度 WET',pc.wet],['干度 NDSI',pc.ndsi],['热度 LST',pc.lst]]
+    .map(k=>'<tr><td>'+k[0]+'</td><td>'+(k[1]!=null?(+k[1]).toFixed(3):'--')+'</td></tr>').join('')+
+    '</table><p style="color:#8b949e;font-size:11px">传感器 '+r.sensor+' · 景数 '+(r.n_scenes||'--')+'</p>';
+}
 
-// 2) 土地利用堆叠柱
-(async()=>{
-  const dom=document.getElementById('lulc'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('lulc');
-  if(!d.length){ empty(dom); return; }
+/* ---------- 2) 土地利用 ---------- */
+async function renderLulc(){
+  const dom=document.getElementById('lulc'), c=charts.lulc||(charts.lulc=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('lulc')); if(!d.length){ empty(dom); return; }
   const years=[...new Set(d.map(x=>x.year))].sort();
   const classes=[...new Set(d.map(x=>x.class))];
   const colors=['#d4a24e','#2f8f46','#6aa84f','#a8c686','#3b82c4','#9ec8e0','#b5a48a','#d54a7a','#3ba8a0'];
   const idx={}; classes.forEach((k,i)=>idx[k]=i);
-  const series=classes.map((k,i)=>({
-    name:k,type:'bar',stack:'total',barMaxWidth:36,itemStyle:{color:colors[i%colors.length]},
-    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.class===k); return r?+r.pct:0; })
-  }));
   c.setOption({
     tooltip:{trigger:'axis',axisPointer:{type:'shadow'}}, legend:LEGEND, grid:{left:40,right:20,top:40,bottom:26},
-    xAxis:{type:'category',data:years,...AXIS},
-    yAxis:{type:'value',name:'占比 %',...AXIS},
-    series
+    xAxis:{type:'category',data:years,...AXIS}, yAxis:{type:'value',name:'占比 %',...AXIS},
+    series:classes.map((k,i)=>({name:k,type:'bar',stack:'total',barMaxWidth:36,itemStyle:{color:colors[i%colors.length]},data:years.map(y=>{const r=d.find(x=>x.year===y&&x.class===k);return r?+r.pct:0;})}))
   });
-})();
+}
 
-// 3) 夜间灯光
-(async()=>{
-  const dom=document.getElementById('nightlight'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('nightlight');
-  if(!d.length){ empty(dom); return; }
+/* ---------- 3) 夜间灯光 ---------- */
+async function renderNightlight(){
+  const dom=document.getElementById('nightlight'), c=charts.nightlight||(charts.nightlight=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('nightlight')); if(!d.length){ empty(dom); return; }
   d.sort((a,b)=>a.year-b.year);
-  c.setOption({
-    tooltip:{trigger:'axis'}, grid:{left:44,right:24,top:24,bottom:26},
-    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
-    yAxis:{type:'value',name:'nW/cm²/sr',...AXIS},
-    series:[{name:'年均灯光',type:'line',data:d.map(x=>x.mean_radiance),smooth:true,areaStyle:{opacity:0.15},lineStyle:{color:'#f0c541'},itemStyle:{color:'#f0c541'}}]
-  });
-})();
+  c.setOption({ tooltip:{trigger:'axis'}, grid:{left:44,right:24,top:24,bottom:26},
+    xAxis:{type:'category',data:d.map(x=>x.year),...AXIS}, yAxis:{type:'value',name:'nW/cm²/sr',...AXIS},
+    series:[{name:'年均灯光',type:'line',data:d.map(x=>x.mean_radiance),smooth:true,areaStyle:{opacity:0.15},lineStyle:{color:'#f0c541'},itemStyle:{color:'#f0c541'}}] });
+}
 
-// 4) 人口（按来源分系列）
-(async()=>{
-  const dom=document.getElementById('population'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('population');
-  if(!d.length){ empty(dom); return; }
-  const years=[...new Set(d.map(x=>x.year))].sort();
-  const srcs=[...new Set(d.map(x=>x.source))];
-  const series=srcs.map((s,i)=>({
-    name:s.includes('GHS')?'GHS-POP':'WorldPop',type:'line',smooth:true,
-    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.source===s); return r?+r.total_pop:null; }),
-    lineStyle:{width:3,color:i===0?'#58a6ff':'#3fb950'},itemStyle:{color:i===0?'#58a6ff':'#3fb950'}
-  }));
-  c.setOption({
-    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:56,right:24,top:32,bottom:26},
+/* ---------- 4) 人口 ---------- */
+async function renderPopulation(){
+  const dom=document.getElementById('population'), c=charts.population||(charts.population=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('population')); if(!d.length){ empty(dom); return; }
+  const years=[...new Set(d.map(x=>x.year))].sort(), srcs=[...new Set(d.map(x=>x.source))];
+  c.setOption({ tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:56,right:24,top:32,bottom:26},
     xAxis:{type:'category',data:years,...AXIS},
     yAxis:{type:'value',name:'人口',axisLabel:{color:'#8b949e',formatter:v=>v>=1e4?(v/1e4)+'万':v},splitLine:{lineStyle:{color:'#21262d'}}},
-    series
-  });
-})();
+    series:srcs.map((s,i)=>({name:s.includes('GHS')?'GHS-POP':'WorldPop',type:'line',smooth:true,
+      data:years.map(y=>{const r=d.find(x=>x.year===y&&x.source===s);return r?+r.total_pop:null;}),
+      lineStyle:{width:3,color:i===0?'#58a6ff':'#3fb950'},itemStyle:{color:i===0?'#58a6ff':'#3fb950'}})) });
+}
 
-// 5) Moran's I
-(async()=>{
-  const dom=document.getElementById('moran'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('moran');
-  if(!d.length){ empty(dom,'空间自相关数据尚未计算（运行 tools/moran_lisa.py 后生成）'); return; }
+/* ---------- 5) Moran ---------- */
+async function renderMoran(){
+  const dom=document.getElementById('moran'), c=charts.moran||(charts.moran=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('moran')); if(!d.length){ empty(dom,'空间自相关数据尚未计算'); return; }
   d.sort((a,b)=>a.year-b.year);
-  c.setOption({
-    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:44,top:32,bottom:26},
+  c.setOption({ tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:44,top:32,bottom:26},
     xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
     yAxis:[{type:'value',name:'Moran I',...AXIS},{type:'value',name:'单元数',...AXIS}],
     series:[
       {name:"Moran's I",type:'line',data:d.map(x=>x.global_moran),smooth:true,lineStyle:{width:3,color:'#f85149'},itemStyle:{color:'#f85149'}},
       {name:'HH 高-高',type:'bar',yAxisIndex:1,data:d.map(x=>x.hh),itemStyle:{color:'#f85149'}},
-      {name:'LL 低-低',type:'bar',yAxisIndex:1,data:d.map(x=>x.ll),itemStyle:{color:'#58a6ff'}}
-    ]
-  });
-})();
+      {name:'LL 低-低',type:'bar',yAxisIndex:1,data:d.map(x=>x.ll),itemStyle:{color:'#58a6ff'}}] });
+}
 
-// 6) 流域气候年值趋势
-(async()=>{
-  const dom=document.getElementById('climate'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('basin_annual');
-  if(!d.length){ empty(dom); return; }
+/* ---------- 6) 气候年值 ---------- */
+async function renderClimate(){
+  const dom=document.getElementById('climate'), c=charts.climate||(charts.climate=base(dom)); if(!c) return;
+  const d=yr(await fetchJSON('basin_annual')); if(!d.length){ empty(dom); return; }
   d.sort((a,b)=>a.year-b.year);
-  c.setOption({
-    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:48,top:32,bottom:26},
+  c.setOption({ tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:44,right:48,top:32,bottom:26},
     xAxis:{type:'category',data:d.map(x=>x.year),...AXIS},
     yAxis:[{type:'value',name:'气温 ℃',...AXIS},{type:'value',name:'降水/蒸散 mm',...AXIS}],
     series:[
       {name:'年均温 ℃',type:'line',data:d.map(x=>x['年均温_℃']),smooth:true,lineStyle:{width:3,color:'#f85149'},itemStyle:{color:'#f85149'}},
       {name:'年降水 mm',type:'line',yAxisIndex:1,data:d.map(x=>x['年降水_mm']),smooth:true,lineStyle:{width:2,color:'#58a6ff'},itemStyle:{color:'#58a6ff'}},
-      {name:'年蒸散 mm',type:'line',yAxisIndex:1,data:d.map(x=>x['年蒸散_mm']),smooth:true,lineStyle:{width:2,color:'#3fb950'},itemStyle:{color:'#3fb950'}}
-    ]
-  });
-})();
+      {name:'年蒸散 mm',type:'line',yAxisIndex:1,data:d.map(x=>x['年蒸散_mm']),smooth:true,lineStyle:{width:2,color:'#3fb950'},itemStyle:{color:'#3fb950'}}] });
+}
 
-// 7) 气候趋势 Sen 斜率（流域面平均 3 指标）
-(async()=>{
-  const dom=document.getElementById('climateTrend'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('climate_trend');
-  if(!d.length){ empty(dom); return; }
-  const basin=d.filter(x=>x.station==='流域面平均');
-  if(!basin.length){ empty(dom); return; }
+/* ---------- 7) 气候趋势 ---------- */
+async function renderClimateTrend(){
+  const dom=document.getElementById('climateTrend'), c=charts.climateTrend||(charts.climateTrend=base(dom)); if(!c) return;
+  const d=await fetchJSON('climate_trend'); if(!d.length){ empty(dom); return; }
+  const basin=d.filter(x=>x.station==='流域面平均'); if(!basin.length){ empty(dom); return; }
   const names={temp_c:'年均温',precip_mm:'年降水',et_mm:'年蒸散'};
-  const labels=basin.map(x=>names[x.metric]||x.metric);
-  const slopes=basin.map(x=>+x.slope);
-  const sigs=basin.map(x=>(x.trend||'').includes('显著')?'显著':'不显著');
-  c.setOption({
-    tooltip:{trigger:'axis',formatter:ps=>{ const i=ps[0].dataIndex; return labels[i]+'<br/>Sen 斜率 '+slopes[i]+'<br/>MK '+sigs[i]+'（p='+(basin[i].p_value)+'）'; }},
-    grid:{left:60,right:20,top:24,bottom:30},
-    xAxis:{type:'category',data:labels,...AXIS},
+  c.setOption({ tooltip:{trigger:'axis',formatter:ps=>{const i=ps[0].dataIndex;const b=basin[i];return names[b.metric]+'<br/>Sen 斜率 '+b.slope+'<br/>MK '+(b.trend||'')+'（p='+(b.p_value)+'）';}},
+    grid:{left:60,right:20,top:24,bottom:30}, xAxis:{type:'category',data:basin.map(x=>names[x.metric]||x.metric),...AXIS},
     yAxis:{type:'value',name:'Sen 斜率',...AXIS},
-    series:[{name:'Sen 斜率',type:'bar',barMaxWidth:60,data:slopes.map(v=>({value:v,itemStyle:{color:v>=0?'#f85149':'#3fb950'}}))}]
-  });
-})();
+    series:[{name:'Sen 斜率',type:'bar',barMaxWidth:60,data:basin.map(x=>({value:+x.slope,itemStyle:{color:+x.slope>=0?'#f85149':'#3fb950'}}))}] });
+}
 
-// 8) 水文径流年值（各站）
-(async()=>{
-  const dom=document.getElementById('hydro'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('hydro_annual');
-  if(!d.length){ empty(dom); return; }
-  const sts=[...new Set(d.map(x=>x.station))];
-  const years=[...new Set(d.map(x=>x.year))].sort();
-  const colors=['#f85149','#58a6ff','#3fb950','#f0c541','#d2a8ff','#ff7b72'];
-  const series=sts.map((s,i)=>({
-    name:s,type:'line',smooth:true,
-    data:years.map(y=>{ const r=d.find(x=>x.year===y&&x.station===s); return r?+r.discharge_mean:null; }),
-    lineStyle:{width:2,color:colors[i%colors.length]},itemStyle:{color:colors[i%colors.length]}
-  }));
-  c.setOption({
-    tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:52,right:20,top:32,bottom:26},
-    xAxis:{type:'category',data:years,...AXIS},
-    yAxis:{type:'value',name:'m³/s',...AXIS},
-    series
+/* ---------- 8) 水文年值 ---------- */
+async function renderHydro(){
+  const dom=document.getElementById('hydro'), c=charts.hydro||(charts.hydro=base(dom)); if(!c) return;
+  let d=yr(await fetchJSON('hydro_annual')); d=stFilter(d); if(!d.length){ empty(dom); return; }
+  const sts=[...new Set(d.map(x=>x.station))], years=[...new Set(d.map(x=>x.year))].sort();
+  c.setOption({ tooltip:{trigger:'axis'}, legend:LEGEND, grid:{left:52,right:20,top:32,bottom:26},
+    xAxis:{type:'category',data:years,...AXIS}, yAxis:{type:'value',name:'m³/s',...AXIS},
+    series:sts.map((s,i)=>({name:s,type:'line',smooth:true,
+      data:years.map(y=>{const r=d.find(x=>x.year===y&&x.station===s);return r?+r.discharge_mean:null;}),
+      lineStyle:{width:2,color:COLORS[i%COLORS.length]},itemStyle:{color:COLORS[i%COLORS.length]}})) });
+  c.off('click'); c.on('click',async p=>{
+    if(!p.seriesName)return; const st=p.seriesName;
+    const hm=await fetchJSON('hydro_monthly');
+    const rows=hm.filter(x=>x.station===st);
+    const byMonth={};
+    rows.forEach(x=>{ byMonth[x.month]=(byMonth[x.month]||[]).concat(+x.discharge_m3s); });
+    const mArr=Object.keys(byMonth).map(m=>({m:+m,v:(byMonth[m].reduce((a,b)=>a+b,0)/byMonth[m].length)}));
+    mArr.sort((a,b)=>a.m-b.m);
+    const mk=await fetchApi('/api/trend/hydro'); const t=(mk&&mk.items||[]).find(x=>x.station===st);
+    let html='<p>站：<b>'+st+'</b> · 多年月均径流（GloFAS 模型）'+(t?'<br/>季节化 MK：τ='+t.tau+' · p='+t.p+' · '+(t.trend||''):'')+'</p>';
+    if(mArr.length){ html+='<table><tr><th>月</th><th>月均径流 m³/s</th></tr>'+mArr.map(r=>'<tr><td>'+r.m+'月</td><td>'+(r.v).toFixed(1)+'</td></tr>').join('')+'</table>'; }
+    showDetail('水文 '+st, html);
   });
-})();
+}
 
-// 9) 生态服务综合指数（20 站）
-(async()=>{
-  const dom=document.getElementById('ecoServices'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('eco_services');
-  if(!d.length){ empty(dom); return; }
+/* ---------- 9) 生态服务 ---------- */
+async function renderEcoServices(){
+  const dom=document.getElementById('ecoServices'), c=charts.ecoServices||(charts.ecoServices=base(dom)); if(!c) return;
+  let d=await fetchJSON('eco_services'); d=stFilter(d); if(!d.length){ empty(dom); return; }
   d.sort((a,b)=>(b['生态环境综合指数']||0)-(a['生态环境综合指数']||0));
-  c.setOption({
-    tooltip:{trigger:'axis',formatter:p=>{ const r=d[p[0].dataIndex]; return r['名称']+'<br/>综合指数 '+r['生态环境综合指数']+' · 等级 '+r['综合等级']+'<br/>水源涵养 '+r['水源涵养量']+' · 生境质量 '+r['生境质量']; }},
+  c.setOption({ tooltip:{trigger:'axis',formatter:p=>{const r=d[p[0].dataIndex];return r['名称']+'<br/>综合指数 '+r['生态环境综合指数']+' · 等级 '+r['综合等级']+'<br/>水源涵养 '+r['水源涵养量']+' · 生境质量 '+r['生境质量'];}},
     grid:{left:52,right:20,top:24,bottom:30},
     xAxis:{type:'category',data:d.map(x=>x['名称']),axisLabel:{color:'#8b949e',rotate:45},axisLine:{lineStyle:{color:'#30363d'}}},
     yAxis:{type:'value',name:'综合指数',...AXIS},
-    series:[{name:'生态环境综合指数',type:'bar',barMaxWidth:18,data:d.map(x=>x['生态环境综合指数']),itemStyle:{color:'#58a6ff'}}]
-  });
-})();
+    series:[{name:'生态环境综合指数',type:'bar',barMaxWidth:18,data:d.map(x=>x['生态环境综合指数']),itemStyle:{color:'#58a6ff'}}] });
+  c.off('click'); c.on('click',p=>{ if(p.dataIndex==null)return; const r=d[p.dataIndex]; showDetail('生态服务 · '+r['名称'], ecoTable(r)); });
+}
+function ecoTable(r){
+  const dims=[['水源涵养量','水源涵养'],['土壤保持量','土壤保持'],['生境质量','生境质量'],['生物多样性','生物多样性'],['人类干扰指数','人类干扰'],['生态韧性','生态韧性'],['气候调节能力','气候调节'],['生态服务价值','生态服务价值']];
+  return '<p>综合指数 <b>'+r['生态环境综合指数']+'</b> · 等级 <b>'+r['综合等级']+'</b></p><table><tr><th>维度</th><th>数值</th></tr>'+
+    dims.map(d=>'<tr><td>'+d[1]+'</td><td>'+(r[d[0]]!=null?r[d[0]]:'--')+'</td></tr>').join('')+'</table>';
+}
 
-// 10) 站点气候分区（散点）
-(async()=>{
-  const dom=document.getElementById('stationClimate'), c=base(dom); if(!c) return;
-  const d=await fetchJSON('station_climate');
-  if(!d.length){ empty(dom); return; }
+/* ---------- 10) 站点气候分区 ---------- */
+async function renderStationClimate(){
+  const dom=document.getElementById('stationClimate'), c=charts.stationClimate||(charts.stationClimate=base(dom)); if(!c) return;
+  let d=await fetchJSON('station_climate'); d=stFilter(d); if(!d.length){ empty(dom); return; }
   const zones=[...new Set(d.map(x=>x['干湿类型']))];
   const colors={湿润:'#3fb950',半湿润:'#58a6ff',半干旱:'#f0c541',干旱:'#f85149'};
-  const series=zones.map(z=>({
-    name:z,type:'scatter',symbolSize:11,
-    data:d.filter(x=>x['干湿类型']===z).map(x=>({value:[x['多年年均温'],x['多年年降水']],name:x['名称']})),
-    itemStyle:{color:colors[z]||'#d2a8ff'}
-  }));
-  c.setOption({
-    tooltip:{trigger:'item',formatter:p=>p.name+'<br/>年均温 '+p.value[0]+' ℃ · 年降水 '+p.value[1]+' mm'},
-    legend:LEGEND, grid:{left:52,right:24,top:32,bottom:40},
-    xAxis:{type:'value',name:'年均温 ℃',scale:true,...AXIS},
-    yAxis:{type:'value',name:'年降水 mm',scale:true,...AXIS},
-    series
-  });
-})();
+  c.setOption({ tooltip:{trigger:'item',formatter:p=>p.name+'<br/>年均温 '+p.value[0]+' ℃ · 年降水 '+p.value[1]+' mm'}, legend:LEGEND, grid:{left:52,right:24,top:32,bottom:40},
+    xAxis:{type:'value',name:'年均温 ℃',scale:true,...AXIS}, yAxis:{type:'value',name:'年降水 mm',scale:true,...AXIS},
+    series:zones.map(z=>({name:z,type:'scatter',symbolSize:11,data:d.filter(x=>x['干湿类型']===z).map(x=>({value:[x['多年年均温'],x['多年年降水']],name:x['名称']})),itemStyle:{color:colors[z]||'#d2a8ff'}})) });
+}
 
-window.addEventListener('resize',()=>{ ['rsei','lulc','nightlight','population','moran','climate','climateTrend','hydro','ecoServices','stationClimate'].forEach(id=>{ const c=echarts.getInstanceByDom(document.getElementById(id)); if(c)c.resize(); }); });
+/* ---------- 详情弹层 ---------- */
+function showDetail(title,html){ document.getElementById('dTitle').textContent=title; document.getElementById('dbody').innerHTML=html; document.getElementById('detail').classList.add('show'); }
+function closeDetail(){ document.getElementById('detail').classList.remove('show'); }
+
+/* ---------- 站点筛选 chips ---------- */
+async function buildStationChips(){
+  const eco=await fetchJSON('eco_services');
+  const sts=eco.map(x=>x['名称']).filter(Boolean).sort();
+  const box=document.getElementById('stChips');
+  box.innerHTML=sts.map(s=>'<span class="chip" data-st="'+s+'">'+s+'</span>').join('');
+  box.addEventListener('click',e=>{
+    const el=e.target.closest('.chip'); if(!el)return;
+    const s=el.dataset.st; el.classList.toggle('on');
+    if(el.classList.contains('on'))S.st.add(s); else S.st.delete(s);
+    renderAll();
+  });
+}
+
+function renderAll(){
+  renderKpis();
+  renderRsei(); renderLulc(); renderNightlight(); renderPopulation(); renderMoran();
+  renderClimate(); renderClimateTrend(); renderHydro(); renderEcoServices(); renderStationClimate();
+}
+function onResize(){ Object.values(charts).forEach(c=>{ if(c)c.resize(); }); }
+
+/* 初始化 */
+document.getElementById('btnBack').addEventListener('click',()=>{ location.href='/'; });
+document.getElementById('btnReset').addEventListener('click',()=>{ S.yrMin=1990;S.yrMax=2025;S.st.clear(); syncFilters(); renderAll(); });
+document.getElementById('dClose').addEventListener('click',closeDetail);
+document.getElementById('detail').addEventListener('click',e=>{ if(e.target.id==='detail')closeDetail(); });
+
+const yrMinEl=document.getElementById('yrMin'), yrMaxEl=document.getElementById('yrMax');
+function syncFilters(){
+  yrMinEl.value=S.yrMin; yrMaxEl.value=S.yrMax;
+  document.getElementById('yrMinL').textContent=S.yrMin;
+  document.getElementById('yrMaxL').textContent=S.yrMax;
+}
+yrMinEl.addEventListener('input',e=>{ S.yrMin=Math.min(+e.target.value,S.yrMax); syncFilters(); renderAll(); });
+yrMaxEl.addEventListener('input',e=>{ S.yrMax=Math.max(+e.target.value,S.yrMin); syncFilters(); renderAll(); });
+
+window.addEventListener('resize',onResize);
+syncFilters();
+buildStationChips().then(renderAll);
 </script>
 </body>
 </html>
