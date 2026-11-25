@@ -853,7 +853,7 @@ body.dockhide #demBadge{bottom:14px}
    ========================================================================== */
 #layout{display:grid;grid-template-columns:352px minmax(0,1fr) 300px;
   grid-template-rows:auto minmax(0,1fr);gap:10px;padding:10px;background:var(--bg)}
-#kpiStrip{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+#kpiStrip{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .kpi{background:linear-gradient(175deg,rgba(13,27,36,.96),rgba(8,17,24,.93));
   border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-width:0}
 .kpi .t{font-size:9.5px;color:#7d979b;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -991,6 +991,7 @@ body.dockhide #bottomRow{display:none!important}
     <div class="kpi"><div class="t">高风险站点</div><div class="v" id="ksHigh">--<small>站</small></div><div class="s">风险 ≥ 58</div></div>
     <div class="kpi"><div class="t">NDVI 显著退化</div><div class="v" id="ksDec">--<small>站</small></div><div class="s">Sen+MK，p&lt;0.05</div></div>
     <div class="kpi"><div class="t">监测站 / 遥感指标</div><div class="v">20<small>站</small></div><div class="s">GEE 8 指标 · 3.3 万行</div></div>
+    <div class="kpi"><div class="t">年均温趋势</div><div class="v" id="ksClim">--<small>°C/a</small></div><div class="s" id="ksClimS">Sen+MK 36 年</div></div>
   </div>
 
   <!-- 右上角态势卡：一眼看到流域状况，点击展开总览 -->
@@ -7996,8 +7997,24 @@ if(typeof DH!=='undefined'){DH.enabled=(location.protocol==='http:'||location.pr
       if(sg)sg.textContent='等级 '+k.grade+' · 改善 '+k.improving+' 站';
     }).catch(function(){});
   }
+  function loadClimateKpi(){
+    if(!window.dhFetch)return;
+    window.dhFetch('/api/data/climate_trend',10000).then(function(arr){
+      if(!arr || !arr.length)return;
+      var t=null;
+      for(var i=0;i<arr.length;i++){
+        if(arr[i].station==='流域面平均' && arr[i].metric==='temp_c'){ t=arr[i]; break; }
+      }
+      if(!t)return;
+      var v=q('ksClim'), s=q('ksClimS');
+      if(v){ v.innerHTML=(Number(t.slope)>=0?'+':'')+Number(t.slope).toFixed(3)+'<small>°C/a</small>'; }
+      if(s){ s.textContent=(t.trend||'')+' · p'+(Number(t.p_value)<0.001?'<0.001':'='+Number(t.p_value).toFixed(3)); }
+    }).catch(function(){});
+  }
   setTimeout(loadKpi,900);
   setInterval(loadKpi,60000);
+  setTimeout(loadClimateKpi,1200);
+  setInterval(loadClimateKpi,120000);
 
   /* 桌面默认展开态势总览；窄屏保持收起，把地图让出来 */
   if(window.innerWidth>860){

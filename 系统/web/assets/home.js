@@ -275,6 +275,110 @@
       }).join('') + '</div>';
   }
 
+  /* ---------- 流域多源数据（气候 / 水文 / RSEI / 生态服务） ---------- */
+  function loadNewData() {
+    var box = q('hxNewData');
+    if (!box) return;
+    box.innerHTML = '<div class="sec-lab">流域多源数据 · 气候 / 水文 / 遥感 / 生态服务</div>'
+      + '<div id="hxClim" style="margin-bottom:10px"><span style="font-size:9px;color:#5d7a80">加载中…</span></div>'
+      + '<div id="hxHydro" style="margin-bottom:10px"></div>'
+      + '<div id="hxRsei" style="margin-bottom:10px"></div>'
+      + '<div id="hxEco"></div>';
+
+    /* 气候趋势（Sen + MK，36 年） */
+    window.dhFetch('/api/data/climate_trend', 10000).then(function (arr) {
+      if (!box || !arr || !arr.length) return;
+      var basin = arr.filter(function (x) { return x.station === '流域面平均'; });
+      if (!basin.length) return;
+      var names = { temp_c: '年均温', precip_mm: '年降水', et_mm: '年蒸散' };
+      var units = { temp_c: '°C/a', precip_mm: 'mm/a', et_mm: 'mm/a' };
+      var html = '<div style="font-size:9.5px;line-height:2.1;color:#bcd6d2">'
+        + basin.map(function (x) {
+          var up = Number(x.slope) >= 0;
+          var sig = (x.trend || '').indexOf('显著') >= 0;
+          var col = sig ? (up ? '#ffb03a' : '#7ab8ff') : '#9fb8bb';
+          return '<span style="display:inline-block;margin-right:12px">' + (names[x.metric] || x.metric)
+            + ' <b style="color:' + col + ';font-family:Consolas,monospace">'
+            + (up ? '+' : '') + Number(x.slope).toFixed(x.metric === 'temp_c' ? 3 : 1) + '</b>'
+            + '<span style="color:#7d979b"> ' + (units[x.metric] || '') + '</span>'
+            + ' <span style="font-size:8.5px;color:#6f8f96">' + E(x.trend) + '</span></span>';
+        }).join('') + '</div>'
+        + '<div style="font-size:8.5px;color:#6f8f96;line-height:1.7">'
+        + 'Sen 斜率 + Mann-Kendall，36 年（1990–2025），NASA POWER MERRA-2。</div>';
+      var c = q('hxClim'); if (c) c.innerHTML = html;
+    }).catch(function () { var c = q('hxClim'); if (c) c.textContent = ''; });
+
+    /* 水文径流趋势（季节化 MK） */
+    window.dhFetch('/api/trend/hydro', 10000).then(function (d) {
+      if (!box || !d || !d.items) return;
+      var sig = d.items.filter(function (x) { return (x.trend || '').indexOf('显著') >= 0; });
+      var html = sig.length
+        ? '<div style="display:flex;flex-wrap:wrap;gap:5px">' + sig.map(function (x) {
+            var down = (x.trend || '').indexOf('下降') >= 0;
+            return '<span style="font-size:9px;padding:2px 7px;border-radius:10px;font-family:Consolas,monospace;'
+              + 'color:' + (down ? '#7ab8ff' : '#ff9b9b') + ';background:rgba(122,184,255,.09);'
+              + 'border:1px solid rgba(122,184,255,.26)">'
+              + E(x.station) + ' ' + E(x.trend) + ' τ=' + Number(x.tau).toFixed(2) + '</span>';
+          }).join('') + '</div>'
+        : '<div style="font-size:9px;color:#7d979b">各站月径流无显著趋势。</div>';
+      var h = q('hxHydro');
+      if (h) h.innerHTML = '<div style="font-size:8.5px;color:#7d979b;letter-spacing:.5px;margin-bottom:4px">月径流趋势 · 季节化 MK</div>' + html;
+    }).catch(function () { var h = q('hxHydro'); if (h) h.textContent = ''; });
+
+    /* RSEI 8 期（徐涵秋遥感生态指数） */
+    window.dhFetch('/api/data/rsei', 10000).then(function (arr) {
+      if (!box || !arr || !arr.length) return;
+      var first = arr[0], last = arr[arr.length - 1];
+      var dR = Number(last.rsei_mean) - Number(first.rsei_mean);
+      var col = dR >= 0 ? '#4ade80' : '#ff9b9b';
+      var vals = arr.map(function (x) { return Number(x.rsei_mean); });
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      var bars = arr.map(function (x) {
+        var hh = 4 + 26 * (Number(x.rsei_mean) - lo) / (hi - lo || 1);
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+          + '<div style="width:78%;max-width:16px;height:' + hh.toFixed(1) + 'px;border-radius:2px;'
+          + 'background:linear-gradient(180deg,#43e8c0,#23b795);box-shadow:0 0 6px rgba(53,224,184,.28)"></div>'
+          + '<span style="font-size:7px;color:#6f8f96">' + String(x.year).slice(2) + '</span></div>';
+      }).join('');
+      var html = '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+        + '<span style="font-family:Consolas,monospace;font-size:19px;color:#8df3de">' + Number(last.rsei_mean).toFixed(3) + '</span>'
+        + '<span style="font-size:9px;color:#7d979b">' + last.year + ' 期 RSEI</span>'
+        + '<span style="margin-left:auto;font-family:Consolas,monospace;font-size:10px;color:' + col + '">'
+        + (dR >= 0 ? '+' : '') + dR.toFixed(3) + '</span>'
+        + '<span style="font-size:8.5px;color:#6f8f96">' + first.year + '→' + last.year + '</span></div>'
+        + '<div style="display:flex;align-items:flex-end;gap:3px;height:40px;padding:0 2px">' + bars + '</div>'
+        + '<div style="font-size:8.5px;color:#6f8f96;line-height:1.7;margin-top:4px">'
+        + '徐涵秋 RSEI（NDVI/湿度/干度/地表温度 PCA），8 期。</div>';
+      var r = q('hxRsei');
+      if (r) r.innerHTML = '<div style="font-size:8.5px;color:#7d979b;letter-spacing:.5px;margin-bottom:4px">遥感生态指数 RSEI</div>' + html;
+    }).catch(function () { var r = q('hxRsei'); if (r) r.textContent = ''; });
+
+    /* 生态服务 8 维 */
+    window.dhFetch('/api/data/eco_services', 10000).then(function (arr) {
+      if (!box || !arr || !arr.length) return;
+      var grades = { A: 0, B: 0, C: 0, D: 0 };
+      arr.forEach(function (x) { var g = x['综合等级']; if (grades[g] != null) grades[g]++; });
+      var cols = { A: '#4ade80', B: '#a3e635', C: '#ffd48a', D: '#ff8a8a' };
+      var bar = ['A', 'B', 'C', 'D'].map(function (g) {
+        return '<span style="font-size:9px;color:' + cols[g] + '">' + g + ' ' + grades[g] + ' 站</span>';
+      }).join('<span style="color:#5f8c86;margin:0 5px">·</span>');
+      var dims = [['水源涵养量', 1], ['土壤保持量', 1], ['生境质量', 2], ['生物多样性', 2],
+        ['人类干扰指数', 2], ['生态韧性', 2], ['气候调节能力', 2], ['生态服务价值', 1]];
+      var html = '<div style="font-size:9px;color:#bcd6d2;margin-bottom:5px">20 站综合等级：' + bar + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:5px">'
+        + dims.map(function (dd) {
+          var k = dd[0], n = dd[1], s = 0, c = 0;
+          arr.forEach(function (x) { var v = Number(x[k]); if (isFinite(v)) { s += v; c++; } });
+          var m = c ? (s / c) : 0;
+          return '<span style="font-size:8.5px;padding:2px 7px;border-radius:8px;color:#9fe6d8;'
+            + 'background:rgba(53,224,184,.07);border:1px solid rgba(53,224,184,.18)">'
+            + E(k) + ' ' + Number(m).toFixed(n) + '</span>';
+        }).join('') + '</div>';
+      var e = q('hxEco');
+      if (e) e.innerHTML = '<div style="font-size:8.5px;color:#7d979b;letter-spacing:.5px;margin-bottom:4px">生态服务 · 8 维流域均值</div>' + html;
+    }).catch(function () { var e = q('hxEco'); if (e) e.textContent = ''; });
+  }
+
   /* ---------- 证据详情弹层（用原生 dialog 之外的轻量层，避免与既有 z-index 冲突） ---------- */
   function showEvidence() {
     if (!H.d) return;
@@ -363,12 +467,13 @@
       H.d = d;
       H.token = d.dataToken;
       B.innerHTML = cardHtml(d) + segHtml(d) + trendHtml(d) + priHtml(d)
-        + zoneHtml(d) + '<div id="hxDiag"></div>' + navHtml()
+        + zoneHtml(d) + '<div id="hxNewData"></div>' + '<div id="hxDiag"></div>' + navHtml()
         + '<div style="font-size:8.5px;color:#5d7a80;margin-top:10px;line-height:1.75">'
         + '本页所有数字由 /api/conclusion 一次算出，与生态评估、风险预警、巡检建议同源；'
         + '数据变动后 20 秒内自动重算。</div>';
       bind();
       loadDiag();
+      loadNewData();
       if (location.hash === '#evidence') setTimeout(showEvidence, 260);
     }).catch(function (e) {
       H.busy = false;
