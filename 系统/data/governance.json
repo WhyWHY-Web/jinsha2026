@@ -1,16 +1,22 @@
 {
  "version": 1,
- "seq": 1,
+ "seq": 5,
  "overrides": {
-  "岗拖": {},
-  "巴塘": {},
+  "岗拖": {
+   "precip": 782.0
+  },
+  "巴塘": {
+   "precip": 747.0
+  },
   "奔子栏": {},
   "石鼓": {},
   "金江街": {},
   "龙街": {},
   "皎平渡": {},
   "攀枝花": {},
-  "乌东德": {},
+  "乌东德": {
+   "lc.农田": 0.0665
+  },
   "白鹤滩": {},
   "溪洛渡": {},
   "向家坝": {},
@@ -20,10 +26,185 @@
   "雷波": {},
   "金阳": {},
   "木里": {},
-  "盐源": {},
+  "盐源": {
+   "lc.农田": 0.0452
+  },
   "会理": {}
  },
- "changes": [],
+ "changes": [
+  {
+   "id": "C2",
+   "t": "2026-11-25 21:35:32",
+   "user": "why",
+   "kind": "correct",
+   "region": "station:盐源",
+   "regionName": "盐源",
+   "station": "盐源",
+   "field": "lc.农田",
+   "fieldNm": "农田占比",
+   "unit": "%",
+   "op": "set",
+   "value": 0.0452,
+   "reason": "数据质量筛查：稳健 Z = 6.70，与 61 km 内邻站相差 +408%",
+   "source": "异常数据修正",
+   "n": 1,
+   "prev": {
+    "盐源": {
+     "lc.农田": null
+    }
+   },
+   "items": [
+    {
+     "name": "盐源",
+     "old": 0.2296,
+     "new": 0.0452
+    }
+   ],
+   "before": {
+    "eei": 56.0,
+    "ei": 42.24,
+    "risk": 49.0,
+    "carbon": 17.7,
+    "fvc": 0.545
+   },
+   "after": {
+    "eei": 55.9,
+    "ei": 42.06,
+    "risk": 49.0,
+    "carbon": 17.6,
+    "fvc": 0.54
+   }
+  },
+  {
+   "id": "C3",
+   "t": "2026-11-25 21:35:34",
+   "user": "why",
+   "kind": "correct",
+   "region": "station:乌东德",
+   "regionName": "乌东德",
+   "station": "乌东德",
+   "field": "lc.农田",
+   "fieldNm": "农田占比",
+   "unit": "%",
+   "op": "set",
+   "value": 0.0665,
+   "reason": "数据质量筛查：稳健 Z = 6.10，与 28 km 内邻站相差 +217%",
+   "source": "异常数据修正",
+   "n": 1,
+   "prev": {
+    "乌东德": {
+     "lc.农田": null
+    }
+   },
+   "items": [
+    {
+     "name": "乌东德",
+     "old": 0.2112,
+     "new": 0.0665
+    }
+   ],
+   "before": {
+    "eei": 55.9,
+    "ei": 42.06,
+    "risk": 49.0,
+    "carbon": 17.6,
+    "fvc": 0.54
+   },
+   "after": {
+    "eei": 55.9,
+    "ei": 41.92,
+    "risk": 49.1,
+    "carbon": 17.6,
+    "fvc": 0.536
+   }
+  },
+  {
+   "id": "C4",
+   "t": "2026-11-25 21:35:37",
+   "user": "why",
+   "kind": "correct",
+   "region": "station:巴塘",
+   "regionName": "巴塘",
+   "station": "巴塘",
+   "field": "precip",
+   "fieldNm": "年降水",
+   "unit": "mm",
+   "op": "set",
+   "value": 747.0,
+   "reason": "数据质量筛查：稳健 Z = -4.50，与 196 km 内邻站相差 -25%",
+   "source": "异常数据修正",
+   "n": 1,
+   "prev": {
+    "巴塘": {
+     "precip": null
+    }
+   },
+   "items": [
+    {
+     "name": "巴塘",
+     "old": 559.0,
+     "new": 747.0
+    }
+   ],
+   "before": {
+    "eei": 55.9,
+    "ei": 41.92,
+    "risk": 49.1,
+    "carbon": 17.6,
+    "fvc": 0.536
+   },
+   "after": {
+    "eei": 55.9,
+    "ei": 41.99,
+    "risk": 49.1,
+    "carbon": 17.6,
+    "fvc": 0.536
+   }
+  },
+  {
+   "id": "C5",
+   "t": "2026-11-25 21:35:39",
+   "user": "why",
+   "kind": "correct",
+   "region": "station:岗拖",
+   "regionName": "岗拖",
+   "station": "岗拖",
+   "field": "precip",
+   "fieldNm": "年降水",
+   "unit": "mm",
+   "op": "set",
+   "value": 782.0,
+   "reason": "数据质量筛查：稳健 Z = -3.46，与 205 km 内邻站相差 -17%",
+   "source": "异常数据修正",
+   "n": 1,
+   "prev": {
+    "岗拖": {
+     "precip": null
+    }
+   },
+   "items": [
+    {
+     "name": "岗拖",
+     "old": 650.0,
+     "new": 782.0
+    }
+   ],
+   "before": {
+    "eei": 55.9,
+    "ei": 41.99,
+    "risk": 49.1,
+    "carbon": 17.6,
+    "fvc": 0.536
+   },
+   "after": {
+    "eei": 56.0,
+    "ei": 42.04,
+    "risk": 49.2,
+    "carbon": 17.6,
+    "fvc": 0.536
+   }
+  }
+ ],
  "observations": [],
  "regions": []
 }

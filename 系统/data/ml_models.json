@@ -1,7 +1,7 @@
 {
  "ok": true,
  "trained": true,
- "trainedAt": "2026-11-18 22:13:22",
+ "trainedAt": "2026-11-25 21:36:05",
  "n": 20,
  "features": [
   "坡度",
@@ -125,10 +125,10 @@
   },
   {
    "model": "逻辑回归",
-   "accuracy": 0.55,
-   "precision": 0.6571,
-   "recall": 0.4646,
-   "f1": 0.5444,
+   "accuracy": 0.6,
+   "precision": 0.7051,
+   "recall": 0.5202,
+   "f1": 0.5987,
    "n": 20,
    "confusion": [
     [
@@ -143,8 +143,8 @@
     ],
     [
      0,
-     4,
-     2
+     3,
+     3
     ]
    ],
    "cv": "留一法(LOO)"
@@ -157,7 +157,15 @@
    "value": 0.15
   },
   {
+   "feature": "起伏度",
+   "value": 0.1
+  },
+  {
    "feature": "林地占比",
+   "value": 0.1
+  },
+  {
+   "feature": "草地占比",
    "value": 0.1
   },
   {
@@ -169,15 +177,7 @@
    "value": 0.05
   },
   {
-   "feature": "起伏度",
-   "value": 0.05
-  },
-  {
    "feature": "海拔",
-   "value": 0.05
-  },
-  {
-   "feature": "草地占比",
    "value": 0.05
   },
   {

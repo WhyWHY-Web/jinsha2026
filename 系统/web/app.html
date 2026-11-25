@@ -3048,7 +3048,7 @@ function buildRiver(){
   for(var k2=0;k2<pts.length;k2++){
     var sum=0,n=0;
     for(var q=-2;q<=2;q++){var kk=k2+q;if(kk>=0&&kk<ys.length){sum+=ys[kk];n++;}}
-    rp.push(new THREE.Vector3(pts[k2].x,sum/n+4.5,pts[k2].z));
+    rp.push(new THREE.Vector3(pts[k2].x,(sum/n)*G.exag+4.5,pts[k2].z));
   }
   if(rp.length>2)roamCurve=new THREE.CatmullRomCurve3(rp,false,'catmullrom',0.35);
   if(riverMesh){scene.remove(riverMesh);riverMesh.geometry.dispose();riverMesh=null;riverU=null;}
@@ -3820,7 +3820,7 @@ function buildUI(){
       terrainU.uShowHill.value=G.layers.hillshade?1:0;
       terrainU.uShowGrid.value=G.layers.grid?1:0;
       terrainU.uShowRamp.value=G.layers.ramp?1:0;
-      riverU.uOn.value=G.layers.water?1:0;
+      if(waterU)waterU.uOn.value=G.layers.water?1:0;
       if(tribGroup)tribGroup.visible=!!G.layers.trib;
       if(patrolGroup)patrolGroup.visible=!!G.layers.patrol;
       if(deformGroup)deformGroup.visible=!!G.layers.deform;
@@ -6801,10 +6801,34 @@ function aiPlan(q){
     {re:/(植被覆盖).*(前|最高|最低)/,sql:'select "站点","植被覆盖FVC" from "生态指标" order by "植被覆盖FVC" desc limit 10'},
     {re:/(降水|气温|气候).*(前|最高|统计)/,sql:'select "站点","多年年降水","多年年均温" from "气候" order by "多年年降水" desc limit 10'},
     {re:/(干燥|干旱|干热)/,sql:'select "站点","干燥指数","多年年降水" from "气候" order by "干燥指数" desc limit 10'},
-    {re:/(站点|station).*(多少|几个|列表|所有)/,sql:'select "名称","类型","海拔","分区" from "站点" order by "海拔" desc'}
+    {re:/(站点|station).*(多少|几个|列表|所有)/,sql:'select "名称","类型","海拔","分区" from "站点" order by "海拔" desc'},
+    {re:/(生态指数|EEI|EI).*(前|最高|排名|top)/,sql:'select "站点","生态指数EI","等级" from "生态指标" order by "生态指数EI" desc limit 10'},
+    {re:/(综合风险).*(前|最高|排名|top)/,sql:'select "站点","综合风险","等级" from "生态指标" order by "综合风险" desc limit 10'},
+    {re:/(分区|区域).*(等级|风险|EEI|指数|分布|情况)/,sql:'select "区域","平均EEI","平均风险","站点数" from "区域" order by "平均EEI" desc'},
+    {re:/(碳密度|碳储量).*(多少|分布|统计)/,sql:'select "站点","碳密度" from "生态指标" order by "碳密度" desc'}
   ];
   for(var si=0;si<SQL_TPL.length;si++){
     if(SQL_TPL[si].re.test(q)){steps.push({t:'db_query',a:{sql:SQL_TPL[si].sql}});break;}
+  }
+  /* 风险等级分布 + 要列出站点 → 补一步查各等级站点明细 */
+  if(/(风险|等级).*(分布|统计|多少|几个)/.test(q)&&/(站点|哪些|说出|列出|分别是|有哪些|点名)/.test(q)){
+    steps.push({t:'db_query',a:{sql:'select "站点","等级" from "生态指标" order by "等级" desc, "站点"'}});
+  }
+  /* 通用指标查询：问某站某指标 / 某指标最高最低，转成 SQL 精确查库 */
+  var _mk=metricFromText(q),_st=stationByName(q);
+  var DB_FIELD={'滑坡敏感性':['生态指标','滑坡敏感性','站点'],'植被覆盖':['生态指标','植被覆盖FVC','站点'],
+    '碳密度':['生态指标','碳密度','站点'],'退化风险':['生态指标','退化风险','站点'],
+    '生态质量':['生态指标','生态指数EI','站点'],'综合风险':['生态指标','综合风险','站点'],
+    '年均温':['气候','多年年均温','站点'],'年降水':['气候','多年年降水','站点'],
+    '海拔':['站点','海拔','名称'],'干燥指数':['气候','干燥指数','站点']};
+  if(_mk&&_st){
+    var _df=DB_FIELD[_mk];
+    if(_df)steps.push({t:'db_query',a:{sql:'select "'+_df[2]+'" as "站点","'+_df[1]+'" from "'+_df[0]+'" where "'+_df[2]+'"=\''+_st[0]+'\''}});
+  }else if(_mk&&/(最高|最大|最低|最小|前\s*\d+|排名|top)/i.test(q)){
+    var _df2=DB_FIELD[_mk];
+    if(_df2){var _ord=/(最低|最小)/.test(q)?'asc':'desc';
+      steps.push({t:'db_query',a:{sql:'select "'+_df2[2]+'" as "站点","'+_df2[1]+'" from "'+_df2[0]+'" order by "'+_df2[1]+'" '+_ord+' limit 5'}});
+    }
   }
   if(/(评估报告|评估报告|生成报告|流域报告|综合评估)/.test(q))steps.push({t:'assess_report',a:{}});
   if(/(巡检计划|巡检安排|巡查计划|本月巡检)/.test(q)){
@@ -6928,7 +6952,24 @@ var AI_TOOL_IMPL={
       var body=j.rows.slice(0,20).map(function(r){
         return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('');
       trace('db_query',j.sql.slice(0,58)+' → '+j.count+' 行 · '+j.ms+'ms');
-      return {ok:true,html:'返回 <b>'+j.count+'</b> 行（'+j.ms+' ms）<table><tr>'+head+'</tr>'+body+'</table>'+
+      /* 自然语言总结：等级分布统计 / 站点明细时自动归纳，别只抛原始表格 */
+      var sum='';
+      var c0=(j.columns[0]||'').toLowerCase(), c1=(j.columns[1]||'').toLowerCase();
+      if(/等级|grade/.test(c0)&&/站点数|count|数量/.test(c1)){
+        var tot=j.rows.reduce(function(a,r){return a+(+r[1]||0);},0);
+        var mx=j.rows[0]||[];
+        var order={A:1,B:2,C:3,D:4};
+        var rows=j.rows.slice().sort(function(a,b){return (order[a[0]]||9)-(order[b[0]]||9);});
+        sum='<div class="sum">共 <b>'+tot+'</b> 站：'+rows.map(function(r){return '<b>'+esc(r[0])+'级</b> '+r[1]+' 站';}).join('、')+
+          '。'+(mx[0]?'<b>'+esc(mx[0])+'级</b>最多，需重点关注。':'')+'</div>';
+      }else if(/站点|名称|station/.test(c0)&&/等级|grade/.test(c1)){
+        var g={};
+        j.rows.forEach(function(r){var k=r[1]||'';g[k]=(g[k]||0)+1;});
+        var ks=Object.keys(g).sort(function(a,b){return {A:1,B:2,C:3,D:4}[a]-{A:1,B:2,C:3,D:4}[b];});
+        sum='<div class="sum">各等级站点：'+ks.map(function(k){return '<b>'+esc(k)+'级</b> '+
+          j.rows.filter(function(r){return (r[1]||'')===k;}).map(function(r){return esc(r[0]);}).join('、');}).join('；')+'</div>';
+      }
+      return {ok:true,html:sum+'返回 <b>'+j.count+'</b> 行（'+j.ms+' ms）<table><tr>'+head+'</tr>'+body+'</table>'+
         (j.rows.length>20?'<div class="src">仅显示前 20 行</div>':'')+
         '<div class="src">SQL：'+esc(j.sql)+'</div>'};
     }
