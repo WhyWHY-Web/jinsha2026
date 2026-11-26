@@ -53,23 +53,28 @@ def build_stage():
 
 
 def main():
+    full = '--full' in sys.argv
     build_stage()
-    print('[build] 开始 PyInstaller 打包（含数据，耗时较长）…')
+    name = '金沙江生态评估_完整版' if full else '金沙江生态评估'
+    print('[build] 开始 PyInstaller 打包（%s，含数据，耗时较长）…' % ('完整版 +tiles' if full else '精简版'))
     cmd = [
         sys.executable, '-m', 'PyInstaller',
-        '--onefile', '--name', '金沙江生态评估',
+        '--onefile', '--name', name,
         '--add-data', 'web;web',
         '--add-data', '_dist_data;data',
         '--hidden-import', 'features',
         '--exclude-module', 'numpy', '--exclude-module', 'PIL', '--exclude-module', 'Pillow',
         '--distpath', os.path.join(BASE, '_dist'), '--workpath', os.path.join(BASE, '_pybuild'),
         '--specpath', BASE, '--noconfirm',
-        os.path.join(BASE, 'boot.py'),
     ]
+    if full:
+        # 完整版额外内置 3D 区域高清影像瓦片（z8~17，放大才清晰）
+        cmd += ['--add-data', os.path.join(DATA, 'tiles') + ';data/tiles']
+    cmd.append(os.path.join(BASE, 'boot.py'))
     r = subprocess.run(cmd, cwd=BASE)
     if r.returncode != 0:
         print('[build] 失败'); return
-    out = os.path.join(BASE, '_dist', '金沙江生态评估.exe')
+    out = os.path.join(BASE, '_dist', name + '.exe')
     print('[build] 完成: %s  %.1f MB' % (out, os.path.getsize(out) / 1024 / 1024))
 
 
