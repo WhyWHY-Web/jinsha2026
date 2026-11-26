@@ -99,7 +99,7 @@
     h += '<div id="dsVal"><div class="mod-note" style="font-size:9.5px">读取中…</div></div>';
 
     /* 数据库（真实入库） */
-    h += '<div class="sec-lab" style="margin-top:9px">数据库 · PostgreSQL jinsha</div>';
+    h += '<div class="sec-lab" style="margin-top:9px">本地数据库</div>';
     h += '<div id="dsPg"><div class="mod-note" style="font-size:9.5px">读取中…</div></div>';
 
     /* GEE 批次状态 */
@@ -117,7 +117,7 @@
       h += '<div class="mod-note" style="font-size:9.5px">尚未同步。在项目目录执行：<br>'
         + '<b>python tools/gee_sync.py --check</b>（校验凭据）<br>'
         + '<b>python tools/gee_sync.py --start 2015</b>（增量同步）<br>'
-        + '产物写入 data/gee/，本页与指标随即生效，无需重启服务。</div>';
+        + '产物写入 data/gee/，可在数据管理查看覆盖与更新时间。</div>';
     }
     box.innerHTML = h;
   }
@@ -160,16 +160,11 @@
           E((j && j.error) || '未入库') + '</div>';
         return;
       }
-      var c = j.counts || {};
-      var rows = Object.keys(c).map(function (k) {
-        return '<span style="display:inline-block;margin:0 6px 3px 0;font-family:Consolas,monospace;font-size:9.5px">'
-          + E(k) + ' <b style="color:#7fe3cd">' + c[k] + '</b></span>';
-      }).join('');
-      box.innerHTML = '<div class="ds-row"><div class="nm"><b>' + E(j.db) + ' · ' + E(j.schema || 'app')
-        + ' schema</b><div class="s">' + rows + '</div></div>'
-        + '<div class="rt"><b style="color:#7fe3cd">已同步</b>' + E((j.time || '').slice(5, 16)) + '</div></div>'
-        + '<div class="rg-tip" style="font-size:9px">应用快照每次构建由 tools/pg_sync.py 刷新；'
-        + 'public schema 保留人工维护的原始台账。</div>';
+      var snapshot = j.snapshot || {};
+      box.innerHTML = '<div class="ds-row"><div class="nm"><b>' + E(j.engine || 'SQLite')
+        + '</b><div class="s">数据集 ' + E(j.datasets) + ' · 审计记录 ' + E(j.auditEvents) + '</div></div>'
+        + '<div class="rt"><b style="color:#7fe3cd">已就绪</b></div></div>'
+        + (snapshot.time ? '<div class="rg-tip">另存 PostgreSQL 快照 ' + E(snapshot.time) + '</div>' : '');
     }).catch(function () {
       box.innerHTML = '<div class="mod-note" style="font-size:9.5px">后端不可达</div>';
     });

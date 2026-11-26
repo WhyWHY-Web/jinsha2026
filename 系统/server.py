@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 金沙江流域森林生态环境智能评估系统 · 服务端
-仅依赖 Python 标准库（无需 pip install）。
+FastAPI + Uvicorn，运行时状态存放于本地 SQLite。
 
 功能
   · 账号登录（PBKDF2 加盐哈希 + 服务端会话 Cookie）
@@ -16,7 +16,20 @@
   python server.py --set-password     修改当前用户密码
 """
 import base64, calendar, csv, gzip, hashlib, hmac, io, json, math, os, random, re, secrets, socket, sys, threading, time, urllib.error, urllib.parse, urllib.request
-from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from contextvars import ContextVar
+from contextlib import asynccontextmanager
+from http.server import BaseHTTPRequestHandler
+from pathlib import Path
+
+import uvicorn
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import FileResponse, JSONResponse, Response
+from state_store import StateStore
+from tile_archive import read_tile
+from eco_metrics import station_metrics, _grade, _sen_mk, seasonal_mk, tennant_baseline
+from api_schemas import AgentMessage, AgentReply
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import features as FT   # 功能补全模块：ML训练 / 情景 / 导出 / 真实任务系统
 
@@ -31,13 +44,21 @@ WEB = os.path.join(ROOT, 'web')
 DATA = os.environ.get('JINSHA_DATA') or os.path.join(ROOT, 'data')
 USERS = os.path.join(DATA, 'users.json')
 STATIONS = os.path.join(DATA, 'stations.json')
-AUDIT = os.path.join(DATA, 'audit.log')
+FROZEN = getattr(sys, 'frozen', False)
+_STATE_BASE = Path(os.environ.get('LOCALAPPDATA') or Path.home()) / 'JinshaEco'
+_DEV_KEY = hashlib.sha256(str(Path(DATA).resolve()).encode()).hexdigest()[:12]
+STATE_DIR = Path(os.environ.get('JINSHA_STATE') or (_STATE_BASE / ('state' if FROZEN else 'dev-' + _DEV_KEY)))
+LEGACY_STATE = os.environ.get('JINSHA_LEGACY_STATE') or (_STATE_BASE / 'data' if FROZEN else None)
+_STORE = StateStore(DATA, STATE_DIR, LEGACY_STATE)
+_REQUEST_CACHE = ContextVar('request_cache', default=None)
+_WRITE_LOCK = threading.RLock()
+_ONLINE = os.environ.get('JINSHA_ONLINE') == '1'
 
-HOST, PORT = '0.0.0.0', int(os.environ.get('PORT', 8080))
+HOST = os.environ.get('JINSHA_HOST', '127.0.0.1' if FROZEN else '0.0.0.0')
+PORT = int(os.environ.get('PORT', 8080))
 SESSION_TTL = 12 * 3600
 MAX_FAIL, FAIL_WINDOW = 8, 600
 MAX_BODY = 8 * 1024 * 1024          # 单个请求体上限，防止 Content-Length 撑爆内存
-AUDIT_MAX = 2 * 1024 * 1024         # 审计日志轮转阈值
 
 
 CSP = ("default-src 'self'; img-src 'self' data: blob: https:; "
@@ -51,32 +72,26 @@ def now(): return time.strftime('%Y-%m-%d %H:%M:%S')
 def log(*a): print('[%s]' % time.strftime('%H:%M:%S'), *a, flush=True)
 
 def load_json(path, default=None):
-    try:
-        with open(path, encoding='utf-8') as f: return json.load(f)
-    except Exception: return default
+    return _STORE.read(path, default)
+
 
 def save_json(path, obj):
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f: json.dump(obj, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, path)
+    _STORE.write(path, obj)
+
+
+FT.configure_storage(load_json, save_json)
+
 
 def audit(rec):
-    """写审计日志；超过 2 MB 自动轮转成 audit.log.1，避免无限增长。"""
-    try:
-        if os.path.exists(AUDIT) and os.path.getsize(AUDIT) > AUDIT_MAX:
-            try: os.replace(AUDIT, AUDIT + '.1')
-            except Exception: pass
-        with open(AUDIT, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + '\n')
-    except Exception:
-        pass
+    _STORE.append_audit(rec)
+
 
 def pbkdf2(pw, salt):
     return hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), salt, 180000).hex()
 
 def init_users():
     """首次运行生成随机口令，而不是写死一个谁都知道的密码。"""
-    if os.path.exists(USERS): return
+    if load_json(USERS, {}).get('users'): return
     salt = secrets.token_bytes(16)
     pw = secrets.token_urlsafe(9)
     save_json(USERS, {"users": [{
@@ -110,10 +125,16 @@ _DEM = None
 def dem():
     global _DEM
     if _DEM is None:
-        raw = open(os.path.join(DATA, 'dem.bin'), 'rb').read()
+        path = Path(DATA, 'dem.bin')
+        if not path.is_file():
+            path = Path(DATA, 'dem256.bin')
+        raw = path.read_bytes()
         import array
         a = array.array('h'); a.frombytes(raw)
-        _DEM = (a, 1024, 1024)
+        size = math.isqrt(len(a))
+        if size * size != len(a) or size < 2:
+            raise ValueError('DEM 数据尺寸无效')
+        _DEM = (a, size, size)
     return _DEM
 
 BBOX = (97.6, 25.9, 105.4, 32.5)
@@ -175,6 +196,9 @@ def llm_forward(body, timeout=40):
 def enrich(lon, lat):
     """联网时实时补齐土地覆盖（Sentinel-2 10m）"""
     out = {"lc": {}, "lcSrc": "待接入"}
+    if not _ONLINE:
+        out["lcSrc"] = "离线：土地覆盖待补"
+        return out
     dy = 5 / 111.0; dx = 5 / (111.0 * math.cos(math.radians(lat)))
     env = json.dumps({"xmin": lon - dx, "ymin": lat - dy, "xmax": lon + dx, "ymax": lat + dy,
                       "spatialReference": {"wkid": 4326}})
@@ -217,17 +241,26 @@ RESERVED_FIELDS = ['soil.有机质', 'soil.全氮', 'met.相对湿度', 'met.风
 _GOV = None
 def gov():
     global _GOV
-    if _GOV is None:
-        g = load_json(GOV_PATH, None)
-        if not isinstance(g, dict): g = {}
-        g.setdefault('version', 1)
-        g.setdefault('seq', 0)
-        g.setdefault('overrides', {})
-        g.setdefault('changes', [])
-        g.setdefault('observations', [])
-        g.setdefault('regions', [])
+    cache = _REQUEST_CACHE.get()
+    if cache is None and _GOV is not None:
+        return _GOV
+    if cache is not None and 'gov' in cache:
+        return cache['gov']
+    g = load_json(GOV_PATH)
+    if not isinstance(g, dict):
+        g = {}
+    g.setdefault('version', 1)
+    g.setdefault('seq', 0)
+    g.setdefault('overrides', {})
+    g.setdefault('changes', [])
+    g.setdefault('observations', [])
+    g.setdefault('regions', [])
+    if cache is None:
         _GOV = g
-    return _GOV
+    else:
+        cache['gov'] = g
+    return g
+
 
 def gov_save():
     save_json(GOV_PATH, gov())
@@ -624,99 +657,6 @@ def rs_load(name):
 def rs_meta():
     return rs_load('meta.json') or {}
 
-def _sen_mk(vals):
-    """与 tools/gee_sync.py 同口径的 Sen 斜率 + Mann-Kendall 检验（纯标准库）。"""
-    ys = [v for v in vals if v is not None]
-    n = len(ys)
-    if n < 5:
-        return None
-    slopes = sorted((ys[j] - ys[i]) / (j - i) for i in range(n - 1) for j in range(i + 1, n))
-    sen = slopes[len(slopes) // 2]
-    s = sum((1 if ys[j] > ys[i] else (-1 if ys[j] < ys[i] else 0))
-            for i in range(n - 1) for j in range(i + 1, n))
-    var = n * (n - 1) * (2 * n + 5) / 18.0
-    z = 0.0 if not var else ((s - (1 if s > 0 else -1)) / math.sqrt(var) if s else 0.0)
-    p = 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2))))
-    trend = ('显著上升' if (sen > 0 and p < 0.05) else
-             '显著下降' if (sen < 0 and p < 0.05) else '无显著趋势')
-    return {'sen': round(sen, 5), 'z': round(z, 3), 'p': round(p, 4), 'trend': trend, 'n': n}
-
-def seasonal_mk(by_season):
-    """季节化 Mann-Kendall（Hirsch–Slack 简化式，忽略季节间协方差）。
-
-    只在同一日历月内部比较（1 月比 1 月……），避免月度序列的季节起伏被误判为趋势。
-    每个季节至少 2 个年份、总共至少 2 个季节，否则不给结论。返回 None 表示样本不足。
-    """
-    seasons = {k: [float(v) for v in vs if v is not None] for k, vs in (by_season or {}).items()}
-    seasons = {k: vs for k, vs in seasons.items() if len(vs) >= 2}
-    if len(seasons) < 2:
-        return None
-    s_total, var_total, denom, n_total = 0, 0.0, 0, 0
-    for vs in seasons.values():
-        n = len(vs)
-        n_total += n
-        denom += n * (n - 1) // 2
-        for i in range(n - 1):
-            for j in range(i + 1, n):
-                s_total += (1 if vs[j] > vs[i] else (-1 if vs[j] < vs[i] else 0))
-        var_g = n * (n - 1) * (2 * n + 5)
-        counts = {}
-        for v in vs:
-            counts[v] = counts.get(v, 0) + 1
-        for t in counts.values():
-            if t > 1:
-                var_g -= t * (t - 1) * (2 * t + 5)
-        var_total += var_g / 18.0
-    if denom <= 0:
-        return None
-    tau = s_total / denom
-    if var_total <= 0:
-        return {'n': n_total, 'seasons': len(seasons), 'S': s_total, 'tau': 0.0,
-                'z': 0.0, 'p': 1.0, 'trend': '无显著趋势', 'method': 'seasonal'}
-    z = ((s_total - 1) / math.sqrt(var_total)) if s_total > 0 else \
-        ((s_total + 1) / math.sqrt(var_total)) if s_total < 0 else 0.0
-    p = 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2))))
-    trend = ('显著上升' if (p < 0.05 and s_total > 0) else
-             '显著下降' if (p < 0.05 and s_total < 0) else '无显著趋势')
-    return {'n': n_total, 'seasons': len(seasons), 'S': s_total, 'tau': round(tau, 3),
-            'z': round(z, 3), 'p': round(p, 4), 'trend': trend, 'method': 'seasonal'}
-
-def tennant_baseline(rows):
-    """从 hydro_monthly（GloFAS 月径流）按站构建季节化生态流量基准（各月 Q50）。
-
-    行结构：station / year / month / discharge_m3s / ...。输出每站 12 个月的
-    mean / median(Q50) / q20 / q80 / min / max / n。这是生态流量参照，非保证率真值。
-    """
-    from collections import OrderedDict
-    st = OrderedDict()
-    for r in rows:
-        if r.get('discharge_m3s') in (None, ''):
-            continue
-        try:
-            q = float(r['discharge_m3s']); m = int(r['month']); nm = r.get('station') or r.get('站点')
-        except (ValueError, TypeError):
-            continue
-        if m < 1 or m > 12 or nm is None:
-            continue
-        st.setdefault(nm, {i: [] for i in range(1, 13)})[m].append(q)
-    out = []
-    for nm, months in st.items():
-        entry = {'station': nm, 'months': {}}
-        for m in range(1, 13):
-            vs = sorted(months.get(m, []))
-            if not vs:
-                entry['months']['%02d' % m] = {'n': 0}
-                continue
-            n = len(vs)
-            def q(x):
-                return vs[min(n - 1, max(0, int(round(x * (n - 1)))))]
-            entry['months']['%02d' % m] = {
-                'n': n, 'mean': round(sum(vs) / n, 1), 'median': round(q(0.5), 1),
-                'q20': round(q(0.2), 1), 'q80': round(q(0.8), 1),
-                'min': round(vs[0], 1), 'max': round(vs[-1], 1)}
-        out.append(entry)
-    return out
-
 def _hav_km(a, b):
     """两点球面距离（km），a/b 为 [lon, lat]。"""
     lon1, lat1, lon2, lat2 = a[0], a[1], b[0], b[1]
@@ -821,7 +761,7 @@ def _climate_refresh():
         params = 'T2M,PRECTOTCORR,EVLAND'
         lapse = 6.5
         cachef = os.path.join(DATA, '.power_cache.json')
-        cache = load_json(cachef, {}) if os.path.exists(cachef) else {}
+        cache = load_json(cachef, {})
         result, basin = {}, {}
         for s in sts:
             key = "%s_%s" % (s['name'], '2000-%d' % end)
@@ -880,9 +820,9 @@ def _auto_sync_start():
     try:
         cf = os.path.join(DATA, 'climate.json')
         stale = True
-        if os.path.exists(cf):
+        if load_json(cf, None):
             try:
-                m = json.load(open(cf, encoding='utf-8'))
+                m = load_json(cf, {})
                 ft = m.get('fetched', '')
                 if ft:
                     tt = time.mktime(time.strptime(ft, '%Y-%m-%d %H:%M'))
@@ -916,8 +856,10 @@ def repro_pack():
     for rel in ('stations.json', 'climate.json', 'dams.json', 'governance.json',
                 'gee/meta.json', 'gee/annual.json', 'gee/series.json', 'validate.json'):
         fp = os.path.join(DATA, rel)
-        if os.path.isfile(fp):
-            files.append({'file': rel, 'bytes': os.path.getsize(fp), 'sha256': _sha256_file(fp)})
+        fingerprint = _STORE.fingerprint(fp)
+        if fingerprint:
+            size, digest = fingerprint
+            files.append({'file': rel, 'bytes': size, 'sha256': digest})
     snap = [{'name': i['name'], 'zone': i['zone'], 'eei': i['eei'], 'grade': i['grade'],
              'habitat': i['habitat'], 'biodiversity': i['biodiversity'], 'water': i['water'],
              'soil': i['soil'], 'climate': i['climate'], 'resilience': i['resilience'],
@@ -1403,7 +1345,11 @@ def data_version():
     parts = [str(gov()['seq'])]
     for f in ('stations.json', 'climate.json', 'dams.json', 'gee/meta.json', 'dem.bin'):
         fp = os.path.join(DATA, f)
-        parts.append('%.0f:%d' % (os.path.getmtime(fp), os.path.getsize(fp)) if os.path.isfile(fp) else '-')
+        signature = _STORE.fingerprint(fp) if f.endswith('.json') else None
+        if signature:
+            parts.append(signature[1])
+        else:
+            parts.append('%.0f:%d' % (os.path.getmtime(fp), os.path.getsize(fp)) if os.path.isfile(fp) else '-')
     return {'ok': True, 'token': hashlib.md5('|'.join(parts).encode()).hexdigest()[:12],
             'govSeq': gov()['seq'], 'time': now()}
 
@@ -1444,12 +1390,11 @@ def auto_login_token():
     if not users:
         return None
     tok = secrets.token_urlsafe(32)
-    _AUTO[tok] = users[0]
+    _AUTO[tok] = (users[0], time.monotonic() + 180)
     return tok
 
 def client_ip(h):
-    xf = h.headers.get('X-Forwarded-For')
-    return (xf.split(',')[0].strip() if xf else h.client_address[0])
+    return h.client_address[0]
 
 # ------------------------------------------------------------------ HTTP
 GZ_CACHE = {}
@@ -1514,8 +1459,11 @@ class H(BaseHTTPRequestHandler):
             # 桌面版免密自动登录：/auto?t=<token> → 建立会话并跳转三维主界面
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             t = (q.get('t') or [''])[0]
-            user = _AUTO.pop(t, None)
-            if user:
+            if self.client_address[0] not in ('127.0.0.1', '::1'):
+                return self.send(302, b'', headers={'Location': '/login'})
+            entry = _AUTO.pop(t, None)
+            if entry and entry[1] > time.monotonic():
+                user = entry[0]
                 tok = new_session(user, SESSION_TTL)
                 cookie = 'sid=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d' % (tok, SESSION_TTL)
                 return self.send(302, b'', headers={'Location': '/', 'Set-Cookie': cookie})
@@ -1538,9 +1486,13 @@ class H(BaseHTTPRequestHandler):
             return self.j({'ok': True, 'version': meta.get('version'), 'built': meta.get('built'),
                            'stations': len(load_json(STATIONS, {}).get('stations', [])),
                            'govSeq': gov()['seq'], 'overrides': len(gov()['overrides']),
-                           'dataToken': data_version()['token'],
+                           'storage': 'SQLite', 'dataToken': data_version()['token'],
                            'time': now()})
         if p == '/api/sync':
+            if not session_of(self)[1]:
+                return self.j({'ok': False, 'error': '请先登录'}, 401)
+            if not _ONLINE:
+                return self.j({'ok': False, 'error': '当前使用离线数据'}, 503)
             threading.Thread(target=_climate_refresh, daemon=True).start()
             return self.j({'ok': True, 'msg': '已开始后台同步（气候年值序列）'})
 
@@ -1627,10 +1579,9 @@ class H(BaseHTTPRequestHandler):
         if p == '/api/validate':
             return self.j({'ok': True, 'data': load_json(os.path.join(DATA, 'validate.json'), {})})
         if p == '/api/db/status':
-            st = load_json(os.path.join(DATA, 'pg_status.json'), None)
-            if not st:
-                return self.j({'ok': False, 'error': '尚未入库，先执行 python tools/pg_sync.py'})
-            return self.j(st)
+            counts = _STORE.counts()
+            return self.j({'ok': True, 'engine': 'SQLite', **counts,
+                           'snapshot': load_json(os.path.join(DATA, 'pg_status.json'), None)})
         # ---------- 遥感（GEE）时序
         if p == '/api/rs/status':
             meta = rs_meta()
@@ -1768,7 +1719,7 @@ class H(BaseHTTPRequestHandler):
                            'note': cl.get('note'), 'basin': cl.get('basin', []),
                            'stations': list(cl.get('stations', {}).keys())})
         if p == '/api/db/tables':
-            return self.j({'ok': True, 'db': 'jinsha', 'tables': db_schema()})
+            return self.j({'ok': True, 'db': 'jinsha', 'engine': 'SQLite', 'tables': db_schema()})
         if p == '/api/fs/tree':
             return self.j({'ok': True, 'tree': fs_tree()})
         if p == '/api/fs/read':
@@ -1790,6 +1741,8 @@ class H(BaseHTTPRequestHandler):
             return self.j(FT.list_tasks(lim))
         if p == '/api/scenarios':
             return self.j(FT.list_scenarios())
+        if p == '/api/scenario/evaluate':
+            return self.j(FT.evaluate_scenarios(all_stations(), eff_val, lambda st, cover: _m(st, cover=cover)))
         if p == '/api/export/dataset':
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             fmt = (qs.get('fmt') or ['csv'])[0]
@@ -1808,10 +1761,7 @@ class H(BaseHTTPRequestHandler):
                            'eei': round(sum(i['eei'] for i in items) / max(1, len(items)), 1),
                            'version': load_json(os.path.join(DATA, 'meta.json'), {}).get('version')})
         if p == '/api/audit':
-            rows = []
-            if os.path.exists(AUDIT):
-                with open(AUDIT, encoding='utf-8') as f: rows = [json.loads(l) for l in f if l.strip()][-40:][::-1]
-            return self.j({'ok': True, 'rows': rows})
+            return self.j({'ok': True, 'rows': _STORE.audit_rows()})
         if p == '/report':
             tok, s = session_of(self)
             if not s: return self.send(302, b'', headers={'Location': '/login'})
@@ -1833,8 +1783,11 @@ class H(BaseHTTPRequestHandler):
             safe = os.path.normpath(p).replace('\\', '/')
             base = os.path.basename(safe)
             # 隐藏文件（.power_cache.json / .secret 等）一律不外发
-            if '..' in safe or base.startswith('.') or not base.endswith(('.json', '.bin')):
+            if '..' in safe or base.startswith('.') or base == 'users.json' or not base.endswith(('.json', '.bin')):
                 return self.send(403, 'Forbidden')
+            if base.endswith('.json'):
+                dataset = load_json(os.path.join(DATA, base))
+                return self.j(dataset) if dataset is not None else self.send(404, 'Not Found')
             return self.file(os.path.join(DATA, base), 'no-cache')
         if p == '/api/export.csv':
             st = load_json(STATIONS, {'stations': []})['stations']
@@ -1864,7 +1817,10 @@ class H(BaseHTTPRequestHandler):
             return self.j({'ok': False, 'error': '请求体过大（上限 8 MB）'}, 413)
         raw = self.rfile.read(n) if n else b'{}'
         try: body = json.loads(raw.decode('utf-8') or '{}')
-        except Exception: body = {}
+        except (UnicodeError, ValueError):
+            return self.j({'ok': False, 'error': '请求体须为 JSON 对象'}, 400)
+        if not isinstance(body, dict):
+            return self.j({'ok': False, 'error': '请求体须为 JSON 对象'}, 400)
 
         if p == '/api/login':
             ip = client_ip(self)
@@ -1944,12 +1900,15 @@ class H(BaseHTTPRequestHandler):
             return self.j(out)
 
         if p == '/api/tasks':
-            tid = 'T%d' % int(time.time())
-            rec = FT.create_task(tid, body.get('model'), body.get('name'), s['u'])
-            # 真实执行：用当前站点数据完成模型计算（本系统中模型为轻量指标计算，秒级完成）
-            FT.run_task(tid)
-            audit({'t': now(), 'user': s['u'], 'ip': client_ip(self), 'act': '派发任务', 'id': tid, 'model': body.get('model')})
-            return self.j({'ok': True, 'id': tid, 'status': 'done', 'progress': 100})
+            model = body.get('model')
+            if not isinstance(model, str) or not model:
+                return self.j({'ok': False, 'error': '必须指定模型'}, 400)
+            tid = 'T' + secrets.token_hex(8)
+            FT.create_task(tid, model, body.get('name'), s['u'])
+            rec = FT.run_task(tid, lambda chosen: FT.evaluate_task(chosen, all_stations(), _m, eff_val, climate))
+            audit({'t': now(), 'user': s['u'], 'ip': client_ip(self), 'act': '派发任务',
+                   'id': tid, 'model': model, 'status': rec['status']})
+            return self.j({'ok': True, **rec})
 
         if p == '/api/ml/train':
             # 真实训练：5 种算法 × 留一法交叉验证，基于 20 站真实数据
@@ -2082,44 +2041,9 @@ def _f(st, k):
     """下垫面占比的有效值（人工修正 > 原始土地覆盖统计）"""
     return float(eff_val(st, 'lc.' + k))
 
-def _m(st, T_ov=None, P_ov=None):
-    f, g, c = _f(st, '林地'), _f(st, '草地灌丛'), _f(st, '农田')
-    b, ba, w, we = _f(st, '建成区'), _f(st, '裸地'), _f(st, '水体'), _f(st, '湿地')
-    # 气候优先用 NASA POWER 2000–2024 实测序列均值；有人工修正时以修正值为准（台账留痕）。
-    # T_ov / P_ov 用于「时间轴」：传入某一年的实测气候，其余输入保持不变，得到该年的指标。
-    P = float(P_ov) if P_ov is not None else eff_val(st, 'precip')
-    T = float(T_ov) if T_ov is not None else eff_val(st, 'temp')
-    slope = float(st.get('slope') or 0)
-    relief = float(st.get('relief') or 0)
-    fvc = min(1, f * .92 + g * .62 + c * .55 + we * .75 + ba * .05 + b * .08)
-    carbon = (f * 52 + g * 7.5 + c * 5.2 + we * 18 + ba * .4 + b * 1.2) * (.72 + .28 * min(1.35, max(.45, P / 1200)))
-    slide = 100 * (.42 * min(1, max(0, (slope - 4) / 28)) + .18 * min(1, relief / 800) +
-                   .22 * min(1, P / 1600) + .18 * (1 - min(1, f * .8 + g * .35)))
-    dry = min(1, max(0, (T - 6) / 18)) * min(1, max(.15, 1 - P / 1800))
-    deg = 100 * (.4 * (1 - fvc) + .3 * dry + .18 * min(1, b / .10) + .12 * (1 - f))
-    lsi = 100 * (.45 * min(1, max(0, (slope - 5) / 30)) + .30 * min(1, relief / 900) +
-                 .15 * min(1, b / .12) + .10 * min(1, ba / .15))
-    abi = 100 * (.35 * f + .21 * g + .28 * (w + we) + .11 * c + .04 * b + .01 * ba)
-    wri = 100 * (.70 * min(1, P / 1600) + .30 * min(1, (w + we) / .05))
-    ei = (.35 * abi + .25 * fvc * 100 + .15 * wri + .15 * (100 - lsi)) / .90
-    risk = .42 * slide + .33 * deg + .25 * lsi
-    habitat = min(1, f * .95 + g * .72 + we * .90 + w * .78 + c * .42 + b * .08 + ba * .20)
-    biodiversity = min(1, habitat * (.78 + .22 * f))
-    water = P * (.50 + .42 * f)
-    soil = max(0, min(40, 10 + 40 * f - slope * .20 + g * 5))
-    climate = min(1, .35 + .50 * f + .20 * g)
-    resilience = min(1, max(.08, .30 + .55 * f + .20 * g - .15 * b))
-    esv = max(0, min(4, 1.0 + 3.0 * f + 1.3 * g + .9 * we + .5 * w - .3 * ba))
-    disturbance = min(1, b * 2.8 + c * .45 + ba * .5)
-    eei = (18 * habitat + 15 * biodiversity + 14 * (water / 1000) + 12 * (soil / 40) +
-           12 * climate + 11 * resilience + 10 * (esv / 4) + 8 * (1 - disturbance))
-    return dict(fvc=fvc, carbon=carbon, slide=slide, deg=deg, lsi=lsi, abi=abi, wri=wri,
-                ei=ei, risk=risk, habitat=habitat, biodiversity=biodiversity, water=water,
-                soil=soil, climate=climate, resilience=resilience, esv=esv,
-                disturbance=disturbance, eei=eei)
+def _m(st, T_ov=None, P_ov=None, *, cover=None):
+    return station_metrics(st, eff_val, T_ov, P_ov, cover=cover)
 
-def _grade(v):
-    return 'A' if v >= 75 else 'B' if v >= 65 else 'C' if v >= 55 else 'D'
 
 def legacy_station(st):
     m = _m(st)
@@ -2192,21 +2116,29 @@ def eco_assess(items):
 # ------------------------------------------------------------------ 气候序列（NASA POWER / MERRA-2）
 _CLIM = None
 def climate():
-    """加载 data/climate.json，并预先算好每站 25 年均值，供指标计算直接取用。"""
+    """读取同一请求内可复算的气候数据及其站点均值。"""
     global _CLIM
-    if _CLIM is None:
-        raw = load_json(os.path.join(DATA, 'climate.json'), {}) or {}
-        means = {}
-        for name, s in (raw.get('stations') or {}).items():
-            ys = s.get('years') or []
-            if ys:
-                n = len(ys)
-                means[name] = (sum(r[1] for r in ys) / n,
-                               sum(r[2] for r in ys) / n,
-                               sum(r[3] for r in ys) / n)
-        raw['_means'] = means
+    cache = _REQUEST_CACHE.get()
+    if cache is None and _CLIM is not None:
+        return _CLIM
+    if cache is not None and 'climate' in cache:
+        return cache['climate']
+    raw = load_json(os.path.join(DATA, 'climate.json'), {}) or {}
+    means = {}
+    for name, station in (raw.get('stations') or {}).items():
+        ys = station.get('years') or []
+        if ys:
+            n = len(ys)
+            means[name] = (sum(r[1] for r in ys) / n,
+                           sum(r[2] for r in ys) / n,
+                           sum(r[3] for r in ys) / n)
+    raw['_means'] = means
+    if cache is None:
         _CLIM = raw
-    return _CLIM
+    else:
+        cache['climate'] = raw
+    return raw
+
 
 def clim_mean(name):
     return climate().get('_means', {}).get(name)
@@ -2477,8 +2409,8 @@ def fs_tree(depth=2):
 
 def fs_read(path):
     rel = (path or '').replace('\\', '/').strip().lstrip('/')
-    full = os.path.normpath(os.path.join(ROOT, rel))
-    if not full.startswith(ROOT + os.sep):
+    full = os.path.realpath(os.path.join(ROOT, rel))
+    if not full.startswith(os.path.realpath(ROOT) + os.sep):
         return None, '只能读取项目目录内的文件'
     base = os.path.basename(full)
     if base.startswith('.') or base in ('users.json',):
@@ -2667,54 +2599,266 @@ def lan_ips():
         pass
     return sorted(ips)
 
-def main():
+# ------------------------------------------------------------------ FastAPI 应用
+class _RequestHandler(H):
+    """让 FastAPI 直接调用现有操作，保持业务公式和 API 响应契约。"""
+
+    def __init__(self, request, body):
+        query = request.url.query
+        self.path = request.url.path + ('?' + query if query else '')
+        self.command = request.method
+        self.headers = dict(request.headers)
+        self.headers = _HeaderView(self.headers, len(body))
+        client = request.client
+        self.client_address = (client.host, client.port) if client else ('', 0)
+        self.rfile = io.BytesIO(body)
+        self.response = None
+
+    def _headers(self, headers):
+        out = {
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'same-origin',
+            'X-Frame-Options': 'SAMEORIGIN',
+            'Content-Security-Policy': CSP,
+            'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+        }
+        if self.headers.get('X-Forwarded-Proto') == 'https':
+            out['Strict-Transport-Security'] = 'max-age=31536000'
+        out.update(headers or {})
+        return out
+
+    def send(self, code, body=b'', ctype='text/plain; charset=utf-8', headers=None):
+        if isinstance(body, str):
+            body = body.encode('utf-8')
+        headers = self._headers(headers)
+        headers['Content-Length'] = str(len(body))
+        self.response = Response(body if self.command != 'HEAD' else b'', status_code=code,
+                                 media_type=ctype, headers=headers)
+
+    def file(self, path, cache='no-cache'):
+        suffix = Path(path).suffix.lower()
+        content_type = MIME.get(suffix, 'application/octet-stream')
+        if not os.path.isfile(path):
+            tile = read_tile(DATA, path)
+            if tile is not None:
+                return self.send(200, tile, content_type, {'Cache-Control': cache})
+            return self.send(404, 'Not Found')
+        self.response = FileResponse(path, media_type=content_type,
+                                     headers=self._headers({'Cache-Control': cache}))
+
+
+class _HeaderView(dict):
+    def __init__(self, headers, size):
+        super().__init__(headers)
+        self['content-length'] = str(size)
+
+    def get(self, key, default=None):
+        return super().get(key.lower(), default)
+
+
+def _serve_request(request, body):
+    handler = _RequestHandler(request, body)
+    cache_token = _REQUEST_CACHE.set({})
+    try:
+        if request.method == 'POST' and urllib.parse.urlparse(handler.path).path == '/api/llm/plan':
+            handler.do_POST()
+        elif request.method == 'POST':
+            with _WRITE_LOCK:
+                with _STORE.transaction():
+                    handler.do_POST()
+        else:
+            handler.do_GET()
+    finally:
+        _REQUEST_CACHE.reset(cache_token)
+    return handler.response
+
+
+async def _dispatch(request: Request):
+    body = b''
+    if request.method == 'POST':
+        chunks = bytearray()
+        async for chunk in request.stream():
+            if len(chunks) + len(chunk) > MAX_BODY:
+                return JSONResponse({'ok': False, 'error': '请求体过大（上限 8 MB）'}, status_code=413)
+            chunks.extend(chunk)
+        body = bytes(chunks)
+    return await run_in_threadpool(_serve_request, request, body)
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    await run_in_threadpool(init_users)
+    if _ONLINE:
+        await run_in_threadpool(_auto_sync_start)
+    yield
+
+
+app = FastAPI(title='金沙江流域生态环境评估 API', version='3.0', docs_url=None, redoc_url=None,
+              lifespan=_lifespan)
+router = APIRouter()
+
+
+@app.get('/docs', include_in_schema=False)
+async def api_docs():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url, title=app.title,
+        swagger_js_url='/assets/vendor/swagger/swagger-ui-bundle.js',
+        swagger_css_url='/assets/vendor/swagger/swagger-ui.css',
+        swagger_favicon_url='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E',
+        swagger_ui_parameters={'validatorUrl': None},
+    )
+
+
+def _agent_response(message, station_name):
+    stations = all_stations()
+    match = next((st for st in sorted(stations, key=lambda item: -len(item['name'])) if st['name'] in message), None)
+    if match is None and station_name:
+        match = next((st for st in stations if st['name'] == station_name), None)
+    action = 'browse'
+    if any(word in message for word in ('修正', '补录', '回退', '录入', '调整')):
+        action = 'governance'
+    elif any(word in message for word in ('定位', '地图', '飞到')):
+        action = 'locate' if match else 'browse'
+    elif any(word in message for word in ('评估', '计算', '报告')):
+        action = 'assessment'
+    if match:
+        metrics = _m(match)
+        evidence = [
+            {'label': '综合风险', 'value': round(metrics['risk'], 1), 'unit': '分',
+             'source': '滑坡敏感性 × 0.42 + 森林退化 × 0.33 + 土地胁迫 × 0.25'},
+            {'label': '滑坡敏感性', 'value': round(metrics['slide'], 1), 'unit': '分',
+             'source': '地形、气候与植被覆盖'},
+            {'label': '生态质量 EI', 'value': round(metrics['ei'], 1), 'unit': '分',
+             'source': '生态评价模型'},
+        ]
+        title = '%s生态指数 %.1f（%s级），综合风险 %.1f。' % (
+            match['name'], metrics['eei'], _grade(metrics['eei']), metrics['risk'])
+        suggestion = '在地图定位站点，并对照植被与气候时间序列。'
+        station = {'name': match['name'], 'lon': match['lon'], 'lat': match['lat']}
+    else:
+        result = conclusion()
+        kpi = result.get('kpi', {})
+        title = result.get('text') or (
+            '流域综合生态指数 %.1f，风险 %.1f。' % (kpi['eei'], kpi['risk'])
+            if 'eei' in kpi and 'risk' in kpi else '当前数据可通过站点、区域与年度专题查询。')
+        if not isinstance(title, str):
+            title = str(title)
+        evidence = [{'label': '站点数', 'value': len(stations), 'unit': '站', 'source': '本地站点名录'}]
+        if kpi.get('eei') is not None:
+            evidence.append({'label': '综合生态指数', 'value': kpi['eei'], 'unit': '分', 'source': '当前流域模型'})
+        suggestion = '打开态势总览，或输入站点名称查看依据。'
+        station = None
+    if action == 'governance':
+        suggestion = '在区域治理中选择字段，填写数据来源和调整理由，再提交修正。'
+    return {'ok': True, 'conclusion': title, 'evidence': evidence, 'suggestion': suggestion,
+            'confidence': '模型推算，以当前数据覆盖为准', 'action': action, 'station': station}
+
+
+@router.post('/api/agent/chat', response_model=AgentReply, tags=['智能体'])
+def agent_chat(message: AgentMessage, request: Request):
+    if not session_of(request)[1]:
+        return JSONResponse({'ok': False, 'error': '请先登录'}, status_code=401)
+    token = _REQUEST_CACHE.set({})
+    try:
+        return _agent_response(message.message.strip(), message.station)
+    finally:
+        _REQUEST_CACHE.reset(token)
+
+
+_COUPLING = None
+_COUPLING_LOCK = threading.RLock()
+
+
+@router.get('/api/coupling', tags=['耦合协调'])
+@router.get('/api/gcp', tags=['耦合协调'])
+@router.get('/api/gcpi', tags=['耦合协调'])
+@router.get('/api/rsei', tags=['耦合协调'])
+@router.get('/api/ltccd', tags=['耦合协调'])
+@router.get('/api/coupling/gcpi', include_in_schema=False)
+@router.get('/api/coupling/rsei', include_in_schema=False)
+@router.get('/api/coupling/ltccd', include_in_schema=False)
+def coupling_report(request: Request, year: int | None = None):
+    if not session_of(request)[1]:
+        return JSONResponse({'ok': False, 'error': '请先登录'}, status_code=401)
+    global _COUPLING
+    from eco_coupling import CouplingAnalysis
+    with _COUPLING_LOCK:
+        if _COUPLING is None:
+            _COUPLING = CouplingAnalysis(DATA, all_stations, eff_val)
+    token = _REQUEST_CACHE.set({})
+    try:
+        return _COUPLING.report(year)
+    except ValueError as error:
+        return JSONResponse({'ok': False, 'error': str(error)}, status_code=422)
+    finally:
+        _REQUEST_CACHE.reset(token)
+
+
+_READ_ROUTES = (
+    'anomalies', 'audit', 'changes', 'climate', 'conclusion', 'data/version', 'data/{name}',
+    'db/status', 'db/tables', 'diagnose', 'eco-assess', 'eco-services', 'evidence', 'export.csv',
+    'export/dataset', 'fs/read', 'fs/tree', 'gov/export', 'health', 'legacy/stations', 'llm/plan',
+    'ml/results', 'ndvi/annual', 'observations', 'patrol/plan', 'provenance', 'region', 'regions',
+    'repro', 'river/compare', 'rs/basin', 'rs/series', 'rs/status', 'rs/trend', 'scenario/evaluate',
+    'scenarios', 'scope', 'session', 'stations', 'summary', 'sync', 'tasks', 'tasks/{task_id}',
+    'tennant', 'timeline', 'timeline/series', 'trend', 'trend/hydro', 'uncertainty', 'validate',
+)
+_WRITE_ROUTES = (
+    'anomalies/dismiss', 'changes/undo', 'db/query', 'import', 'llm/plan', 'login', 'logout', 'ml/train',
+    'observations', 'password', 'region/adjust', 'region/reset', 'regions', 'regions/delete',
+    'scenario', 'station/correct', 'stations', 'tasks',
+)
+for _path in _READ_ROUTES:
+    router.add_api_route('/api/' + _path, _dispatch, methods=['GET'], summary=_path)
+for _path in _WRITE_ROUTES:
+    router.add_api_route(
+        '/api/' + _path, _dispatch, methods=['POST'], summary=_path,
+        openapi_extra={'requestBody': {'content': {'application/json': {'schema': {'type': 'object'}}}}},
+    )
+app.include_router(router)
+
+
+@app.api_route('/{path:path}', methods=['GET', 'HEAD'], include_in_schema=False)
+async def web_content(request: Request):
+    return await _dispatch(request)
+
+
+def _reserve_socket(host, preferred, span=50):
+    if not 0 <= preferred <= 65535:
+        raise ValueError('端口必须介于 0 和 65535')
+    for port in range(preferred, min(65536, preferred + (1 if preferred == 0 else span))):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            if hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            listener.bind((host, port))
+            return listener
+        except OSError:
+            listener.close()
+    raise OSError('端口 %d 起的 %d 个端口均不可用' % (preferred, span))
+
+
+def main(ready=None):
     global HOST, PORT
     args = sys.argv[1:]
     if '--set-password' in args:
-        u = input('用户名 [admin]: ').strip() or 'admin'
+        u = input('用户名 [why]: ').strip() or 'why'
         p = input('新密码: ').strip()
         print('已修改' if p and set_password(u, p) else '用户不存在或密码为空')
         return
-    if '--port' in args: PORT = int(args[args.index('--port') + 1])
-    elif os.environ.get('PORT'): PORT = int(os.environ['PORT'])
-    if '--host' in args: HOST = args[args.index('--host') + 1]
+    if '--port' in args:
+        PORT = int(args[args.index('--port') + 1])
+    if '--host' in args:
+        HOST = args[args.index('--host') + 1]
+    with _reserve_socket(HOST, PORT) as listener:
+        PORT = listener.getsockname()[1]
+        print('金沙江生态评估 · http://127.0.0.1:%d/ · API 文档 /docs' % PORT, flush=True)
+        if ready:
+            ready(PORT)
+        config = uvicorn.Config(app, host=HOST, port=PORT, loop='asyncio', http='h11', ws='none',
+                                proxy_headers=False, access_log=False, log_config=None)
+        uvicorn.Server(config).run(sockets=[listener])
 
-    # 端口自愈：若被旧实例占用，自动顺延，避免"双击无反应/看到旧界面"
-    try:
-        _probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _probe.settimeout(0.5)
-        _probe.connect((HOST if HOST not in ('0.0.0.0', '') else '127.0.0.1', PORT))
-        _probe.close()
-        for _p in range(PORT + 1, PORT + 50):
-            _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _s.settimeout(0.5)
-            try:
-                _s.connect(('127.0.0.1', _p))
-                _s.close()
-            except OSError:
-                _s.close()
-                PORT = _p
-                break
-    except OSError:
-        pass
-
-    os.makedirs(DATA, exist_ok=True)
-    init_users()
-    _auto_sync_start()
-    srv = ThreadingHTTPServer((HOST, PORT), H)
-    srv.daemon_threads = True
-    print('\n' + '─' * 62)
-    print('  金沙江流域森林生态环境智能评估系统  v2.0')
-    print('─' * 62)
-    print('  本机访问   http://127.0.0.1:%d' % PORT)
-    for ip in lan_ips():
-        print('  局域网访问 http://%s:%d' % (ip, PORT))
-    print('  账号       why（密码不在此处回显，可在「设置 → 修改密码」更换）')
-    print('  停止服务   Ctrl + C')
-    print('─' * 62 + '\n', flush=True)
-    try: srv.serve_forever()
-    except KeyboardInterrupt:
-        print('\n已停止')
 
 if __name__ == '__main__':
     main()

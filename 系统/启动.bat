@@ -1,19 +1,16 @@
 @echo off
-chcp 65001 >nul
+setlocal EnableExtensions
 cd /d "%~dp0"
-title 金沙江流域森林生态环境智能评估系统
 
-where python >nul 2>nul
-if %errorlevel%==0 (
-  set PY=python
-) else (
-  if exist "D:\miniconda3\python.exe" (set PY=D:\miniconda3\python.exe) else (
-    echo 未找到 Python，请先安装 Python 3.9+ 并勾选 Add to PATH
-    pause & exit /b
-  )
+set "PY="
+where python.exe >nul 2>nul && set "PY=python.exe"
+if not defined PY if exist "D:\miniconda3\python.exe" set "PY=D:\miniconda3\python.exe"
+if not defined PY if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PY=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined PY (
+  echo Python 3.10 or newer is required to launch from source.
+  pause
+  exit /b 1
 )
 
-echo 正在启动服务...
-start "" http://127.0.0.1:8080
-%PY% server.py --port 8080
-pause
+"%PY%" boot.py %*
+if errorlevel 1 pause

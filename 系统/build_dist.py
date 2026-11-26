@@ -1,81 +1,82 @@
-# -*- coding: utf-8 -*-
-"""
-构建「可直接发给别人电脑」的单文件 exe：
-- 内置 web/ 前端 + data/ 关键数据（3D 地形 dem.bin、河流、图表 JSON、实景块 detail/patch）
-- 排除只在 2D 底图用到的 tiles(246MB)、未被前端引用的 rsei/*.tif(50MB) 与 tiles_dem(38.5MB)、sql 快照
-用法：python build_dist.py
-"""
+"""Build a standalone Windows executable using the current source and data."""
+import argparse
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
+from zipfile import ZIP_STORED, ZipFile
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(BASE, 'data')
-STAGE = os.path.join(BASE, '_dist_data')
-EXCLUDE_DIRS = {'tiles', 'tiles_dem', 'sql'}
-EXCLUDE_EXT = {'.tif', '.log'}
-EXCLUDE_FILES = {'.power_cache.json', '.secret'}
+BASE = Path(__file__).resolve().parent
+DATA = BASE / 'data'
+WORK = BASE / '_pybuild'
+DIST = BASE / '_dist'
+PRIVATE_FILES = {'users.json', 'public_url.txt', '.secret', '.power_cache.json',
+                 'public.pg_stat_statements.csv.gz', 'public.pg_stat_statements_info.csv.gz'}
+PRIVATE_SUFFIXES = {'.log', '.sqlite', '.sqlite3', '.db', '.pem', '.key'}
+OPTIONAL_DIRECTORIES = {'tiles', 'tiles_dem', 'sql'}
 
 
-def build_stage():
-    # 已有暂存数据则直接复用（数据未变），避免触发批量删除安全策略
-    if os.path.isdir(STAGE) and os.listdir(STAGE):
-        total = 0
-        for r, d, fs in os.walk(STAGE):
-            for f in fs:
-                try:
-                    total += os.path.getsize(os.path.join(r, f))
-                except OSError:
-                    pass
-        print('[stage] 复用已有 _dist_data (%.1f MB)；如需重建请手动删除该目录' % (total / 1024 / 1024))
-        return total
-    os.makedirs(STAGE, exist_ok=True)
-    n = 0
-    total = 0
-    for root, dirs, files in os.walk(DATA):
-        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
-        rel = os.path.relpath(root, DATA)
-        dst_dir = STAGE if rel == '.' else os.path.join(STAGE, rel)
-        os.makedirs(dst_dir, exist_ok=True)
-        for f in files:
-            if f in EXCLUDE_FILES or os.path.splitext(f)[1].lower() in EXCLUDE_EXT:
-                continue
-            src = os.path.join(root, f)
-            shutil.copy2(src, os.path.join(dst_dir, f))
-            n += 1
-            try:
-                total += os.path.getsize(src)
-            except OSError:
-                pass
-    print('[stage] 复制 %d 个文件, %.1f MB -> %s' % (n, total / 1024 / 1024, STAGE))
-    return total
+def copy_data(destination, full):
+    """Copy fresh seed data while keeping credentials and live runtime state local."""
+    def ignored(directory, names):
+        directory = Path(directory)
+        skip = set()
+        for name in names:
+            path = directory / name
+            suffix = path.suffix.lower()
+            if name.startswith('.') or name in PRIVATE_FILES or name.startswith('audit.log'):
+                skip.add(name)
+            elif suffix in PRIVATE_SUFFIXES or name.endswith(('.sqlite3-wal', '.sqlite3-shm')):
+                skip.add(name)
+            elif name == 'tiles' or (not full and (name in OPTIONAL_DIRECTORIES or suffix in {'.tif', '.tiff'})):
+                skip.add(name)
+        return skip
+
+    shutil.copytree(DATA, destination, ignore=ignored)
+    if full:
+        # A single archive avoids thousands of small file extractions at launch.
+        with ZipFile(destination / 'tiles.zip', 'w', compression=ZIP_STORED) as archive:
+            for path in (DATA / 'tiles').rglob('*'):
+                if path.is_file() and path.suffix.lower() in {'.jpg', '.jpeg', '.png'}:
+                    archive.write(path, path.relative_to(DATA).as_posix())
 
 
 def main():
-    full = '--full' in sys.argv
-    build_stage()
-    name = '金沙江生态评估_完整版' if full else '金沙江生态评估'
-    print('[build] 开始 PyInstaller 打包（%s，含数据，耗时较长）…' % ('完整版 +tiles' if full else '精简版'))
-    cmd = [
-        sys.executable, '-m', 'PyInstaller',
-        '--onefile', '--name', name,
-        '--add-data', 'web;web',
-        '--add-data', '_dist_data;data',
-        '--hidden-import', 'features',
-        '--exclude-module', 'numpy', '--exclude-module', 'PIL', '--exclude-module', 'Pillow',
-        '--distpath', os.path.join(BASE, '_dist'), '--workpath', os.path.join(BASE, '_pybuild'),
-        '--specpath', BASE, '--noconfirm',
-    ]
-    if full:
-        # 完整版额外内置 3D 区域高清影像瓦片（z8~17，放大才清晰）
-        cmd += ['--add-data', os.path.join(DATA, 'tiles') + ';data/tiles']
-    cmd.append(os.path.join(BASE, 'boot.py'))
-    r = subprocess.run(cmd, cwd=BASE)
-    if r.returncode != 0:
-        print('[build] 失败'); return
-    out = os.path.join(BASE, '_dist', name + '.exe')
-    print('[build] 完成: %s  %.1f MB' % (out, os.path.getsize(out) / 1024 / 1024))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--full', action='store_true', help='Include all local map tiles and research data')
+    parser.add_argument('--output-dir', type=Path, default=DIST, help='Directory for the finished executable')
+    args = parser.parse_args()
+    output_dir = args.output_dir.resolve()
+    name = '金沙江生态评估_完整版' if args.full else '金沙江生态评估'
+    if not (DATA / 'dem.bin').is_file():
+        parser.error('data/dem.bin is required for the offline terrain.')
+    if args.full and not (DATA / 'tiles').is_dir():
+        parser.error('data/tiles is required for the full build.')
+
+    WORK.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='jinsha-build-', dir=WORK) as staging:
+        staging = Path(staging)
+        data = staging / 'data'
+        copy_data(data, args.full)
+        command = [
+            sys.executable, '-m', 'PyInstaller',
+            '--onefile', '--name', name, '--noconfirm',
+            '--icon', str(BASE / 'tools' / 'app.ico'),
+            '--add-data', f'{BASE / "web"}{os.pathsep}web',
+            '--add-data', f'{data}{os.pathsep}data',
+            '--collect-submodules', 'uvicorn.loops',
+            '--collect-submodules', 'uvicorn.protocols',
+            '--collect-submodules', 'uvicorn.lifespan',
+            '--exclude-module', 'PIL',
+            '--distpath', str(output_dir), '--workpath', str(WORK / output_dir.name),
+            '--specpath', str(staging), str(BASE / 'boot.py'),
+        ]
+        subprocess.run(command, cwd=BASE, check=True)
+    executable = output_dir / (name + '.exe')
+    print(f'[build] {executable} ({executable.stat().st_size:,} bytes)', flush=True)
 
 
 if __name__ == '__main__':

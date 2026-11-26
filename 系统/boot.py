@@ -1,114 +1,67 @@
-# -*- coding: utf-8 -*-
-"""
-打包启动器（双击 exe 的入口）。
-
-职责：
-1. 定位外部数据目录 data/（用 JINSHA_DATA 注入，server.py 已支持）
-2. 启动后端服务（server.py，纯标准库 ThreadingHTTPServer）
-3. 服务起来后自动免密登录并打开浏览器 → 三维数字孪生主界面（/）
-   （数据看板 /dashboard 仍可通过主界面右上角「数据看板」入口访问）
-
-设计说明：
-- data/ 目录（含地图瓦片/遥感图/分析 JSON，约 500MB）外置、与 exe 同目录，
-  不打包进 exe，便于数据更新与体积控制。
-- 不依赖项目内其他启动脚本，独立可运行。
-"""
+"""Run the local server and open the desktop dashboard once it is ready."""
 import os
+from pathlib import Path
 import sys
-import socket
 import threading
 import time
+from urllib.parse import urlencode
+from urllib.request import ProxyHandler, build_opener
 import webbrowser
 
 
-def _base_dir():
-    """exe / 脚本所在目录。"""
+def _data_directory():
+    override = os.environ.get('JINSHA_DATA')
+    if override:
+        return Path(override).expanduser().resolve()
+
     if getattr(sys, 'frozen', False):
-        return os.path.dirname(os.path.abspath(sys.executable))
-    return os.path.dirname(os.path.abspath(__file__))
+        sibling = Path(sys.executable).resolve().parent / 'data'
+        if (sibling / 'meta.json').is_file() and (sibling / 'dem.bin').is_file():
+            return sibling
+        return Path(sys._MEIPASS) / 'data'
+
+    return Path(__file__).resolve().parent / 'data'
 
 
-def _resolve_data_dir(base):
-    """找 data 目录（优先级）：
-    1) JINSHA_DATA 环境变量（开发覆盖）
-    2) exe 同目录 data/（用户本机有外置数据时用最新的，便于迭代）
-    3) exe 内置 _MEIPASS/data（单文件分发到别人电脑时用这里）
-    """
-    meipass = getattr(sys, '_MEIPASS', None)
-    cands = [
-        os.environ.get('JINSHA_DATA'),
-        os.path.join(base, 'data'),
-        os.path.join(meipass, 'data') if meipass else None,
-        os.path.join(base, '系统', 'data'),
-        os.path.join(base, '..', 'data'),
-    ]
-    for c in cands:
-        if c and os.path.isdir(c):
-            return c
-    return None
-
-
-def _parse_port():
-    if '--port' in sys.argv:
-        return int(sys.argv[sys.argv.index('--port') + 1])
-    if os.environ.get('PORT'):
-        return int(os.environ['PORT'])
-    return 8080
-
-
-def _port_taken(port, host='127.0.0.1'):
-    """TCP 连接探测：能连上说明已有服务在监听（旧实例占着端口）。"""
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(0.5)
-    try:
-        s.connect((host, port))
-        s.close()
-        return True
-    except OSError:
-        s.close()
-        return False
-
-
-def _find_free_port(preferred, span=50):
-    """优先用 preferred；被占则向后顺延，保证双击即用、永不因端口冲突而启动失败。"""
-    for p in range(preferred, preferred + span):
-        if not _port_taken(p):
-            return p
-    return preferred
+def _open_dashboard(port, create_token):
+    base = f'http://127.0.0.1:{port}'
+    opener = build_opener(ProxyHandler({}))
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            with opener.open(f'{base}/api/health', timeout=1) as response:
+                if response.status == 200:
+                    token = create_token()
+                    url = f'{base}/auto?{urlencode({"t": token})}' if token else f'{base}/'
+                    webbrowser.open(url)
+                    return
+        except OSError:
+            pass
+        time.sleep(0.25)
+    print(f'[启动器] 浏览器启动等待超时，可手动打开 {base}/', flush=True)
 
 
 def main():
-    base = _base_dir()
-    data_dir = _resolve_data_dir(base)
-    if data_dir:
-        os.environ['JINSHA_DATA'] = data_dir
-        print('[启动器] 数据目录：%s' % data_dir)
-    else:
-        print('[启动器] 未找到 data/ 目录，将使用空数据目录（部分功能不可用）。')
+    data = _data_directory()
+    os.environ['JINSHA_DATA'] = str(data)
+    os.environ.setdefault('JINSHA_HOST', '127.0.0.1')
+    if getattr(sys, 'frozen', False):
+        local = Path(os.environ.get('LOCALAPPDATA') or Path.home() / 'AppData' / 'Local')
+        os.environ.setdefault('JINSHA_STATE', str(local / 'JinshaEco'))
+    print(f'[启动器] 数据目录：{data}', flush=True)
 
-    port = _find_free_port(_parse_port())
-    os.environ['PORT'] = str(port)
+    no_browser = '--no-browser' in sys.argv
+    if no_browser:
+        sys.argv.remove('--no-browser')
 
-    # 先确保账号文件存在，再生成一次性免密登录令牌
     import server
-    server.init_users()
-    auto_tok = server.auto_login_token()
 
-    # 服务启动后自动打开浏览器 → 免密登录 → 三维主界面
-    def _open():
-        time.sleep(2.0)
-        url = ('http://127.0.0.1:%d/auto?t=%s' % (port, auto_tok)) if auto_tok \
-            else 'http://127.0.0.1:%d/' % port
-        webbrowser.open(url)
-    threading.Thread(target=_open, daemon=True).start()
+    def on_ready(port):
+        if no_browser:
+            return
+        threading.Thread(target=_open_dashboard, args=(port, server.auto_login_token), daemon=True).start()
 
-    # 运行后端
-    try:
-        server.main()
-    except OSError as e:
-        print('\n[启动失败] %s' % e)
-        print('请确认端口 %d 未被占用（如已运行本系统请先关闭），再重新双击。' % port)
-        input('\n按回车键退出...')
+    server.main(ready=on_ready)
 
 
 if __name__ == '__main__':

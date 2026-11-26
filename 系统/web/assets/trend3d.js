@@ -3,19 +3,17 @@
    已在前端站点数组第 23 列。纯视觉专题，不参与指标计算。 */
 (function () {
   'use strict';
-  var G3 = { group: null, on: true, built: false };
-  function q(id) { return document.getElementById(id); }
+  var trendGroup = null;
 
   function build() {
     if (!window.THREE || !window.scene || !window.pillars || !window.pillars.length) return false;
-    if (G3.built) return true;
     var S = window.STATIONS || [];
     var g = new THREE.Group();
     g.name = 'trendArrows';
     var n = 0;
     for (var i = 0; i < S.length; i++) {
       var s = S[i], sen = Number(s[23] || 0);
-      if (!isFinite(sen) || Math.abs(sen) < 0.0008) continue;   // 不显著的不画，避免噪声
+      if (!Number.isFinite(sen) || Math.abs(sen) < 0.0008 || !/(上升|下降)/.test(String(s[24] || ''))) continue;
       var down = sen < 0;
       var h = 6 + Math.min(26, Math.abs(sen) * 3400);            // 0.008/年 → 约 33
       var w = window.toWorld(s[2], s[3]);
@@ -39,35 +37,29 @@
       g.add(cone); g.add(shaft);
       n++;
     }
+    g.visible = Boolean(window.G.layers.ndviTrend);
+    if (trendGroup) {
+      window.scene.remove(trendGroup);
+      trendGroup.traverse(function (obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) obj.material.dispose();
+      });
+    }
+    trendGroup = g;
     window.scene.add(g);
-    G3.group = g; G3.built = true; G3.count = n;
-    return n > 0;
+    return n;
   }
 
-  function chip() {
-    var row = document.querySelector('#hudLayers .hud-row');
-    if (!row || q('trChip')) return;
-    var el = document.createElement('span');
-    el.id = 'trChip';
-    el.className = 'lchip on';
-    el.title = 'NDVI 年值趋势：绿箭头改善 / 红箭头退化，长度表示快慢';
-    el.innerHTML = '<i class="dt"></i>植被趋势';
-    el.onclick = function () {
-      G3.on = !G3.on;
-      if (G3.group) G3.group.visible = G3.on;
-      el.classList.toggle('on', G3.on);
-      window.toast && window.toast(G3.on ? '植被趋势箭头已显示' : '已隐藏', 'ok', '↕');
-    };
-    row.appendChild(el);
-  }
-
-  var tries = 0;
-  var t = setInterval(function () {
-    tries++;
-    if (build()) {
-      clearInterval(t);
-      chip();
-      if (window.toast) window.toast('植被趋势专题：' + G3.count + ' 站有显著趋势', 'ok', '↕');
-    } else if (tries > 40) clearInterval(t);
-  }, 600);
+  window.JinshaTrendArrows = {
+    rebuild: build,
+    setVisible: function (visible) {
+      window.G.layers.ndviTrend = Boolean(visible);
+      if (trendGroup) trendGroup.visible = Boolean(visible);
+      else if (visible) build();
+    },
+    isVisible: function () {
+      return Boolean(window.G && window.G.layers.ndviTrend);
+    }
+  };
+  if (window.scene) build();
 })();

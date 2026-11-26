@@ -12,14 +12,24 @@
   4. 真实任务系统（创建 / 查询 / 详情 / 进度），替代原来的假状态
 """
 import os, json, time, math, statistics, csv, io, hashlib
+from threading import RLock
 
 DATA = os.environ.get('JINSHA_DATA') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 ML_PATH = os.path.join(DATA, 'ml_models.json')
 SCEN_PATH = os.path.join(DATA, 'scenarios.json')
 TASKS_PATH = os.path.join(DATA, 'tasks.json')
+_load_database = _save_database = None
+_TASK_LOCK = RLock()
+
+
+def configure_storage(load, save):
+    global _load_database, _save_database
+    _load_database, _save_database = load, save
 
 
 def _load(path, default):
+    if _load_database:
+        return _load_database(path, default)
     try:
         with open(path, encoding='utf-8') as f:
             return json.load(f)
@@ -28,6 +38,8 @@ def _load(path, default):
 
 
 def _save(path, obj):
+    if _save_database:
+        return _save_database(path, obj)
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
     tmp = path + '.tmp'
     with open(tmp, 'w', encoding='utf-8') as f:
@@ -369,29 +381,92 @@ def export_dataset(stations, metrics, fmt='csv'):
 
 # ---------------------------------------------------------------- 真实任务系统
 def create_task(task_id, model, name, user='unknown'):
-    db = _load(TASKS_PATH, {'items': []})
-    rec = {'id': task_id, 'model': model, 'name': name or model or '任务',
-           'status': 'running', 'progress': 0, 'user': user,
-           'created': _now(), 'updated': _now(),
-           'log': ['任务已创建', '正在准备真实站点数据…']}
-    db['items'].insert(0, rec)
-    db['items'] = db['items'][:200]
-    _save(TASKS_PATH, db)
-    return rec
+    with _TASK_LOCK:
+        db = _load(TASKS_PATH, {'items': []})
+        rec = {'id': task_id, 'model': model, 'name': name or model or '任务',
+               'status': 'running', 'progress': 0, 'user': user,
+               'created': _now(), 'updated': _now(), 'log': ['任务已创建']}
+        db['items'].insert(0, rec)
+        db['items'] = db['items'][:200]
+        _save(TASKS_PATH, db)
+        return rec
 
 
-def run_task(task_id):
-    """真实执行任务：推进进度，写入模型结果摘要。"""
-    db = _load(TASKS_PATH, {'items': []})
-    rec = next((t for t in db['items'] if t['id'] == task_id), None)
-    if not rec:
-        return None
-    rec['status'] = 'done'
-    rec['progress'] = 100
-    rec['updated'] = _now()
-    rec['log'] = ['任务已创建', '真实站点数据已加载', '模型计算完成', '结果已叠加到图层']
-    _save(TASKS_PATH, db)
-    return rec
+def run_task(task_id, evaluate=None):
+    with _TASK_LOCK:
+        db = _load(TASKS_PATH, {'items': []})
+        rec = next((item for item in db['items'] if item['id'] == task_id), None)
+        if not rec:
+            return None
+        if rec['status'] != 'running':
+            return rec
+        try:
+            if evaluate is None:
+                raise ValueError('任务计算服务尚未配置')
+            rec['result'] = evaluate(rec['model'])
+            rec.update(status='done', progress=100)
+            rec['log'].append('计算完成，结果已保存')
+        except ValueError as error:
+            rec.update(status='failed', progress=0, error=str(error))
+            rec['log'].append(str(error))
+        rec['updated'] = _now()
+        _save(TASKS_PATH, db)
+        return rec
+
+
+def evaluate_task(model, stations, calculate, effective, climate):
+    """通过当前站点数据执行已接入的分析能力。"""
+    units = {'slope': '°', 'dem': 'm', 'lc': '%', 'era': '℃',
+             'risk': '分', 'eei': '分', 'carbon': 't/ha'}
+
+    def value_of(station):
+        if model == 'lc':
+            return 100 * effective(station, 'lc.林地')
+        if model in ('risk', 'eei', 'carbon'):
+            return calculate(station)[model]
+        return effective(station, {'dem': 'elev', 'era': 'temp'}.get(model, model))
+
+    if model not in units:
+        raise ValueError('此目录项尚未接入可运行引擎及所需输入。可在渲染台检查现有数据，或在智能评估运行已接入的模型。')
+    available = stations
+    if model == 'era':
+        available = [st for st in stations if st['name'] in (climate().get('stations') or {})]
+    rows = [{'name': st['name'], 'value': round(value_of(st), 3)} for st in available]
+    if not rows:
+        raise ValueError('没有可用于该分析的站点数据')
+    return {'headline': '已分析 %d 个站点' % len(rows), 'unit': units[model], 'items': rows,
+            'mean': round(statistics.mean(item['value'] for item in rows), 3),
+            'note': '由本地台账及评估公式计算，空间范围为站点。'}
+
+
+SCENARIO_TRANSFERS = (
+    ('baseline', '基准', None, None, 0, '使用当前有效土地覆盖比例'),
+    ('degraded', '退化管理', '林地', '裸地', .15, '将各站林地面积的 15% 转为裸地'),
+    ('restored', '生态修复', '裸地', '林地', .25, '将各站裸地面积的 25% 转为林地'),
+)
+
+
+def evaluate_scenarios(stations, effective, calculate):
+    fields = ('林地', '草地灌丛', '农田', '建成区', '裸地', '水体', '湿地')
+    indicators = ('eei', 'risk', 'carbon', 'fvc')
+    results = []
+    for code, name, source, target, fraction, assumption in SCENARIO_TRANSFERS:
+        rows = []
+        for station in stations:
+            cover = {key: effective(station, 'lc.' + key) for key in fields}
+            if source:
+                change = cover[source] * fraction
+                cover[source] -= change
+                cover[target] += change
+            values = calculate(station, cover)
+            rows.append({'name': station['name'], **{key: round(values[key], 4) for key in indicators}})
+        if not rows:
+            return {'ok': True, 'scenarios': []}
+        summary = {key: round(statistics.mean(row[key] for row in rows), 4) for key in indicators}
+        results.append({'id': code, 'name': name, 'assumption': assumption, 'n': len(rows),
+                        'summary': summary, 'items': rows})
+    return {'ok': True, 'scenarios': results,
+            'note': '情景假设仅改变土地覆盖，参考站点当前气候和地形。结果按站点等权汇总。'}
 
 
 def get_task(task_id):
