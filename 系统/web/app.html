@@ -5203,8 +5203,7 @@ function buildSettings(){
    '<div class="srv"><span class="dot"></span><span class="nm">当前页面</span><span class="ad" id="srvPage">—</span><span class="st ok">本地</span></div>'+
    '<div class="sec-lab" style="margin-top:9px">研究技术栈</div>'+
    '<div class="srv"><span class="dot"></span><span class="nm">智能体开发环境</span><span class="ad">WorkBuddy · Deepseek-V4-Pro</span><span class="st ok">在用</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 三维地形平台</span><span class="ad">Three.js r158 · WebGL2</span><span class="st ok">在用</span></div>'+
-   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 评估工作台</span><span class="ad">/studio · ECharts 5</span><span class="st ok">在用</span></div>'+
+   '<div class="srv"><span class="dot"></span><span class="nm">前端 · 三维地形平台</span><span class="ad">Three.js r158 · WebGL2 · 集成评估工作台</span><span class="st ok">在用</span></div>'+
    '<div class="srv"><span class="dot" id="srvBeDot2"></span><span class="nm">后端服务</span><span class="ad">Python http.server · 20 组 REST API</span><span class="st ok" id="srvBeSt2">在线</span></div>'+
    '<div class="srv"><span class="dot"></span><span class="nm">数据层</span><span class="ad">data/*.json（可平滑迁 PostgreSQL）</span><span class="st ok">jinsha</span></div>'+
    '<div class="srv"><span class="dot"></span><span class="nm">AI 模型群</span><span class="ad">RF / SVM / U-Net / XGBoost / LSTM</span><span class="st ok">已注册</span></div>'+
@@ -7225,11 +7224,6 @@ var AI_TOOL_IMPL={
         return {ok:true,html:html};
       });
     }).catch(function(e){return {ok:false,html:'生成失败：'+esc(e.message)};});
-  },
-  open_studio:function(a){
-    if(M2.on)m2Toggle(false);
-    trace('open_studio','三维地形已在前景');
-    return {ok:true,html:'当前界面就是三维地图，无需切换'};
   },
   /* 真·跨层工具：派发后端任务（写库）并等它算完 */
   submit_job:function(a){

@@ -55,6 +55,7 @@ build/
 .slidep/
 
 # ---------- 本机运行态数据 ----------
+系统/_user_tmp.json
 *.sqlite
 *.sqlite3
 *.db

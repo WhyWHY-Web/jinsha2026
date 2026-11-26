@@ -40,13 +40,6 @@ MAX_BODY = 8 * 1024 * 1024          # 单个请求体上限，防止 Content-Len
 AUDIT_MAX = 2 * 1024 * 1024         # 审计日志轮转阈值
 
 
-CSP_CESIUM = ("default-src 'self'; img-src 'self' data: blob: https:; "
-              "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; "
-              "connect-src 'self' https: http://localhost:* http://127.0.0.1:*; "
-              "font-src 'self' data: https://cdn.jsdelivr.net; worker-src 'self' blob:; "
-              "frame-ancestors 'self'; base-uri 'self'; object-src 'none'")
-
 CSP = ("default-src 'self'; img-src 'self' data: blob: https:; "
        "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; "
        "connect-src 'self' https: http://localhost:* http://127.0.0.1:*; "
@@ -1478,7 +1471,7 @@ class H(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'same-origin')
         self.send_header('X-Frame-Options', 'SAMEORIGIN')
-        self.send_header('Content-Security-Policy', CSP_CESIUM if self.path.startswith('/cesium') else CSP)
+        self.send_header('Content-Security-Policy', CSP)
         self.send_header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
         if self.headers.get('X-Forwarded-Proto') == 'https' or self.headers.get('CF-Visitor'):
             self.send_header('Strict-Transport-Security', 'max-age=31536000')
@@ -1514,14 +1507,6 @@ class H(BaseHTTPRequestHandler):
             tok, s = session_of(self)
             if not s: return self.send(302, b'', headers={'Location': '/login'})
             return self.file(os.path.join(WEB, 'app.html'))
-        if p in ('/studio', '/studio.html'):
-            tok, s = session_of(self)
-            if not s: return self.send(302, b'', headers={'Location': '/login'})
-            return self.file(os.path.join(WEB, 'index.html'))
-        if p in ('/cesium2', '/cesium2.html'):
-            tok, s2 = session_of(self)
-            if not s2: return self.send(302, b'', headers={'Location': '/login'})
-            return self.file(os.path.join(WEB, 'cesium2.html'))
         if p == '/auto':
             # 桌面版免密自动登录：/auto?t=<token> → 建立会话并跳转三维主界面
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -1819,10 +1804,6 @@ class H(BaseHTTPRequestHandler):
             if os.path.exists(AUDIT):
                 with open(AUDIT, encoding='utf-8') as f: rows = [json.loads(l) for l in f if l.strip()][-40:][::-1]
             return self.j({'ok': True, 'rows': rows})
-        if p in ('/cesium', '/cesium.html'):
-            tok, s = session_of(self)
-            if not s: return self.send(302, b'', headers={'Location': '/login'})
-            return self.file(os.path.join(WEB, 'cesium.html'))
         if p == '/report':
             tok, s = session_of(self)
             if not s: return self.send(302, b'', headers={'Location': '/login'})
