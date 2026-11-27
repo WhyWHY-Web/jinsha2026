@@ -899,6 +899,10 @@ body.dockhide #demBadge{bottom:14px}
         </div>
       </div>
       <section class="jr-panel"><h3>站点评估</h3><div id="jrStationAssessment" role="status"></div></section>
+      <section class="jr-panel" id="jrDamPanel" hidden>
+        <div class="jr-panel-heading"><h3>梯级电站参数</h3><span id="jrDamOrder"></span></div>
+        <div id="jrDamBody"></div>
+      </section>
     </section>
     <div id="jrBasinInspector">
       <section id="rightChartCard" class="jr-panel">
@@ -914,6 +918,11 @@ body.dockhide #demBadge{bottom:14px}
         <div class="jr-panel-heading"><h3>干流分段对比</h3><span>EEI / 100</span></div>
         <div id="rcSeg" class="jr-segments" aria-label="干流分段评估"></div>
         <p class="jr-panel-status" id="jrSegmentStatus" role="status">正在读取分段数据</p>
+      </section>
+      <section class="jr-panel" id="jrDamChainPanel" hidden>
+        <div class="jr-panel-heading"><h3>四级梯级电站</h3><span>装机 万kW</span></div>
+        <div id="jrDamChainBody" aria-label="金沙江下游四级梯级电站"></div>
+        <p class="jr-panel-status" id="jrDamChainNote"></p>
       </section>
     </div>
   </aside>

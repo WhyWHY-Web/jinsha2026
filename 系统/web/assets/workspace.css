@@ -395,3 +395,17 @@ body.coll-r #jrRightSplit, body.maxmap #jrRightSplit, body[data-workspace-module
 .jr-ai-answer { margin: 0 0 7px; font-size: 12px; }
 .jr-ai-answer b { color: var(--jr-teal); }
 body[data-workspace-module="coupling"] #phIc, body[data-workspace-module="coupling"] #mod-ph .me { display: none }
+
+/* 四级梯级电站：条形为正常蓄水位（体现梯级落差），右侧为装机 */
+.jr-dam-row {
+  width: 100%; display: grid; grid-template-columns: 12px 46px minmax(0,1fr) 40px; gap: 6px; align-items: center;
+  padding: 4px 2px; border: 1px solid transparent; border-radius: 4px; background: transparent;
+  color: #bed4e7; font-size: 11px; text-align: left; cursor: pointer;
+}
+.jr-dam-row:hover { border-color: #365675; background: #142a41 }
+.jr-dam-row[aria-current="true"] { border-color: #4d8db8; background: #16304a }
+.jr-dam-order { color: #7fa4c2; font-size: 10px; font-variant-numeric: tabular-nums }
+.jr-dam-name { color: #e3f3ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.jr-dam-track { display: block; height: 6px; overflow: hidden; border-radius: 3px; background: #24374d }
+.jr-dam-track i { display: block; width: var(--fill,0%); height: 100%; border-radius: inherit; background: linear-gradient(90deg,#2f7fb0,#5fc9f2) }
+.jr-dam-cap { text-align: right; color: #e3f3ff; font-variant-numeric: tabular-nums }

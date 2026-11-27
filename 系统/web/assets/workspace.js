@@ -28,6 +28,9 @@
   let latestToken = null;
   let loading = false;
   let dock = '';
+  let damList = [];
+  let damIndex = {};
+  let damTotals = null;
 
   function make(tag, cls, value) {
     const element = document.createElement(tag);
@@ -191,6 +194,88 @@
     );
   }
 
+  function renderDamPanel() {
+    const panel = byId('jrDamPanel');
+    const dam = station ? damIndex[station[0]] : null;
+    if (!dam) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    setText('jrDamOrder', '第 ' + dam.order + ' 级 / ' + damList.length);
+    const upstream = damList.find(row => row.order === dam.order - 1);
+    const drop = upstream ? Number(upstream.normalLevelM) - Number(dam.normalLevelM) : null;
+    byId('jrDamBody').replaceChildren(
+      makePairs([
+        ['装机容量', number(dam.capacityMW / 10, 0) + ' 万kW'],
+        ['坝高', number(dam.damHeightM, 1) + ' m'],
+        ['正常蓄水位', number(dam.normalLevelM, 0) + ' m'],
+        ['总库容', number(dam.totalStorageYiM3, 2) + ' 亿m³'],
+        ['调节库容', number(dam.regulationStorageYiM3, 2) + ' 亿m³'],
+        ['年发电量', number(dam.annualGenYiKWh, 1) + ' 亿kWh'],
+        ['全部投产', dam.allUnits || '—'],
+        ['梯级落差', drop === null ? '龙头水库' : number(drop, 0) + ' m']
+      ]),
+      make('p', 'jr-station-note', [dam.units, dam.type, dam.location].filter(Boolean).join(' · ')),
+      make('p', 'jr-station-note', '设计值，非实时运行值 · 来源：三峡集团 / 国家能源局公开资料')
+    );
+  }
+
+  function renderDamChain() {
+    const panel = byId('jrDamChainPanel');
+    if (!damList.length) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    const heights = damList.map(row => Number(row.normalLevelM) || 0);
+    const bottom = Math.min(...heights);
+    const span = Math.max(1, Math.max(...heights) - bottom);
+    byId('jrDamChainBody').replaceChildren(...damList.map(dam => {
+      const button = make('button', 'jr-dam-row');
+      button.type = 'button';
+      const track = make('span', 'jr-dam-track');
+      const bar = make('i');
+      bar.style.setProperty('--fill', (15 + (dam.normalLevelM - bottom) / span * 85).toFixed(1) + '%');
+      track.append(bar);
+      button.append(
+        make('span', 'jr-dam-order', String(dam.order)),
+        make('span', 'jr-dam-name', dam.station),
+        track,
+        make('span', 'jr-dam-cap', number(dam.capacityMW / 10, 0))
+      );
+      button.title = dam.station + ' · 正常蓄水位 ' + number(dam.normalLevelM, 0) + ' m · 装机 '
+        + number(dam.capacityMW / 10, 0) + ' 万kW · 点击定位';
+      button.setAttribute('aria-current', String(Boolean(station && station[0] === dam.station)));
+      button.onclick = () => {
+        const row = (window.STATIONS || []).find(item => item[0] === dam.station);
+        if (row) selectStation(row, true);
+        zoomToStation(dam.station);
+      };
+      return button;
+    }));
+    if (damTotals) {
+      setText('jrDamChainNote', '合计装机 ' + number(damTotals.capacityMW / 10, 0)
+        + ' 万kW · 总库容 ' + number(damTotals.totalStorageYiM3, 2)
+        + ' 亿m³ · 年发电 ' + number(damTotals.annualGenYiKWh, 1) + ' 亿kWh');
+    }
+  }
+
+  function loadDams() {
+    query('/api/dams').then(data => {
+      if (!data || !data.ok || !Array.isArray(data.dams) || !data.dams.length) throw new Error('无电站数据');
+      damList = data.dams.slice().sort((a, b) => a.order - b.order);
+      damTotals = data.totals || null;
+      damIndex = {};
+      damList.forEach(dam => { damIndex[dam.station] = dam; });
+      renderDamChain();
+      renderDamPanel();
+    }).catch(() => {
+      byId('jrDamChainPanel').hidden = true;
+      byId('jrDamPanel').hidden = true;
+    });
+  }
+
   function selectStation(value, notify) {
     if (!value) {
       station = null;
@@ -199,6 +284,8 @@
       setText('jrInspectorTitle', '流域分析');
       if (notify) document.dispatchEvent(new CustomEvent('jinsha:station', { detail: null, bubbles: true }));
       renderRadar();
+      renderDamPanel();
+      renderDamChain();
       resizeWorkspace();
       return;
     }
@@ -223,6 +310,8 @@
     document.body.classList.remove('coll-r');
     if (narrow.matches) document.body.classList.add('coll-l');
     renderStationAssessment();
+    renderDamPanel();
+    renderDamChain();
     if (notify) document.dispatchEvent(new CustomEvent('jinsha:station', { detail: value, bubbles: true }));
     resizeWorkspace();
   }
@@ -424,6 +513,7 @@
     renderRisks();
     loadSummary();
     loadClimateKpi();
+    loadDams();
 
     setInterval(() => query('/api/data/version').then(data => {
       if (data.token && data.token !== latestToken) loadSummary();
