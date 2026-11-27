@@ -1,0 +1,14 @@
+# git blame 忽略的提交清单
+#
+# 2026-11-27 误删事故：c283fa4 删除了 208 个文件，55f923d 原样恢复。
+# 文件在恢复提交里被"重新加入"，父提交中不存在，导致 blame 把所有行
+# 归给恢复提交，掩盖真实作者。忽略这两次提交即可恢复正确归属。
+#
+# 启用：git config blame.ignoreRevsFile .git-blame-ignore-revs
+# 临时跳过：git blame --no-ignore-revs <file>
+
+# chore: 误删 208 个文件（事故提交）
+c283fa44e78e0b9fb0a767493348e48b32c349c0
+
+# fix: 恢复被误删的仓库文件（文件重新加入，污染 blame）
+55f923d5c9894d54d106cd818a514a7633e7f802
