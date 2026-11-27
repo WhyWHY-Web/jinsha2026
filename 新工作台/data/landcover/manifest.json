@@ -1,0 +1,210 @@
+{
+  "id": "esa-worldcover-2021-sample",
+  "label": "ESA WorldCover 2021 流域土地覆盖样本",
+  "source": "ESA WorldCover 2021 v200",
+  "kind": "卫星遥感分类 · 0.01° 网格样本",
+  "rows": 447637,
+  "startYear": 2021,
+  "endYear": 2021,
+  "file": "worldcover_2021_cells.csv.gz",
+  "format": "csv.gz",
+  "description": "从官方 WorldCover COG 内建低分辨率概览最近邻采样，按网格中心点掩膜，0.01° EPSG:4326。 用于流域图层和按类筛选。类别频数为样本数。",
+  "sourceUrl": "https://esa-worldcover.org/en/data-access",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by the ESA WorldCover consortium",
+  "crs": "EPSG:4326",
+  "coverageBounds": [
+    90.54557,
+    24.474998,
+    104.942272,
+    35.767283
+  ],
+  "maskSource": "系统/data/basin/jinsha_basin.geojson",
+  "cellSpacingDegrees": 0.01,
+  "columns": [
+    "longitude",
+    "latitude",
+    "year",
+    "class_code"
+  ],
+  "columnsDescription": {
+    "longitude": "°E",
+    "latitude": "°N",
+    "year": "产品年份",
+    "class_code": "ESA 官方类别代码"
+  },
+  "classLegend": {
+    "0": "无数据",
+    "10": "乔木覆盖",
+    "20": "灌丛",
+    "30": "草地",
+    "40": "耕地",
+    "50": "建设用地",
+    "60": "裸地或稀疏植被",
+    "70": "冰雪",
+    "80": "永久水体",
+    "90": "草本湿地",
+    "95": "红树林",
+    "100": "苔藓与地衣"
+  },
+  "classCounts": {
+    "10": 135630,
+    "20": 6,
+    "30": 239917,
+    "40": 18613,
+    "50": 1267,
+    "60": 36523,
+    "70": 1400,
+    "80": 3607,
+    "90": 71,
+    "100": 10603
+  },
+  "sourceTiles": [
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N30E090_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N33E090_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N30E093_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N33E093_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N27E096_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N30E096_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N33E096_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N24E099_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N27E099_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N30E099_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N33E099_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N24E102_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N27E102_Map.tif",
+      "overviewFactors": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ]
+    }
+  ],
+  "missingRows": 0,
+  "bytes": 1072792,
+  "sha256": "35c8b4f3c4f97b49bbe4da14adb67ffe6e9ec0e7bae7d72f04e50b31ce9a0658"
+}

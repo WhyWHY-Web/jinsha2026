@@ -1,0 +1,308 @@
+{
+  "id": "ghcn-daily",
+  "label": "NOAA 全球历史气候网日观测",
+  "source": "NOAA NCEI · Global Historical Climatology Network–Daily (GHCN-Daily)",
+  "kind": "气象地面站日观测",
+  "rows": 694730,
+  "startYear": 1980,
+  "endYear": 2026,
+  "startDate": "1980-01-01",
+  "endDate": "2026-11-21",
+  "retrievedAt": "2026-11-27T03:15:09+00:00",
+  "file": "daily-observations.csv.gz",
+  "format": "csv.gz",
+  "sizeBytes": 2940135,
+  "sha256": "e9b163e001940efdbd979151cde3a6fbadab9972c4c4261fc902457b4443e871",
+  "columns": [
+    "station_id",
+    "date",
+    "element",
+    "value",
+    "unit",
+    "measurement_flag",
+    "quality_flag",
+    "source_flag"
+  ],
+  "description": "按项目金沙江流域边界选取站点，归档最高温、最低温、平均温、日降水及可用雪量。每行是单站、单日、单要素。保留 NOAA 测量与来源标志，剔除缺测和非空质量标志。记录时间以各站归档为准，年度和站点覆盖不完全一致。",
+  "sourceUrl": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+  "licenseUrl": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+  "documentationUrl": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+  "stationIndexUrl": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt",
+  "stationCount": 11,
+  "elements": {
+    "PRCP": {
+      "rows": 165533,
+      "unit": "mm"
+    },
+    "SNWD": {
+      "rows": 2032,
+      "unit": "mm"
+    },
+    "TAVG": {
+      "rows": 183712,
+      "unit": "°C"
+    },
+    "TMAX": {
+      "rows": 171088,
+      "unit": "°C"
+    },
+    "TMIN": {
+      "rows": 172365,
+      "unit": "°C"
+    }
+  },
+  "stations": [
+    {
+      "stationId": "CHM00056004",
+      "name": "TUOTUOHE",
+      "lat": 34.217,
+      "lon": 92.433,
+      "elevation_m": 4535.0,
+      "rows": 62608,
+      "firstDate": "1980-01-01",
+      "lastDate": "2025-08-24",
+      "elements": {
+        "PRCP": 15133,
+        "SNWD": 162,
+        "TAVG": 16624,
+        "TMAX": 14891,
+        "TMIN": 15798
+      }
+    },
+    {
+      "stationId": "CHM00056021",
+      "name": "QUMARLEB",
+      "lat": 34.133,
+      "lon": 95.783,
+      "elevation_m": 4176.0,
+      "rows": 64501,
+      "firstDate": "1980-01-01",
+      "lastDate": "2025-08-24",
+      "elements": {
+        "PRCP": 15297,
+        "SNWD": 222,
+        "TAVG": 16621,
+        "TMAX": 16603,
+        "TMIN": 15758
+      }
+    },
+    {
+      "stationId": "CHM00056029",
+      "name": "YUSHU",
+      "lat": 33.0,
+      "lon": 96.967,
+      "elevation_m": 3717.0,
+      "rows": 62652,
+      "firstDate": "1980-01-01",
+      "lastDate": "2025-08-24",
+      "elements": {
+        "PRCP": 15316,
+        "SNWD": 152,
+        "TAVG": 16627,
+        "TMAX": 14798,
+        "TMIN": 15759
+      }
+    },
+    {
+      "stationId": "CHM00056146",
+      "name": "GARZE",
+      "lat": 31.617,
+      "lon": 100.0,
+      "elevation_m": 3394.0,
+      "rows": 64114,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-20",
+      "elements": {
+        "PRCP": 15245,
+        "SNWD": 443,
+        "TAVG": 16995,
+        "TMAX": 15268,
+        "TMIN": 16163
+      }
+    },
+    {
+      "stationId": "CHM00056257",
+      "name": "LITANG",
+      "lat": 30.0,
+      "lon": 100.267,
+      "elevation_m": 3950.0,
+      "rows": 65654,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-21",
+      "elements": {
+        "PRCP": 15123,
+        "SNWD": 412,
+        "TAVG": 16970,
+        "TMAX": 16945,
+        "TMIN": 16204
+      }
+    },
+    {
+      "stationId": "CHM00056462",
+      "name": "JIULONG",
+      "lat": 29.0,
+      "lon": 101.5,
+      "elevation_m": 2994.0,
+      "rows": 61548,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-21",
+      "elements": {
+        "PRCP": 14635,
+        "SNWD": 2,
+        "TAVG": 16478,
+        "TMAX": 14716,
+        "TMIN": 15717
+      }
+    },
+    {
+      "stationId": "CHM00056571",
+      "name": "XICHANG",
+      "lat": 27.9,
+      "lon": 102.267,
+      "elevation_m": 1599.0,
+      "rows": 63594,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-20",
+      "elements": {
+        "PRCP": 15045,
+        "SNWD": 257,
+        "TAVG": 16972,
+        "TMAX": 15240,
+        "TMIN": 16080
+      }
+    },
+    {
+      "stationId": "CHM00056651",
+      "name": "LIJING",
+      "lat": 26.833,
+      "lon": 100.467,
+      "elevation_m": 2394.0,
+      "rows": 63896,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-21",
+      "elements": {
+        "PRCP": 15134,
+        "SNWD": 329,
+        "TAVG": 16998,
+        "TMAX": 15196,
+        "TMIN": 16239
+      }
+    },
+    {
+      "stationId": "CHM00056671",
+      "name": "HUILI",
+      "lat": 26.65,
+      "lon": 102.25,
+      "elevation_m": 1788.0,
+      "rows": 65260,
+      "firstDate": "1980-01-01",
+      "lastDate": "2026-11-20",
+      "elements": {
+        "PRCP": 15099,
+        "SNWD": 7,
+        "TAVG": 16954,
+        "TMAX": 16921,
+        "TMIN": 16279
+      }
+    },
+    {
+      "stationId": "CHM00056768",
+      "name": "CHUXIONG",
+      "lat": 25.017,
+      "lon": 101.517,
+      "elevation_m": 1820.0,
+      "rows": 61020,
+      "firstDate": "1980-01-01",
+      "lastDate": "2023-04-27",
+      "elements": {
+        "PRCP": 14306,
+        "SNWD": 14,
+        "TAVG": 15813,
+        "TMAX": 15788,
+        "TMIN": 15099
+      }
+    },
+    {
+      "stationId": "CHM00056778",
+      "name": "KUNMING",
+      "lat": 25.017,
+      "lon": 102.683,
+      "elevation_m": 1892.0,
+      "rows": 59883,
+      "firstDate": "1980-01-01",
+      "lastDate": "2025-08-24",
+      "elements": {
+        "PRCP": 15200,
+        "SNWD": 32,
+        "TAVG": 16660,
+        "TMAX": 14722,
+        "TMIN": 13269
+      }
+    }
+  ],
+  "sourceFiles": [
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056004.dly",
+      "sha256": "dd29d013dbee73b3a67fedb0f280d1363032179efab7bf5daccaab162320ccb2",
+      "bytes": 905580
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056021.dly",
+      "sha256": "741011db022b4ab0645cf98b155521f6f82e6464ca77dee3ea82d09ee0659d69",
+      "bytes": 912870
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056029.dly",
+      "sha256": "6458228351a81deb81d3e9dc1308e0eec7cc9bd8a105b200655470527f758bfe",
+      "bytes": 966060
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056146.dly",
+      "sha256": "2f8509c0efc4068785446c0f2dc0b8104b13418bb9ea44d6c10a836a95d4ad73",
+      "bytes": 986310
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056257.dly",
+      "sha256": "ba5f23adc55703987ae65c6a2a1066fb940904a3a3cb94de468e3d848e31c2a8",
+      "bytes": 974970
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056462.dly",
+      "sha256": "f66a3f9f338b22cf4d1c788d924d4a3d82fd7ba903b69df1c472eed9dee409ab",
+      "bytes": 957150
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056571.dly",
+      "sha256": "d3baecd0edb0e707ade0f627a7e54536858cdc9d26a458b1efb30db60f4bc974",
+      "bytes": 979020
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056651.dly",
+      "sha256": "cf55da879e0817c3bdfa5ef8aa69798e534651fd414ac5bd8be06df4d85f9a7a",
+      "bytes": 983880
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056671.dly",
+      "sha256": "9ab085c3704c5a0d5c3f26766f9ed7ff41a7f17fc680aec774883e7211cae93c",
+      "bytes": 965790
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056768.dly",
+      "sha256": "5b1d0c92456a4c58fe012addeeba6d72036d8706dd575ef187f3d203649e08b6",
+      "bytes": 943920
+    },
+    {
+      "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/CHM00056778.dly",
+      "sha256": "f7e2bfd40c7be52b8f2cd4162227fa8e8d728612482b228035987aceb5effd47",
+      "bytes": 979290
+    }
+  ],
+  "spatialFilter": {
+    "geometry": "项目金沙江流域 GeoJSON 子流域边界合并",
+    "crs": "WGS 84 / EPSG:4326",
+    "method": "点坐标位于合并后的多边形内或边界上",
+    "boundarySha256": "4eb9146ec0ac7fa3502f476d1d56b22462230e2fd5e463f402ef518b2e5f8d50"
+  },
+  "doi": "10.7289/V5D21VHZ",
+  "archiveVersionAtCheck": "The current version of GHCN Daily is 3.35-upd-2026112418 (i.e, an update that started at 2026112418 [yyyymmddhh] UTC; yyyy=year; mm=month; dd=day; hh=hour),\ncreated by appending recently available data updates to the last fully reprocessed version: 3.35-por-2026110623."
+}

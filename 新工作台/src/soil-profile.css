@@ -1,0 +1,19 @@
+.soil-profile {
+  margin: 0 10px 8px;
+  padding: 7px 8px;
+  border: 1px solid #2c526e;
+  border-radius: 3px;
+  background: #0b2338;
+  font-size: 10px;
+  color: #b7cddb;
+}
+.soil-selectors { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
+.soil-selectors select { color: #e3f1ff; background: #153750; border: 1px solid #345d7d; border-radius: 3px; }
+.soil-selectors span { color: #92c6a9; }
+.soil-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); gap: 6px; margin: 6px 0 0; }
+.soil-values div { padding: 3px 5px; background: #123048; border-radius: 2px; }
+.soil-values dd { font-size: 14px; color: #acecff; margin: 1px 0 0; font-variant-numeric: tabular-nums; }
+.soil-values small { color: #adc6d7; font-size: 9px; }
+@media (max-width: 700px) {
+  .soil-values { grid-template-columns: repeat(4, minmax(70px, 1fr)); overflow-x: auto; }
+}
