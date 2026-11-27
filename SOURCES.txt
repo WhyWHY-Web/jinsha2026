@@ -1,0 +1,6 @@
+Satellite base: NASA EOSDIS GIBS, BlueMarble_ShadedRelief_Bathymetry (Visible Earth).
+Coverage: 97.6 E to 105.4 E; 25.9 N to 32.5 N. WMS Web Mercator subset; feathered edges.
+Relief: USGS SRTM / Mapzen Terrain Tiles, plus the project published Terrarium DEM.
+Soil: ISRIC SoilGrids v2.0, CC BY 4.0; land cover: ESA WorldCover v200, CC BY 4.0.
+HydroRIVERS: WWF and HydroSHEDS, open data terms. https://www.hydrosheds.org/products/hydrorivers
+Additional data provenance and links: ./snapshot/api/catalog.json

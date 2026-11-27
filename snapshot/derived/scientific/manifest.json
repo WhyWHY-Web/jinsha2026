@@ -1,0 +1,139 @@
+{
+  "id": "isric-soilgrids-2-topsoil",
+  "label": "SoilGrids 金沙江表层土壤",
+  "source": "ISRIC SoilGrids250m v2.0",
+  "kind": "静态模型预测 · 多深度土壤",
+  "rows": 484614,
+  "unit": "条",
+  "file": "soilgrids_v2_topsoil.csv.gz",
+  "format": "csv.gz",
+  "sourceUrl": "https://docs.isric.org/globaldata/soilgrids/",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "ISRIC – World Soil Information, SoilGrids 2.0, CC BY 4.0. 金沙江工作台裁剪、单位换算与派生统计。",
+  "description": "四项土壤属性的平均预测层，含 0–5、5–15、15–30 cm 三层。每行代表一个网格中心及一个深度。用于区域土壤背景与后续研究，不是实测剖面或生态评级阈值。",
+  "nativeResolutionMetres": 250,
+  "outputCrs": "EPSG:4326",
+  "outputSpacingDegrees": [
+    0.016165013713623905,
+    0.017091485016013316
+  ],
+  "requestedExtent": [
+    90.5,
+    24.4,
+    105.0,
+    35.8
+  ],
+  "boundarySha256": "4eb9146ec0ac7fa3502f476d1d56b22462230e2fd5e463f402ef518b2e5f8d50",
+  "insideCellsPerDepth": 161993,
+  "subbasins": 27,
+  "depths": [
+    "0-5cm",
+    "5-15cm",
+    "15-30cm"
+  ],
+  "fields": [
+    {
+      "field": "ph_h2o",
+      "label": "土壤 pH（水）",
+      "unit": "pH",
+      "divisor": 10,
+      "decimals": 1
+    },
+    {
+      "field": "organic_carbon_g_kg",
+      "label": "土壤有机碳含量",
+      "unit": "g/kg",
+      "divisor": 10,
+      "decimals": 1
+    },
+    {
+      "field": "clay_pct",
+      "label": "黏粒含量",
+      "unit": "%",
+      "divisor": 10,
+      "decimals": 1
+    },
+    {
+      "field": "bulk_density_g_cm3",
+      "label": "细土容重",
+      "unit": "g/cm³",
+      "divisor": 100,
+      "decimals": 2
+    }
+  ],
+  "columns": [
+    "longitude",
+    "latitude",
+    "basin_id",
+    "depth",
+    "ph_h2o",
+    "organic_carbon_g_kg",
+    "clay_pct",
+    "bulk_density_g_cm3"
+  ],
+  "sourceCoverages": [
+    {
+      "coverage": "phh2o_0-5cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fphh2o.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=phh2o_0-5cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "61ae2d6c693170518a1801a272385bb51cdfc37106f1fff26e97d02a779f2274"
+    },
+    {
+      "coverage": "soc_0-5cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fsoc.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=soc_0-5cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "d830e39ea9f7d723f43eb76b8e72d8c3d2821548524879c412e0e9de4c0a852e"
+    },
+    {
+      "coverage": "clay_0-5cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_0-5cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "a36cc6d828c821d779f647f5609b05793a24010c2fba6276f5da3452865e5162"
+    },
+    {
+      "coverage": "bdod_0-5cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fbdod.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=bdod_0-5cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "b6eccac67f4f97dae479d229975b9499b55dc673efe68b2a31caa4e4aeb36ab4"
+    },
+    {
+      "coverage": "phh2o_5-15cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fphh2o.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=phh2o_5-15cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "30bc8361dde4f1869257adfa048628530acb7f696e66d1836078022ae7c0f7ca"
+    },
+    {
+      "coverage": "soc_5-15cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fsoc.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=soc_5-15cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "7479ee47ea2de57edfbc4c35fbbde4e9fa37067cefdfc716faf2a6473def9644"
+    },
+    {
+      "coverage": "clay_5-15cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_5-15cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "fae6be9e38970010fbf8e9bb367dd27f101e486689dd1595f7e3d41909467395"
+    },
+    {
+      "coverage": "bdod_5-15cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fbdod.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=bdod_5-15cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "14d6fe1cd1a0d837972847641707e7789cb8876e9fcef342e752b0bf22a422d5"
+    },
+    {
+      "coverage": "phh2o_15-30cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fphh2o.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=phh2o_15-30cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "485e3e7aadd4deeb63de342e79d95d144bd6f8359b62d36085320dc78af7e77b"
+    },
+    {
+      "coverage": "soc_15-30cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fsoc.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=soc_15-30cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "3bfd859f4729ef08e9a0a82526d828275b01ea311a85d6bd5a45212a3c42098a"
+    },
+    {
+      "coverage": "clay_15-30cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_15-30cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "696ff155e2d7af4083d44a60f118728958bda574da90e8eb2b704ebff7f65cb2"
+    },
+    {
+      "coverage": "bdod_15-30cm_mean",
+      "url": "https://maps.isric.org/mapserv?MAP=%2Fmap%2Fbdod.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=bdod_15-30cm_mean&FORMAT=image%2Ftiff&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&OUTPUTCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Lat%2824.4%2C35.8%29&SUBSET=Long%2890.5%2C105%29&SCALEFACTOR=0.14&INTERPOLATION=NEAREST",
+      "sha256": "ea20d02ac1e38383e3df61a73ac74cfcac566c60d4dcdf82c24f3c9b21369e1e"
+    }
+  ],
+  "sha256": "a57d557105035e387b6d8314ae11c9e4575a390bfe84ec492803036e36c8e8e9",
+  "bytes": 4397293,
+  "processing": "从 ISRIC WCS 2.0.1 重投影并按 0.14 缩小后，以网格中心点裁剪入 HYBAS_ID。对四项有效的样点求非面积加权空间分位数。pH 和容重正值用于排除无效匹配。土壤层有效覆盖率分母为子流域内网格中心数。"
+}
