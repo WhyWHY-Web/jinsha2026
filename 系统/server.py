@@ -913,7 +913,7 @@ def repro_pack():
     """
     its = [eco_item(x) for x in all_stations()]
     files = []
-    for rel in ('stations.json', 'climate.json', 'governance.json',
+    for rel in ('stations.json', 'climate.json', 'dams.json', 'governance.json',
                 'gee/meta.json', 'gee/annual.json', 'gee/series.json', 'validate.json'):
         fp = os.path.join(DATA, rel)
         if os.path.isfile(fp):
@@ -1350,6 +1350,9 @@ DATA_LAYERS = [
     {'key': 'climate', 'nm': '气候年值序列', 'file': 'climate.json', 'kind': '再分析',
      'src': 'NASA POWER（MERRA-2）逐年', 'res': '0.5°×0.625° → 站点高程订正', 'cad': '年度',
      'stale': 500, 'note': '每年 1 月补上一年'},
+    {'key': 'dams', 'nm': '梯级电站参数', 'file': 'dams.json', 'kind': '公开资料',
+     'src': '中国长江三峡集团工程概况 / 国家能源局大坝安全监察中心', 'res': '4 座梯级', 'cad': '静态',
+     'stale': 3650, 'note': '设计参数，非实时运行值'},
     {'key': 'streams', 'nm': '河网水系', 'file': 'streams.json', 'kind': '派生',
      'src': 'DEM 洼地填充 + D8 汇流累积提取', 'res': '365 条折线', 'cad': '静态', 'stale': 3650},
     {'key': 'detail', 'nm': '实景走廊补丁', 'file': 'detail.json', 'kind': '实测',
@@ -1398,7 +1401,7 @@ def data_version():
     """轻量指纹：前端轮询它，只有变化时才重新拉数据，避免每 30 秒整页重绘。
     人工修正（govSeq）、站点表、气候序列、遥感批次任一变化都会改变指纹。"""
     parts = [str(gov()['seq'])]
-    for f in ('stations.json', 'climate.json', 'gee/meta.json', 'dem.bin'):
+    for f in ('stations.json', 'climate.json', 'dams.json', 'gee/meta.json', 'dem.bin'):
         fp = os.path.join(DATA, f)
         parts.append('%.0f:%d' % (os.path.getmtime(fp), os.path.getsize(fp)) if os.path.isfile(fp) else '-')
     return {'ok': True, 'token': hashlib.md5('|'.join(parts).encode()).hexdigest()[:12],
@@ -1735,6 +1738,11 @@ class H(BaseHTTPRequestHandler):
                              {'Content-Disposition': 'attachment; filename="jinsha_governance.csv"'})
         if p == '/api/stations':
             return self.j(load_json(STATIONS, {'stations': []}))
+        if p == '/api/dams':
+            d = load_json(os.path.join(DATA, 'dams.json'), None)
+            if not d:
+                return self.j({'ok': False, 'error': '无电站参数数据'}, 404)
+            return self.j(dict(d, ok=True))
         if p == '/api/legacy/stations':
             return self.j([legacy_station(x) for x in load_json(STATIONS, {'stations': []})['stations']])
         if p == '/api/eco-services':
