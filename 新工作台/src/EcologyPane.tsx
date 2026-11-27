@@ -254,6 +254,7 @@ function ResearchAgent({ ecology, onAction, canAmend }: { ecology:EcologyState; 
       const reply = await postJson<AgentReply>('/api/ecology/agent', {
         prompt:question, stationId:ecology.selectedStationId ?? undefined,
         scope:ecology.activeScope, year:ecology.year ? Number(ecology.year) : undefined,
+        bbox:ecology.activeScope === 'bbox' ? ecology.bbox : undefined,
       })
       setInteractions(current=>[...current.slice(-4), { prompt:question, reply }])
       setPrompt('')
