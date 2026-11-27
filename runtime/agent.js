@@ -74,12 +74,14 @@ export async function runEcologyAgent(input                         , context   
   const mode = proposed ? "ollama"          : "local"         ;
   const intent = rule.intent === "help" || (rule.intent === "evidence" && proposed?.intent === "assess")
     ? proposed?.intent ?? rule.intent : rule.intent;
-  const station = matchStation(stations,prompt)
-    ?? (typeof proposed?.station === "string" && prompt.includes(proposed.station) ? matchStation(stations,proposed.station) : undefined)
-    ?? (typeof input.stationId === "string" ? stations.find(item=>item.id===input.stationId) : undefined);
-  const currentScope = typeof input.scope === "string" && /^(basin|seg_(up|mid|low)|subbasin:\d{1,16}|zone:[^\s]{1,40})$/u.test(input.scope)
+  const directStation = matchStation(stations,prompt)
+    ?? (typeof proposed?.station === "string" && prompt.includes(proposed.station) ? matchStation(stations,proposed.station) : undefined);
+  const station = directStation ?? (typeof input.stationId === "string" ? stations.find(item=>item.id===input.stationId) : undefined);
+  const currentScope = typeof input.scope === "string" && /^(basin|bbox|seg_(up|mid|low)|subbasin:\d{1,16}|zone:[^\s]{1,40})$/u.test(input.scope)
     ? input.scope : "basin";
-  const scope = /全流域|流域总体|流域平均/u.test(prompt) ? "basin" : station ? "station:"+station.id : currentScope;
+  const namedScope = /上游/u.test(prompt) ? "seg_up" : /中游/u.test(prompt) ? "seg_mid" : /下游/u.test(prompt) ? "seg_low" : undefined;
+  const scope = /全流域|流域总体|流域平均/u.test(prompt) ? "basin"
+    : directStation ? "station:"+directStation.id : namedScope ?? (station ? "station:"+station.id : currentScope);
   const year = rule.year ?? (Number.isInteger(input.year) ? Number(input.year) : undefined);
   const evidence                                             = [];
 
@@ -129,7 +131,9 @@ export async function runEcologyAgent(input                         , context   
   if (intent === "assess") {
     const options = await ecologyOptions(sourceData);
     const targetYear = year ?? options.years.at(-1);
-    const params = new URLSearchParams({scope,...(targetYear === undefined ? {} : {year:String(targetYear)})});
+    const params = new URLSearchParams({scope,
+      ...(scope === "bbox" && typeof input.bbox === "string" ? {bbox:input.bbox} : {}),
+      ...(targetYear === undefined ? {} : {year:String(targetYear)})});
     let report                                             ;
     try {
       report = await evaluateEcology(sourceData,params,targetYear===undefined ? {} : context.overrides(targetYear));
