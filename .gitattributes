@@ -1,0 +1,6 @@
+# 钩子脚本必须以 LF 存储，否则在 Windows 上 checkout 后
+# shebang 尾部带 \r，Git 执行时会报 "bad interpreter"。
+系统/tools/hooks/pre-push text eol=lf
+系统/tools/hooks/install.sh text eol=lf
+.git-blame-ignore-revs text eol=lf
+*.sh text eol=lf
