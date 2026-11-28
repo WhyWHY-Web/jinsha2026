@@ -2,8 +2,9 @@
 
 当前唯一维护的产品是 `新工作台/`。同一套工作台可在网页中使用，也可由 Windows 便携软件启动。
 
+- **公开网站**：[打开最新版工作台](https://whywhy-web.github.io/jinsha2026/)（公开基准资料与发布快照）。
 - **网页运行**：在 `新工作台/` 构建并启动服务，浏览器访问 `http://127.0.0.1:8732/`。
-- **Windows 软件**：完整解压 `dist/Jinsha-Workbench-Windows-x64-0.3.1.zip`，双击其中的启动程序。包内包含 Node.js 运行时与离线研究资料。
+- **Windows 软件**：从 [0.3.1 下载页](https://github.com/WhyWHY-Web/jinsha2026/releases/tag/v0.3.1) 获取，完整解压 `dist/Jinsha-Workbench-Windows-x64-0.3.1.zip`，双击其中的启动程序。包内包含 Node.js 运行时与离线研究资料。
 - **静态网页分发**：`新工作台/scripts/export_web.mjs` 导出同一产品的只读版本，可放到静态网站服务器。
 
 ```powershell
@@ -34,4 +35,4 @@ EEI 沿用项目经验模型，无固定 100 分上限。站点均值不代表�
 
 旧版 Python 源码已经归档，不再作为启动或发布入口。数据大文件的获取条件见 [数据获取说明](数据获取说明.md)。原始影像、切片、运行数据库及凭据不进入 Git。
 
-既有线上地址 [GitHub Pages](https://whywhy-web.github.io/jinsha2026/) 在重新发布前仍是此前版本；本次以本地产品与交付包为准。
+公开网站与 0.3.1 网页分发包使用同一份已验收构建。源码只维护新工作台，旧版 Python 和旧网页已从当前版本清理；研究原数据仍保留在原位置。

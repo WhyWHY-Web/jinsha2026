@@ -2,6 +2,8 @@
 
 同一套产品支持网页使用和 Windows 便携软件启动。工作台围绕“选范围 → 核对资料 → 读取结果 → 保存证据”组织，不需要先理解大量专题图标。
 
+公开网站：[金沙江生态工作台](https://whywhy-web.github.io/jinsha2026/)。Windows 软件与网页分发包：[0.3.1 下载页](https://github.com/WhyWHY-Web/jinsha2026/releases/tag/v0.3.1)。
+
 ## 开始使用
 
 网页服务需要 Node.js 24。在本目录执行：
