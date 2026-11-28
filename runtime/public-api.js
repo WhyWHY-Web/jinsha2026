@@ -1,6 +1,7 @@
 import { ecologyOptions, ecologyRsei, ecologyRseiLayer, evaluateEcology } from './ecology.js'
 import { runEcologyAgent } from './agent.js'
 import { readFile } from './snapshot-io.js'
+import { forecastUsable } from './forecast-model.js'
 
 const address = new URL('../', import.meta.url)
 const dataRoot = new URL('snapshot/', address)
@@ -9,7 +10,7 @@ const originalFetch = window.fetch.bind(window)
 const sourceData = 'source'
 const newData = 'derived'
 const emptyOverrides = () => ({})
-const staticApis = new Set(['dashboard','catalog','engineering','water-quality','flood/replay'])
+const staticApis = new Set(['dashboard','catalog','engineering','water-quality','flood/replay','live/observations'])
 const geography = {
   '/api/layers/basin':'basin.geojson',
   '/api/layers/river-network':'river-network.geojson',
@@ -132,13 +133,28 @@ async function route(url, method, body, signal) {
     const data = await dashboard()
     return json({...data,map:replaceMapPaths(data.map)})
   }
+  if(key==='live/status') {
+    const [status,forecast]=await Promise.all([read('api/live/status.json'),read('api/live/forecast.json')])
+    return json({...status,mode:'snapshot',collecting:false,sources:status.sources.map(source=>({
+      ...source,state:source.id==='forecast' && forecast.snapshot && !forecastUsable(forecast.snapshot) && ['fresh','offline'].includes(source.state)?'delayed':source.state,
+    }))})
+  }
+  if(key==='live/forecast') {
+    const value=await read('api/live/forecast.json')
+    const snapshot=params.get('batch') && params.get('batch')!==value.snapshot?.id ? null : value.snapshot
+    const usable=!!snapshot && forecastUsable(snapshot)
+    const sourceStatus=value.sourceStatus ? {...value.sourceStatus,nextCheckAt:null,
+      state:['fresh','offline'].includes(value.sourceStatus.state)?usable?'offline':'delayed':value.sourceStatus.state,
+      detail:'发布时资料快照；更新需要重新导出。'+value.sourceStatus.detail} : undefined
+    return json({...value,snapshot,usable,sourceStatus})
+  }
   if (staticApis.has(key)) return apiFile(key,signal)
   if (key==='health') return json({ok:true,service:'jinsha-workbench',engine:'browser',mode:'public'})
   if (Object.hasOwn(geography,url.pathname)) return originalFetch(new URL('map/'+geography[url.pathname],dataRoot),{signal})
   if (key==='ecology/options') return json(await ecologyOptions(sourceData))
   if (key==='ecology/assess') return json(await evaluateEcology(sourceData,params))
   if (key==='ecology/rsei') return json(await ecologyRsei(sourceData,newData,params.get('scope') ?? 'basin'))
-  if (key==='layers/rsei') return json(await ecologyRseiLayer(newData,Number(params.get('year'))))
+  if (key==='layers/rsei') return json(await ecologyRseiLayer(newData,Number(params.get('year')),params.get('mask') ?? 'common'))
   if (key==='ecology/amendments') return json({revision:0,entries:[],amendments:[],readOnly:true})
   if (key==='scientific') return readScience(params.get('basin'))
   if (key==='flood/series') {

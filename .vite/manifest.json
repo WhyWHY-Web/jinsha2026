@@ -1,0 +1,267 @@
+{
+  "_DataTable-zrKjRggi.js": {
+    "file": "assets/DataTable-zrKjRggi.js",
+    "name": "DataTable",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_locate-fixed-JRN2Yb3X.js": {
+    "file": "assets/locate-fixed-JRN2Yb3X.js",
+    "name": "locate-fixed",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_refresh-cw-6zJBwTjD.js": {
+    "file": "assets/refresh-cw-6zJBwTjD.js",
+    "name": "refresh-cw",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_rolldown-runtime-BLXQ4ufn.js": {
+    "file": "assets/rolldown-runtime-BLXQ4ufn.js",
+    "name": "rolldown-runtime"
+  },
+  "_vendor-maplibre-BlJ9WpRt.js": {
+    "file": "assets/vendor-maplibre-BlJ9WpRt.js",
+    "name": "vendor-maplibre",
+    "css": [
+      "assets/vendor-maplibre-qvkd0SPb.css"
+    ],
+    "assets": [
+      "assets/maplibre-gl-worker-BZdkatZW.mjs"
+    ]
+  },
+  "_vendor-maplibre-qvkd0SPb.css": {
+    "file": "assets/vendor-maplibre-qvkd0SPb.css",
+    "src": "_vendor-maplibre-qvkd0SPb.css"
+  },
+  "index.html": {
+    "file": "assets/index-CZ58E57i.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-BLXQ4ufn.js"
+    ],
+    "dynamicImports": [
+      "src/TerrainMap.tsx",
+      "src/ArchivePane.tsx",
+      "src/EcologyPane.tsx",
+      "src/operations.tsx",
+      "src/FloodPane.tsx",
+      "src/QualityResponse.tsx",
+      "src/WarningPane.tsx",
+      "src/ForecastPane.tsx",
+      "src/ResearchCenter.tsx",
+      "src/AnalysisWorkspace.tsx",
+      "src/saved-runs.ts",
+      "src/export-view.ts",
+      "src/assessment-export.ts"
+    ],
+    "css": [
+      "assets/index-BKzYj3Ac.css"
+    ]
+  },
+  "node_modules/canvg/lib/index.es.js": {
+    "file": "assets/index.es-B0kPlvUB.js",
+    "name": "index.es",
+    "src": "node_modules/canvg/lib/index.es.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-BLXQ4ufn.js",
+      "node_modules/jspdf/dist/jspdf.es.min.js"
+    ]
+  },
+  "node_modules/dompurify/dist/purify.es.mjs": {
+    "file": "assets/purify.es-BQJV6A36.js",
+    "name": "purify.es",
+    "src": "node_modules/dompurify/dist/purify.es.mjs",
+    "isDynamicEntry": true
+  },
+  "node_modules/html2canvas/dist/html2canvas.js": {
+    "file": "assets/html2canvas-DNVohpta.js",
+    "name": "html2canvas",
+    "src": "node_modules/html2canvas/dist/html2canvas.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-BLXQ4ufn.js"
+    ]
+  },
+  "node_modules/jspdf/dist/jspdf.es.min.js": {
+    "file": "assets/jspdf.es.min-CJxvpzjo.js",
+    "name": "jspdf.es.min",
+    "src": "node_modules/jspdf/dist/jspdf.es.min.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-BLXQ4ufn.js",
+      "index.html"
+    ],
+    "dynamicImports": [
+      "node_modules/html2canvas/dist/html2canvas.js",
+      "node_modules/dompurify/dist/purify.es.mjs",
+      "node_modules/canvg/lib/index.es.js"
+    ]
+  },
+  "node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs": {
+    "file": "assets/maplibre-gl-worker-BZdkatZW.mjs",
+    "src": "node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs"
+  },
+  "src/AnalysisWorkspace.tsx": {
+    "file": "assets/AnalysisWorkspace-B0jPVUPR.js",
+    "name": "AnalysisWorkspace",
+    "src": "src/AnalysisWorkspace.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/ArchivePane.tsx": {
+    "file": "assets/ArchivePane-K0QgQkiG.js",
+    "name": "ArchivePane",
+    "src": "src/ArchivePane.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_DataTable-zrKjRggi.js"
+    ],
+    "css": [
+      "assets/ArchivePane-CUFmEcti.css"
+    ]
+  },
+  "src/EcologyPane.tsx": {
+    "file": "assets/EcologyPane-rG8JBF16.js",
+    "name": "EcologyPane",
+    "src": "src/EcologyPane.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_locate-fixed-JRN2Yb3X.js",
+      "src/assessment-export.ts",
+      "src/saved-runs.ts",
+      "_DataTable-zrKjRggi.js"
+    ],
+    "css": [
+      "assets/EcologyPane-BjEolcAF.css"
+    ]
+  },
+  "src/FloodPane.tsx": {
+    "file": "assets/FloodPane-C0DKAzWW.js",
+    "name": "FloodPane",
+    "src": "src/FloodPane.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ],
+    "css": [
+      "assets/FloodPane-B_QOMpe5.css"
+    ]
+  },
+  "src/ForecastPane.tsx": {
+    "file": "assets/ForecastPane-B7UvOHTB.js",
+    "name": "ForecastPane",
+    "src": "src/ForecastPane.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_refresh-cw-6zJBwTjD.js",
+      "src/assessment-export.ts"
+    ]
+  },
+  "src/QualityResponse.tsx": {
+    "file": "assets/QualityResponse-7FI6oE8b.js",
+    "name": "QualityResponse",
+    "src": "src/QualityResponse.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_DataTable-zrKjRggi.js"
+    ],
+    "css": [
+      "assets/QualityResponse-BLSl3lh5.css"
+    ]
+  },
+  "src/ResearchCenter.tsx": {
+    "file": "assets/ResearchCenter-d4jbJcj7.js",
+    "name": "ResearchCenter",
+    "src": "src/ResearchCenter.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_refresh-cw-6zJBwTjD.js",
+      "src/assessment-export.ts",
+      "src/saved-runs.ts"
+    ],
+    "dynamicImports": [
+      "src/export-view.ts"
+    ]
+  },
+  "src/TerrainMap.tsx": {
+    "file": "assets/TerrainMap-BPdZmZD5.js",
+    "name": "TerrainMap",
+    "src": "src/TerrainMap.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_locate-fixed-JRN2Yb3X.js",
+      "_vendor-maplibre-BlJ9WpRt.js"
+    ]
+  },
+  "src/WarningPane.tsx": {
+    "file": "assets/WarningPane-DIGgncoU.js",
+    "name": "WarningPane",
+    "src": "src/WarningPane.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_DataTable-zrKjRggi.js"
+    ],
+    "css": [
+      "assets/WarningPane-DJP2VFjO.css"
+    ]
+  },
+  "src/assessment-export.ts": {
+    "file": "assets/assessment-export-0lNlW-uc.js",
+    "name": "assessment-export",
+    "src": "src/assessment-export.ts",
+    "isDynamicEntry": true
+  },
+  "src/export-view.ts": {
+    "file": "assets/export-view-Cw_l9XAN.js",
+    "name": "export-view",
+    "src": "src/export-view.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-BLXQ4ufn.js",
+      "index.html"
+    ],
+    "dynamicImports": [
+      "node_modules/html2canvas/dist/html2canvas.js",
+      "node_modules/jspdf/dist/jspdf.es.min.js"
+    ]
+  },
+  "src/operations.tsx": {
+    "file": "assets/operations-C-z1b1l_.js",
+    "name": "operations",
+    "src": "src/operations.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_DataTable-zrKjRggi.js"
+    ],
+    "css": [
+      "assets/operations-CJSKxrV7.css"
+    ]
+  },
+  "src/saved-runs.ts": {
+    "file": "assets/saved-runs-CEzx3Pbi.js",
+    "name": "saved-runs",
+    "src": "src/saved-runs.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/assessment-export.ts"
+    ]
+  }
+}

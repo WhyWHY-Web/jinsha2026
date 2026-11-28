@@ -79,7 +79,12 @@ export async function runEcologyAgent(input                         , context   
   const station = directStation ?? (typeof input.stationId === "string" ? stations.find(item=>item.id===input.stationId) : undefined);
   const currentScope = typeof input.scope === "string" && /^(basin|bbox|seg_(up|mid|low)|subbasin:\d{1,16}|zone:[^\s]{1,40})$/u.test(input.scope)
     ? input.scope : "basin";
-  const namedScope = /上游/u.test(prompt) ? "seg_up" : /中游/u.test(prompt) ? "seg_mid" : /下游/u.test(prompt) ? "seg_low" : undefined;
+  const zone=stations.map(row=>row.zone).find(value=>value && prompt.includes(value));
+  const namedScope = zone ? "zone:"+zone : /西部/u.test(prompt) ? "seg_up" : /中部/u.test(prompt) ? "seg_mid" : /东部/u.test(prompt) ? "seg_low" : undefined;
+  if(intent==='assess' && /上游|中游|下游/u.test(prompt) && !directStation && !namedScope) {
+    return {mode,answer:"目前的项目西/中/东部分区按经度划分，不等同于河流上中下游。请指定一个站点、水文子流域或完整的站点生态分区名称后再评估。",
+      evidence:[{label:'分区口径',detail:'项目西部 <100°E，中部 100–102.8°E，东部 ≥102.8°E；尚无河段上下游分界依据。'}]};
+  }
   const scope = /全流域|流域总体|流域平均/u.test(prompt) ? "basin"
     : directStation ? "station:"+directStation.id : namedScope ?? (station ? "station:"+station.id : currentScope);
   const year = rule.year ?? (Number.isInteger(input.year) ? Number(input.year) : undefined);
@@ -130,13 +135,16 @@ export async function runEcologyAgent(input                         , context   
   }
   if (intent === "assess") {
     const options = await ecologyOptions(sourceData);
-    const targetYear = year ?? options.years.at(-1);
+    const targetYear = input.ledger === true && year === undefined ? undefined : year ?? options.years.at(-1);
     const params = new URLSearchParams({scope,
+      ...(typeof input.scenario === 'string' ? {scenario:input.scenario} : {}),
+      ...(Number.isInteger(input.compareYear) ? {compareYear:String(input.compareYear)} : {}),
       ...(scope === "bbox" && typeof input.bbox === "string" ? {bbox:input.bbox} : {}),
       ...(targetYear === undefined ? {} : {year:String(targetYear)})});
     let report                                             ;
     try {
-      report = await evaluateEcology(sourceData,params,targetYear===undefined ? {} : context.overrides(targetYear));
+      report = await evaluateEcology(sourceData,params,targetYear===undefined ? {} : context.overrides(targetYear),
+        Number.isInteger(input.compareYear) ? context.overrides(Number(input.compareYear)) : {});
     } catch (error) {
       if (!(error instanceof EcologyInputError)) throw error;
       return { mode, answer:error.message, evidence:[{label:"评估年份",detail:options.years.join("、")} ] };
@@ -152,7 +160,7 @@ export async function runEcologyAgent(input                         , context   
       ? " 筛查分值较高的站点为 " + [...report.stations].sort((a,b)=>b.metrics.risk-a.metrics.risk).slice(0,4)
         .map(item=>item.name+" "+number.format(item.metrics.risk)+"（"+item.riskLevel+"）").join("、") + "。"
       : "";
-    const answer = `${title} ${targetYear ?? "多年基准"} 评估显示，EEI 为 ${number.format(eei)} / 100，生态指数 EI 为 ${number.format(ei)} / 100，综合敏感性为 ${number.format(risk)} / 100，模型碳密度为 ${number.format(carbon)} t/ha。${ranking}`;
+    const answer = `${title} ${targetYear ?? "多年基准"} · ${report.scenario.name}：EEI 经验分为 ${number.format(eei)}，生态指数 EI 为 ${number.format(ei)}，综合敏感性为 ${number.format(risk)}，模型碳密度为 ${number.format(carbon)} tC/ha。${ranking} EEI 无固定 100 分上限。以上为站点等权研究结果，建议核对固定土地覆盖背景与年度气候证据。`;
     evidence.push({label:"模型口径",detail:"区域值为有效站点等权平均。指数和风险来自经验模型，碳密度为模型估算。"});
     const amendments = report.stations.filter(item=>item.inputs.amendedFields.length).length;
     if (amendments) evidence.push({label:"数据修正",detail:amendments+" 个站点采用工作台留痕数据。"});
