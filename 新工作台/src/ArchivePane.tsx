@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Dataset } from './data'
+import { PanelHeader } from './PanelHeader'
+import { DataTable, type TableColumn } from './DataTable'
 import { defaultSoilSelection, SOIL_ARCHIVE_ID, soilArchiveQuery, SoilProfile } from './SoilProfile'
 
 type Records = { columns:string[]; rows:string[][]; nextOffset:number|null }
@@ -33,8 +35,8 @@ export function ArchivePane({ dataset, onClose }: { dataset:Dataset, onClose:()=
     return ()=>ctrl.abort()
   },[dataset.id,filter])
   return <section className="archive-view hud" aria-label="数据表浏览">
-    <header className="panel-title"><h2>{dataset.label ?? dataset.name}</h2>
-      <button type="button" className="icon-btn" onClick={onClose} aria-label="关闭数据表"><X size={18}/></button></header>
+    <PanelHeader title={dataset.label ?? dataset.name} state={error ? 'error' : !records ? 'loading' : !records.rows.length ? 'empty' : undefined}
+      actions={<button type="button" className="icon-btn" onClick={onClose} aria-label="关闭数据表"><X size={18}/></button>}/>
     <div className="archive-info"><strong>{dataset.rows?.toLocaleString('zh-CN') ?? '—'} 条</strong>
       <span>{dataset.startYear!==undefined && (dataset.endYear!==undefined && dataset.endYear!==dataset.startYear
         ? dataset.startYear+'–'+dataset.endYear+' · ' : dataset.startYear+' · ')}{dataset.kind}</span>
@@ -50,11 +52,12 @@ export function ArchivePane({ dataset, onClose }: { dataset:Dataset, onClose:()=
       <input value={year} onChange={event=>setYear(event.target.value)} aria-label="筛选年份" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} placeholder="年份"/>
       <button type="submit">查询</button>
     </form>}
-    {records && records.rows.length ? <div className="archive-table"><table><thead><tr>
-      {records.columns.map(field=><th key={field} title={field}>{headings[field] ?? field}</th>)}
-    </tr></thead><tbody>
-      {records.rows.map((row,index)=><tr key={index}>{row.map((value,i)=><td key={i}>{value}</td>)}</tr>)}
-    </tbody></table></div> : <p className="archive-status" role="status">{error || (records ? '没有符合条件的记录' : '正在读取数据')}</p>}
+    {records && records.rows.length ? <DataTable className="archive-table" name={dataset.label ?? dataset.name ?? '数据集'} exportLabel="导出本页 CSV"
+      rows={records.rows} columns={records.columns.map((field,i):TableColumn<string[]> => ({
+        key:field, label:headings[field] ?? field, value:row=>row[i],
+        numeric:records.rows.every(row=>row[i]==='' || Number.isFinite(Number(row[i]))),
+        sum:['value','precipitation_mm','precip_mm','organic_carbon_g_kg','clay_pct'].includes(field)
+      }))}/> : <p className="archive-status" role="status">{error || (records ? '没有符合条件的记录' : '正在读取数据')}</p>}
     <div className="archive-pages">
       <button type="button" disabled={!records || filter.offset===0} onClick={()=>setFilter({...filter,offset:Math.max(0,filter.offset-24)})}>上一页</button>
       <span>{records?.rows.length ? '第 '+(filter.offset+1)+'–'+(filter.offset+records.rows.length)+' 条' : ''}</span>

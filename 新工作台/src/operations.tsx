@@ -1,7 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowUpRight, Building2, CalendarDays, MapPin, Search, Waypoints } from 'lucide-react'
 import type { DispatchEntry, DispatchKind, EngineeringCatalog, EngineeringProject } from '../data/engineering/types'
 import type { Station, StationMark } from './data'
+import { PanelHeader } from './PanelHeader'
+import { DataTable } from './DataTable'
 import './operations.css'
 
 type OperationsScene = 'engineering' | 'dispatch'
@@ -26,60 +28,13 @@ const kindColors: Record<DispatchKind,string> = {
   试验总结:'#e5b36e',
 }
 
-export function useEngineering(enabled: boolean) {
-  const [data,setData] = useState<EngineeringCatalog | null>(null)
-  const [error,setError] = useState(false)
-  useEffect(() => {
-    if (!enabled || data) return
-    const controller = new AbortController()
-    setError(false)
-    async function load() {
-      try {
-        const response = await fetch('/api/engineering',{signal:controller.signal})
-        if (!response.ok) throw new Error(String(response.status))
-        const catalog = await response.json() as EngineeringCatalog
-        if (!controller.signal.aborted) setData(catalog)
-      } catch {
-        if (!controller.signal.aborted) setError(true)
-      }
-    }
-    void load()
-    return () => controller.abort()
-  },[enabled,data])
-  return {data,error}
-}
-
-export function operationalStations(catalog: EngineeringCatalog | null, stations: Station[]) {
-  return catalog?.projects.flatMap(project => {
-    const station = stations.find(item=>item.id===project.id)
-    return station ? [station] : []
-  }) ?? []
-}
-
 function currentEvent(catalog: EngineeringCatalog, id?: string | null) {
   return catalog.dispatch.find(event=>event.id===id) ?? catalog.dispatch[0]
 }
 
-export function operationMarks(catalog: EngineeringCatalog | null, scene: OperationsScene, dispatchEventId?: string | null) {
-  const marks: Record<string,StationMark> = {}
-  if (!catalog) return marks
-  const event = currentEvent(catalog,dispatchEventId)
-  for (const project of catalog.projects) {
-    const inEvent = event?.projects.includes(project.id)
-    marks[project.id] = scene === 'engineering' ? {
-      reading:capacities.format(project.installedMW)+' MW',
-      color:projectColors[(project.cascade-1) % projectColors.length],
-    } : {
-      reading:inEvent ? event.kind : '第 '+project.cascade+' 级',
-      color:inEvent ? kindColors[event.kind] : '#7089a4',
-    }
-  }
-  return marks
-}
-
 function Panel({title,tag,children}: {title:string;tag:string;children:ReactNode}) {
   return <section className="hud operations-panel">
-    <header className="panel-title"><h2>{title}</h2><span>{tag}</span></header>
+    <PanelHeader title={title} tag={tag}/>
     {children}
   </section>
 }
@@ -148,13 +103,11 @@ function EngineeringDetails({catalog,selectedId,onSelect}: {
         <div><dt>正常蓄水位</dt><dd>{selected.designLevelM} <small>m</small></dd></div>
         <div><dt>年发电量</dt><dd>{generation.format(selected.annualGeneration2023)} <small>亿 kWh</small></dd></div>
         <div><dt>首批投产</dt><dd>{selected.firstOperationYear} <small>年</small></dd></div>
-      </dl> : <div className="operations-table-wrap"><table className="operations-table">
-        <thead><tr><th scope="col">工程</th><th scope="col">正常蓄水位</th><th scope="col">首批投产</th></tr></thead>
-        <tbody>{catalog.projects.map(project=><tr key={project.id}>
-          <th scope="row"><button type="button" onClick={()=>onSelect(project.id)}>{project.name}</button></th>
-          <td>{project.designLevelM} m</td><td>{project.firstOperationYear}</td>
-        </tr>)}</tbody>
-      </table></div>}
+      </dl> : <DataTable className="operations-table-wrap" name="工程参数对照" rows={catalog.projects} columns={[
+        {key:'name',label:'工程',value:project=>project.name,render:project=><button type="button" onClick={()=>onSelect(project.id)}>{project.name}</button>},
+        {key:'level',label:'正常蓄水位 m',value:project=>project.designLevelM,numeric:true},
+        {key:'year',label:'首批投产',value:project=>project.firstOperationYear,numeric:true},
+      ]}/>}
       <Source url={catalog.sourceUrl}>{catalog.issuer} {catalog.baselineYear} 年度报告</Source>
     </Panel>
     <Panel title="梯级年发电量" tag={catalog.baselineYear+' 年 · 亿 kWh'}>

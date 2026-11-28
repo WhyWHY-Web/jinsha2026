@@ -31,6 +31,18 @@ export class EcologyInputError extends Error {
 
 const climateDataset = 'NASA POWER / MERRA-2 站点再分析'
 const formulaVersion = 'jinsha-legacy-ecology-v1'
+export const ecologyModelCard = {
+  version:formulaVersion,
+  purpose:'站点经验模型的研究筛查与输入敏感性分析，未经过独立地面样本校准。',
+  eeiRange:'EEI 是经验加权分，无固定 100 分上限；水源涵养项 water/1000 未封顶。保留 v1 公式和既有研究结果，不作显示截断。',
+  formula:'EEI=18×habitat+15×biodiversity+14×water/1000+12×soil/40+12×climate+11×resilience+10×esv/4+8×(1−disturbance)',
+  gradeBasis:'A≥75、B≥65、C≥55、D<55 为项目既有经验分组，非国家标准生态质量等级。',
+  spatialSupport:'有效站点等权均值，不是流域面积统计；无站区域不能由该均值外推。',
+  inputs:{annual:'年均气温、年降水；台账模式使用多年参考值。',fixed:'土地覆盖、坡度和起伏为固定背景。',validation:'NDVI 作为独立年度证据展示，未进入 EEI；NOAA、CHIRPS 和 SoilGrids 未作为 EEI 驱动。'},
+  domain:'土地覆盖为 0–1 的类别比例；降水≥0、坡度 0–90°。极端输入与气候/覆盖情景属于外推试验。',
+  validation:'尚无独立校准或时间隔离回测，不提供灾害概率和模型准确率。',
+  standard:'本项目站点 EEI 与 HJ 192 的行政区 EQI 评价对象及方法不同，未声明符合该标准。',
+}
 const metricDefinitions = [
   {id:'eei',name:'生态环境综合指数 EEI',unit:'分',description:'八项指标按项目既有权重合成'},
   {id:'ei',name:'生态状况指数 EI',unit:'分',description:'生物丰度、植被覆盖、水网密度与土地胁迫合成'},
@@ -152,9 +164,9 @@ function definitions(stations:Station[], basins:Basin[]) {
   })
   return [
     partition('basin','全流域站点','basin',()=>true),
-    partition('seg_up','上游河段','section',row=>row.lon<100),
-    partition('seg_mid','中游河段','section',row=>row.lon>=100 && row.lon<102.8),
-    partition('seg_low','下游河段','section',row=>row.lon>=102.8),
+    partition('seg_up','项目西部分区（<100°E）','section',row=>row.lon<100),
+    partition('seg_mid','项目中部分区（100–102.8°E）','section',row=>row.lon>=100 && row.lon<102.8),
+    partition('seg_low','项目东部分区（≥102.8°E）','section',row=>row.lon>=102.8),
     ...Array.from(new Set(stations.map(row=>row.zone))).sort().map(zone=>partition('zone:'+zone,zone,'zone',row=>row.zone===zone)),
     ...basins.map(feature=> {
       const id = String(feature.properties.HYBAS_ID)
@@ -176,7 +188,7 @@ const listYears = (rows:ClimateYear[]) => Array.from(new Set(rows.map(row=>row.y
 export async function ecologyOptions(dataDir:string) {
   const {stations,annual,basins} = await loadEcology(dataDir)
   const publicRegions = definitions(stations,basins).map(({id,name,kind,count})=>({id,name,kind,count}))
-  return {regions:publicRegions,years:listYears(annual),scenarios,metricDefinitions,method:formulaVersion}
+  return {regions:publicRegions,years:listYears(annual),scenarios,metricDefinitions,method:formulaVersion,modelCard:ecologyModelCard}
 }
 
 function yearParameter(value:string|null,years:number[]) {
@@ -262,8 +274,9 @@ function qualityScreen(entries:Array<{station:Station,input:AssessmentInput}>, i
       return [{
         stationId:station.id,station:station.name,field:rule.field,name:rule.name,unit:rule.unit,
         value:round(observed),reference:round(reference),z:round(z,2),relativePct:round(relative*100,1),
-        nearestKm:round(near[0].distance,1),level:Math.abs(z)>=4.5 || Math.abs(relative)>=1 ? '高' : '中',
-        note:'疑似异常，待核对原始来源及站点环境'
+        nearestKm:round(near[0].distance,1), elevationDifferenceM:round(Math.abs(near[0].station.elev-station.elev)),
+        referenceInsufficient:near[0].distance>100,level:Math.abs(z)>=4.5 || Math.abs(relative)>=1 ? '高' : '中',
+        note:near[0].distance>100 ? '邻站距离超过 100 km，参考不足，仅提示核查，不能自动纠错。' : '疑似异常，待核对原始来源及站点环境'
       }]
     })
   }).sort((a,b)=>Number(b.level==='高')-Number(a.level==='高') || Math.abs(b.z)-Math.abs(a.z))
@@ -288,7 +301,7 @@ export async function evaluateEcology(
 
   function inputs(station:Station,targetYear:number|null,adjustment:StationOverrides[string]|undefined) {
     const row = targetYear === null ? undefined : climateByYear.get(station.name+'|'+targetYear)
-    if (!numeric(station.slope) || !station.lc) return null
+    if (!numeric(station.slope) || station.slope<0 || station.slope>90 || !numeric(station.relief) || station.relief<0 || !station.lc) return null
     const amendedFields = (['temp','precip'] as const).filter(field=>numeric(adjustment?.[field]))
     const archived = targetYear === null ? meanClimate(climateArchive?.stations?.[station.name]?.years,station) : {
       temp:row?.temp_c,precip:row?.precip_mm,source:row?.source ?? climateDataset
@@ -298,6 +311,7 @@ export async function evaluateEcology(
     if (!numeric(temp) || !numeric(precip) || precip<0) return null
     const cover = Object.fromEntries(coverFields.map(field=>[field,station.lc?.[field] ?? 0])) as Cover
     if (Object.values(cover).some(value=>!numeric(value) || value<0 || value>1)) return null
+    if(Math.abs(Object.values(cover).reduce((sum,value)=>sum+value,0)-1)>.01)return null
     const input:AssessmentInput = {
       temp,precip,
       relief:station.relief ?? 0,
@@ -321,6 +335,7 @@ export async function evaluateEcology(
       id:station.id,name:station.name,lon:station.lon,lat:station.lat,zone:station.zone,type:station.type,
       elev:station.elev,grade:grade(metrics.eei),riskLevel:riskLevel(metrics.risk),ndvi,
       inputs:{...modeled,year,climateSource,coverSource:station.lcSrc ?? '站点土地覆盖档案',amendedFields},
+      baselineInputs:input,
       metrics:roundMetrics(metrics),baselineMetrics:roundMetrics(base),delta:roundMetrics(metricDifferences(metrics,base))
     }
   })
@@ -333,26 +348,36 @@ export async function evaluateEcology(
   const pairs = compareYear === null ? [] : rows.flatMap(row=> {
     const station = selected.find(value=>value.id===row.id)!
     const earlier = inputs(station,compareYear,(compareYear===year ? overrides : comparisonOverrides)[station.id])
-    return earlier ? [{current:row.metrics,earlier:stationEcology(scenarioInputs(earlier.input,selectedScenario.id))}] : []
+    return earlier ? [{id:row.id,current:row.metrics,earlier:roundMetrics(stationEcology(scenarioInputs(earlier.input,selectedScenario.id))),
+      inputs:scenarioInputs(earlier.input,selectedScenario.id)}] : []
   })
   const comparisonMeans = metricMeans(pairs.map(row=>row.earlier))
   const currentMeans = metricMeans(pairs.map(row=>row.current))
   const comparison = compareYear===null ? null : {
-    year:compareYear,count:pairs.length,means:comparisonMeans,
+    year:compareYear,count:pairs.length,means:comparisonMeans,currentMeans,stations:pairs,
     delta:comparisonMeans && currentMeans ? roundMetrics(metricDifferences(currentMeans,comparisonMeans)) : null
   }
-  return {
-    ok:true,method:formulaVersion,scope,year,scenario:selectedScenario,metricDefinitions,stations:rows,
-    summary:{count:rows.length,eligible:selected.length,means:aggregates,grades,riskLevels},comparison,
+  const sampledBasins = basins.filter(basin=>rows.some(row=>covers(basin.geometry,[row.lon,row.lat]))).length
+  const report = {
+    ok:true,method:formulaVersion,modelCard:ecologyModelCard,scope,year,scenario:selectedScenario,
+    metricDefinitions:metricDefinitions.map(item=>({...item,inputRole:['eei','ei','risk','slide','deg','carbon','wri','water'].includes(item.id) ? '年度气候 + 固定背景' : '固定背景'})),stations:rows,
+    summary:{count:rows.length,eligible:selected.length,means:aggregates,grades,riskLevels,
+      spatialSupport:'有效站点等权均值',totalBasins:basins.length,sampledBasins},comparison,
     quality:{
       missingStations,anomalies:qualityScreen(allInputs,ids),
       notes:[
         'EEI、EI、碳密度与风险为经验模型结果。滑坡敏感性用于筛查，风险分值无实时预警能力。',
-        '区域值为纳入站点等权平均。地形和土地覆盖采用档案的固定站点属性。',
+        ecologyModelCard.eeiRange,
+        '区域值为纳入站点等权平均，不代表面积覆盖。地形和土地覆盖采用档案的固定站点属性；NDVI 未进入 EEI。',
         '情景变化为基于同一输入的单项敏感性分析。跨年比较仅使用两期均有数据的相同站点。'
       ]
     }
   }
+  const digest = await globalThis.crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(report)))
+  const sha256 = Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('')
+  return {...report,run:{id:sha256.slice(0,24),sha256,generatedAt:new Date().toISOString(),
+    parameters:{scope:scope.id,bbox:'bbox' in scope ? scope.bbox : null,year,compareYear,scenario:selectedScenario.id},
+    hashScope:'除 run 外的完整响应 JSON（含实际输入、共同样本站点、结果、方法卡及质量说明）'}}
 }
 
 type RseiRow = {
@@ -373,17 +398,19 @@ type RseiSupport = {
 
 const loadRseiSupport = (newDataDir:string) => readJson<RseiSupport>(join(newDataDir,'ecology','rsei-support.json'))
 
-export async function ecologyRseiLayer(newDataDir:string,year:number) {
+export async function ecologyRseiLayer(newDataDir:string,year:number,mask='common') {
+  if(!['common','annual'].includes(mask))throw new EcologyInputError('RSEI 掩膜须为 common 或 annual')
   const support = await loadRseiSupport(newDataDir)
   if (!support.rasterSources.some(row=>row.year===year)) throw new EcologyInputError('请选择 RSEI 档案年份')
   const entries = Object.values(support.regions).flatMap(region=>{
     if (!region.id.startsWith('subbasin:')) return []
-    const record = region.records.find(row=>row.year===year)
+    const annual = region.records.find(row=>row.year===year)
+    const record=mask==='common'?annual?.allYearsCommon:annual
     const coverage = record && region.areaKm2 > 0 ? within(record.coverageKm2/region.areaKm2,0,1) : 0
     return [{id:region.id.slice('subbasin:'.length),value:record?.value ?? null,coverage:round(coverage,6)}]
   })
   return {
-    year, source:support.source, method:support.version, note:support.note,
+    year,mask, source:support.source, method:support.version, note:support.note,
     values:Object.fromEntries(entries.map(row=>[row.id,row.value])),
     coverage:Object.fromEntries(entries.map(row=>[row.id,row.coverage]))
   }

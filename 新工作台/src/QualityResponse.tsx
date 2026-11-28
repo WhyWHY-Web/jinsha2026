@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { ArrowUpRight, MapPin } from 'lucide-react'
 import type { MapLocation } from './data'
+import { PanelHeader } from './PanelHeader'
+import { DataTable } from './DataTable'
 import { sections, sichuanReports, snapshots, type Level } from '../data/water-quality/reports'
 import './quality-response.css'
 
@@ -27,7 +29,7 @@ const milestones = [
 ]
 
 function Panel({title, label, children}: {title:string; label?:string; children:ReactNode}) {
-  return <section className="hud qr-panel"><header className="panel-title"><h2>{title}</h2>{label && <span>{label}</span>}</header>{children}</section>
+  return <section className="hud qr-panel"><PanelHeader title={title} tag={label}/>{children}</section>
 }
 
 function Source({url, children}: {url:string; children:ReactNode}) {
@@ -48,13 +50,11 @@ function QualityTable({index, onChange}: {index:number; onChange:(index:number)=
           {snapshots.map((report,i)=><option key={report.label} value={i}>{report.label}</option>)}
         </select>
       </label>
-      <table className="qr-table">
-        <thead><tr><th scope="col">监测断面</th><th scope="col">{snapshot.year}</th><th scope="col">{other.year}对照</th></tr></thead>
-        <tbody>{sections.map((section,i)=><tr key={section.id}>
-          <th scope="row">{section.name}<small>{section.area} · {section.river}</small></th>
-          <td><Category level={snapshot.values[i]}/></td><td><Category level={other.values[i]}/></td>
-        </tr>)}</tbody>
-      </table>
+      <DataTable className="qr-table" name={'国考断面水质-'+snapshot.year} rows={sections.map((section,i)=>({section,index:i}))} columns={[
+        {key:'section',label:'监测断面',value:row=>row.section.name,render:row=><>{row.section.name}<small>{row.section.area} · {row.section.river}</small></>},
+        {key:'current',label:String(snapshot.year),value:row=>snapshot.values[row.index],render:row=><Category level={snapshot.values[row.index]}/>,numeric:true},
+        {key:'other',label:other.year+' 对照',value:row=>other.values[row.index],render:row=><Category level={other.values[row.index]}/>,numeric:true},
+      ]}/>
       <Source url={snapshot.source}>查阅本期报告</Source>
     </div>
   </Panel>

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Compass, LocateFixed, Maximize, Minus, Plus } from 'lucide-react'
-import { Map as MapLibreMap, Marker, setWorkerUrl, type ExpressionSpecification, type StyleSpecification } from 'maplibre-gl'
+import { Map as MapLibreMap, Marker, setWorkerUrl, type ExpressionSpecification, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl'
+import type { FeatureCollection, Point as GeoPoint } from 'geojson'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import terrainWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import type { MapConfig, MapLocation, RseiLayer, Scene, Station, StationMark } from './data'
+import { compactLabel } from './map-labels'
+import type { CameraView } from './view-query'
 
 setWorkerUrl(terrainWorker)
 
@@ -18,17 +21,22 @@ const riverColors: Partial<Record<Scene, [string, string]>> = {
   dispatch:['#8ffce9','#17ceca'],
   flood:['#afdafd','#5199e8'],
   quality:['#9ee6fc','#30b8ee'],
-  emergency:['#a6ccf2','#4b80cc']
+  emergency:['#a6ccf2','#4b80cc'],
+  warning:['#ffd4a9','#ed8a5c']
 }
 
 const vegetationColors = ['#bc846b','#c8ad67','#90be78','#45ad8e','#43caba']
 
-export function TerrainMap({ config, stations, selected, scene, relief, rivers, border, expanded, onSelect, vegetation, entire, marks, stationIds, location,
-  basinId, onBasin, rsei }: {
+export function TerrainMap({ config, stations, selected, scene, relief, rivers, border, expanded, onSelect, vegetation, entire, marks, metricMarks, stationIds, location,
+  basinId, onBasin, rsei, focusTick, compare, initialView, onViewChange,
+  online,flat,onFlatChange,drawing,bbox,onBounds }: {
   config: MapConfig, stations: Station[], selected: Station | null, scene: Scene, relief: boolean,
   rivers: boolean, border: boolean, expanded: boolean, onSelect: (station: Station) => void, vegetation?: Record<string,number>, entire: boolean,
-  marks?: Record<string,StationMark>, stationIds?: readonly string[], location?: MapLocation | null,
-  basinId?: string, onBasin?: (id:string)=>void, rsei?: RseiLayer
+  marks?: Record<string,StationMark>, metricMarks?: Record<string,StationMark>, stationIds?: readonly string[], location?: MapLocation | null,
+  basinId?: string, onBasin?: (id:string)=>void, rsei?: RseiLayer, focusTick?:number,
+  compare?: {a:Record<string,number>;b:Record<string,number>;blend:number} | null,
+  initialView?:CameraView | null, onViewChange?:(view:CameraView)=>void
+  online:boolean;flat:boolean;onFlatChange:(value:boolean)=>void;drawing:boolean;bbox?:string;onBounds:(value:string)=>void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
@@ -36,16 +44,33 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
   choices.current = onSelect
   const basinChoice = useRef(onBasin)
   basinChoice.current = onBasin
-  const pins = useRef<Array<{ id: string; location: [number,number]; marker: Marker; element: HTMLButtonElement; reading: HTMLElement }>>([])
+  const viewChange = useRef(onViewChange)
+  viewChange.current = onViewChange
+  const initialCamera = useRef(initialView)
+  const skipInitialReframe = useRef(Boolean(initialView))
+  const pins = useRef<Array<{ id: string; location: [number,number]; marker: Marker; element: HTMLButtonElement; reading: HTMLElement; metric:HTMLElement }>>([])
+  const labelUpdate = useRef<()=>void>(()=>{})
+  const priorities = useRef(metricMarks)
+  priorities.current = metricMarks
+  const selectedId = useRef(selected?.id)
+  selectedId.current = selected?.id
+  const pulseTimer = useRef<number | undefined>(undefined)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [heading, setHeading] = useState(camera.bearing)
-  const [flat, setFlat] = useState(false)
+  const flatChange=useRef(onFlatChange);flatChange.current=onFlatChange
+  const drawingNow=useRef(drawing);drawingNow.current=drawing
+  const boundsChoice=useRef(onBounds);boundsChoice.current=onBounds
+  const [zoomLevel,setZoomLevel]=useState(initialView?.zoom ?? camera.zoom)
+  const [onlineFailed,setOnlineFailed]=useState(false)
+  const [layerError,setLayerError]=useState('')
+  const [retry,setRetry]=useState(0)
   const [fullscreen,setFullscreen] = useState(false)
   const [mapHint,setMapHint] = useState("")
   const sceneCamera = scene === 'engineering' || scene === 'dispatch' ? cascadeCamera : scene === 'flood' ? floodCamera : camera
 
   useEffect(() => {
     if (!ref.current) return
+    setStatus('loading');setOnlineFailed(false);setLayerError('')
     const [west,south,east,north] = config.bounds
     const contextImage = config.context && {
       type:'image' as const, url:config.context.url,
@@ -60,9 +85,11 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       version: 8,
       sources: {
         dem: { type:'raster-dem', tiles:[config.terrainUrl], tileSize:256, minzoom:5, maxzoom:config.terrainMaxZoom ?? 9, encoding:'terrarium', bounds:config.bounds },
+        'dem-shade': { type:'raster-dem', tiles:[config.terrainUrl], tileSize:256, minzoom:5, maxzoom:config.terrainMaxZoom ?? 9, encoding:'terrarium', bounds:config.bounds },
         ...(config.regionalTerrain ? { regional: { type:'raster-dem' as const, tiles:[config.regionalTerrain.url], tileSize:256,
           minzoom:5, maxzoom:7, encoding:'terrarium' as const, bounds:config.regionalTerrain.bounds } } : {}),
         satellite: { type:'image', url:config.fallbackImageUrl, coordinates:[[west,north],[east,north],[east,south],[west,south]] },
+        ...(config.onlineImagery ? {'detail-imagery':{type:'raster' as const,tiles:[config.onlineImagery.url],tileSize:256,minzoom:7,maxzoom:config.onlineImagery.maxZoom}} : {}),
         ...(contextImage ? { context:contextImage } : {}),
         rivers: { type:'geojson', data:config.riverUrl },
         basin: { type:'geojson', data:config.basinUrl }
@@ -70,25 +97,26 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       layers: [
         { id:'sky-floor', type:'background', paint:{'background-color':'#09172a'} },
         ...(contextImage ? [{ id:'context-relief', type:'raster' as const, source:'context', paint:{'raster-opacity':.88} }] : []),
-        { id:'relief', type:'hillshade', source:'dem', paint:{
-          'hillshade-shadow-color':'#081426','hillshade-highlight-color':'#6587a5',
-          'hillshade-accent-color':'#193451','hillshade-exaggeration':.52,'hillshade-illumination-direction':321
+        { id:'relief', type:'hillshade', source:'dem-shade', paint:{
+          'hillshade-shadow-color':'#16242b','hillshade-highlight-color':'#c8cfd0',
+          'hillshade-accent-color':'#45545a','hillshade-exaggeration':.22,'hillshade-illumination-direction':321
         }},
         { id:'satellite', type:'raster', source:'satellite', paint:{
-          'raster-opacity':.96,'raster-brightness-min':.045,'raster-brightness-max':.78,
-          'raster-saturation':-.45,'raster-contrast':.21,'raster-fade-duration':170
+          'raster-opacity':1,'raster-brightness-min':0,'raster-brightness-max':1,
+          'raster-saturation':0,'raster-contrast':0,'raster-fade-duration':170
         }},
+        ...(config.onlineImagery ? [{id:'detail-imagery',type:'raster' as const,source:'detail-imagery',layout:{visibility:'none' as const},paint:{'raster-opacity':1,'raster-fade-duration':250}}] : []),
         { id:'basin-tint', type:'fill', source:'basin', paint:{'fill-color':'#1599d9','fill-opacity':.045} },
         { id:'boundaries', type:'line', source:'basin', paint:{'line-color':'#67a6c7','line-width':.8,'line-opacity':.31,'line-dasharray':[3,2]} },
         { id:'basin-selected', type:'line', source:'basin', layout:{visibility:'none'}, paint:{
           'line-color':'#a4efdf','line-width':2.6,'line-opacity':.92,'line-blur':.35
         }},
         { id:'river-background', type:'line', source:'rivers', layout:{'line-cap':'round','line-join':'round'},
-          paint:{'line-color':'#41bfff','line-width':['case',['==',['get','role'],'main'],17,3],'line-blur':7,'line-opacity':.36} },
+          paint:{'line-color':'#41bfff','line-width':['case',['==',['get','role'],'main'],6,1],'line-blur':2,'line-opacity':.12} },
         { id:'river-glow', type:'line', source:'rivers', filter:['==',['get','role'],'main'],
-          layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#1ba5ff','line-width':7.5,'line-blur':3.5,'line-opacity':.82} },
+          layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#1ba5ff','line-width':3,'line-blur':1,'line-opacity':.24} },
         { id:'river-flow', type:'line', source:'rivers', filter:['==',['get','role'],'main'],
-          paint:{'line-color':'#b5f1ff','line-width':3.2,'line-blur':.7,'line-opacity':.9,'line-dasharray':[1,5]} },
+          paint:{'line-color':'#b5f1ff','line-width':1.2,'line-blur':0,'line-opacity':.35,'line-dasharray':[1,5]} },
         { id:'river-core', type:'line', source:'rivers', layout:{'line-cap':'round','line-join':'round'},paint:{
           'line-color':['case',['==',['get','role'],'main'],'#96e5ff','#4aa9cc'],
           'line-opacity':['case',['==',['get','role'],'main'],.95,.68],
@@ -103,7 +131,9 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
     let instance: MapLibreMap
     try {
       instance = new MapLibreMap({
-        container:ref.current, style, ...camera, maxPitch:75, minZoom:4, maxZoom:13,
+        container:ref.current, style, ...camera,
+        ...(initialCamera.current ? {center:[initialCamera.current.lon,initialCamera.current.lat] as [number,number],zoom:initialCamera.current.zoom} : {}),
+        canvasContextAttributes:{preserveDrawingBuffer:true}, maxPitch:75, minZoom:4, maxZoom:16,
         renderWorldCopies:false, attributionControl:false, dragRotate:true, fadeDuration:100
       })
     } catch {
@@ -111,15 +141,28 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       return
     }
     map.current = instance
+    instance.on('error',event=>{
+      const sourceId=(event as typeof event & {sourceId?:string}).sourceId
+      const message=String(event.error?.message ?? '')
+      if(sourceId==='detail-imagery' || message.includes('tiles.maps.eox.at')) {
+        setOnlineFailed(true);setLayerError('在线影像加载失败，已回退区域预览。')
+        if(instance.getLayer('detail-imagery'))instance.setLayoutProperty('detail-imagery','visibility','none')
+      } else if(sourceId==='dem' || sourceId==='regional' || /\/(?:terrain|regional-dem)\//.test(message)) {
+        setLayerError('部分地形缺失，已回退二维地图。');flatChange.current(true);instance.setTerrain(null)
+      } else {setLayerError('部分地图资料未能加载，请检查网络或重试图层。')}
+    })
     let loaded = false
     instance.on('load', () => {
       loaded = true
       setStatus('ready')
+      const center = instance.getCenter()
+      viewChange.current?.({lon:center.lng,lat:center.lat,zoom:instance.getZoom()})
       for (const station of stations) {
         const element = document.createElement('button')
         element.type = 'button'
         element.className = 'map-pin'
         element.dataset.station = station.id
+        element.dataset.stationName = station.name
         element.setAttribute('aria-label', '地图定位 ' + station.name)
         const dot = document.createElement('span')
         dot.className = 'pin-shape'
@@ -131,20 +174,23 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
         const reading = document.createElement('small')
         reading.dataset.fallback = station.elevation == null ? '' : '高程 ' + Math.round(station.elevation) + ' m'
         label.append(reading)
+        const metric = document.createElement('small')
+        metric.className = 'pin-metric'
+        label.append(metric)
         const glyph = document.createElement('i')
         glyph.textContent = station.type.includes('电站') ? '▥' : '≈'
         glyph.setAttribute('aria-hidden','true')
         dot.append(glyph)
         element.append(dot,label)
-        element.onclick = () => choices.current(station)
+        element.onclick = () => {if(!drawingNow.current)choices.current(station)}
         if (station.type.includes('电站')) element.classList.add('pin-dam')
         const marker = new Marker({ element, anchor:'bottom' }).setLngLat([station.lon,station.lat]).addTo(instance)
-        pins.current.push({ id:station.id, location:[station.lon,station.lat], marker, element, reading })
+        pins.current.push({ id:station.id, location:[station.lon,station.lat], marker, element, reading, metric })
       }
     })
     instance.on('click','basin-tint',event=>{
       const id = event.features?.[0]?.properties?.HYBAS_ID
-      if (id !== undefined && id !== null) basinChoice.current?.(String(id))
+      if (!drawingNow.current && id !== undefined && id !== null) basinChoice.current?.(String(id))
     })
     instance.on('mouseenter','basin-tint',()=>{
       if (basinChoice.current) instance.getCanvas().style.cursor = 'pointer'
@@ -152,41 +198,54 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
     instance.on('mouseleave','basin-tint',()=>{ instance.getCanvas().style.cursor = '' })
     const updateLabels = () => {
       const used: Array<{x:number;y:number}> = []
-      for (const pin of pins.current) {
+      const ranked = [...pins.current].filter(pin=>!pin.element.hidden).sort((a,b)=>
+        Number(b.id===selectedId.current)-Number(a.id===selectedId.current) ||
+        (priorities.current?.[b.id]?.priority ?? 0)-(priorities.current?.[a.id]?.priority ?? 0))
+      for (const [index,pin] of ranked.entries()) {
         if (pin.element.hidden) continue
         const point = instance.project(pin.location)
         const overlaps = used.some(position => Math.abs(position.x-point.x)<112 && Math.abs(position.y-point.y)<43)
-        pin.element.classList.toggle('pin-compact',overlaps)
-        if (!overlaps) used.push(point)
+        const lowZoom = instance.getZoom()<6.1
+        const compact = compactLabel(instance.getZoom(),index,overlaps,pin.id===selectedId.current)
+        pin.element.classList.toggle('pin-lowzoom',lowZoom)
+        pin.element.classList.toggle('pin-compact',compact)
+        if (!compact) used.push(point)
       }
     }
+    labelUpdate.current = updateLabels
     instance.on('moveend', updateLabels)
+    instance.on('moveend', () => {
+      const center = instance.getCenter()
+      setZoomLevel(instance.getZoom())
+      viewChange.current?.({lon:center.lng,lat:center.lat,zoom:instance.getZoom()})
+    })
     instance.on('rotate', () => setHeading(instance.getBearing()))
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let pulse = 0
-    const timer = reducedMotion ? undefined : window.setInterval(() => {
-      if (!loaded || !instance.getLayer('river-flow')) return
-      pulse = (pulse+1)%7
-      instance.setPaintProperty('river-flow','line-dasharray',[pulse*.56,5,1,5-pulse*.56])
-    },160)
     const resize = new ResizeObserver(() => instance.resize())
     resize.observe(ref.current)
     return () => {
-      window.clearInterval(timer)
+      window.clearTimeout(pulseTimer.current)
       resize.disconnect()
       for (const pin of pins.current) pin.marker.remove()
       pins.current = []
       instance.remove()
       map.current = null
     }
-  },[config, stations])
+  },[config, stations,retry])
 
   useEffect(() => {
     const instance = map.current
     if (!instance || status !== 'ready') return
-    instance.setTerrain(flat ? null : { source:entire && config.regionalTerrain ? 'regional' : 'dem',
-      exaggeration:entire && config.regionalTerrain ? 1.25 : 1.8 })
-  },[status,flat,entire,config.regionalTerrain])
+    const update=()=>{
+      const center=instance.getCenter(),[west,south,east,north]=config.bounds
+      const fine=center.lng>=west && center.lng<=east && center.lat>=south && center.lat<=north && instance.getZoom()>=6.5
+      const source=(!entire || fine || !config.regionalTerrain)?'dem':'regional'
+      const terrain=instance.getTerrain()
+      if(flat){if(terrain)instance.setTerrain(null)}
+      else if(terrain?.source!==source || terrain.exaggeration!==1)instance.setTerrain({source,exaggeration:1})
+    }
+    update();instance.on('moveend',update)
+    return ()=>{instance.off('moveend',update)}
+  },[status,flat,entire,config])
 
   useEffect(() => {
     const onChange = () => setFullscreen(Boolean(document.fullscreenElement))
@@ -198,7 +257,8 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
     const instance = map.current
     if (!instance || status !== 'ready') return
     instance.setPaintProperty('satellite','raster-opacity', relief ? .96 : 0)
-    instance.setPaintProperty('relief','hillshade-exaggeration',relief ? 0 : .43)
+    instance.setPaintProperty('relief','hillshade-exaggeration',relief ? .1 : .35)
+    if(instance.getLayer('detail-imagery'))instance.setLayoutProperty('detail-imagery','visibility',relief && online && !onlineFailed?'visible':'none')
     for (const layer of ['river-background','river-glow','river-core','river-flow']) {
       instance.setLayoutProperty(layer,'visibility',rivers?'visible':'none')
     }
@@ -216,7 +276,35 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
     instance.setPaintProperty('river-core','line-color',['case',['==',['get','role'],'main'],core,'#4aa9cc'])
     instance.setPaintProperty('river-glow','line-color',glow)
     instance.setPaintProperty('river-flow','line-color',core)
-  },[status, scene, relief, rivers, border, expanded, config.expandedRiverUrl])
+  },[status, scene, relief, rivers, border, expanded, config.expandedRiverUrl,online,onlineFailed])
+
+  useEffect(()=>{
+    const instance=map.current
+    if(!instance || status!=='ready')return
+    if(!instance.getSource('analysis-bounds')) {
+      instance.addSource('analysis-bounds',{type:'geojson',data:{type:'FeatureCollection',features:[]}})
+      instance.addLayer({id:'analysis-bounds-fill',type:'fill',source:'analysis-bounds',paint:{'fill-color':'#87e7bd','fill-opacity':.12}})
+      instance.addLayer({id:'analysis-bounds-line',type:'line',source:'analysis-bounds',paint:{'line-color':'#b2ffda','line-width':2,'line-dasharray':[3,2]}})
+    }
+    const set=(values:number[])=>{
+      const [w,s,e,n]=values
+      ;(instance.getSource('analysis-bounds') as GeoJSONSource).setData({type:'FeatureCollection',features:values.length===4 && values.every(Number.isFinite) && w<e && s<n ? [{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}}]:[]})
+    }
+    set(bbox?.split(',').map(Number) ?? [])
+    if(!drawing)return
+    const drag=instance.dragPan.isEnabled();instance.dragPan.disable();instance.getCanvas().style.cursor='crosshair'
+    let start:[number,number]|null=null
+    const down=(event:{lngLat:{lng:number;lat:number};originalEvent:MouseEvent})=>{if(event.originalEvent.button===0)start=[event.lngLat.lng,event.lngLat.lat]}
+    const bounds=(end:{lng:number;lat:number})=>start?[Math.min(start[0],end.lng),Math.min(start[1],end.lat),Math.max(start[0],end.lng),Math.max(start[1],end.lat)]:[]
+    const move=(event:{lngLat:{lng:number;lat:number}})=>{if(start)set(bounds(event.lngLat))}
+    const up=(event:{lngLat:{lng:number;lat:number}})=>{
+      if(!start)return
+      const values=bounds(event.lngLat);start=null
+      if(values[2]-values[0]>.001 && values[3]-values[1]>.001)boundsChoice.current(values.map(n=>n.toFixed(5)).join(','))
+    }
+    instance.on('mousedown',down);instance.on('mousemove',move);instance.on('mouseup',up)
+    return ()=>{instance.off('mousedown',down);instance.off('mousemove',move);instance.off('mouseup',up);if(drag)instance.dragPan.enable();instance.getCanvas().style.cursor=''}
+  },[status,bbox,drawing])
 
   useEffect(() => {
     const instance = map.current
@@ -237,16 +325,25 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       const active = selected?.id === pin.id
       pin.element.classList.toggle('pin-active', active)
       pin.element.setAttribute('aria-pressed',String(active))
+      if (active && focusTick) {
+        pin.element.classList.remove('pin-pulse')
+        void pin.element.offsetWidth
+        pin.element.classList.add('pin-pulse')
+        window.clearTimeout(pulseTimer.current)
+        pulseTimer.current = window.setTimeout(()=>pin.element.classList.remove('pin-pulse'),1400)
+      }
     }
-    if (selected && !location && map.current) {
-      map.current.easeTo({ center:[selected.lon,selected.lat], zoom:7.85, pitch:flat?0:55, padding:{top:0,bottom:10,left:0,right:0}, duration:1050 })
+    if (selected && (focusTick ?? 0) > 0 && !location && map.current) {
+      map.current.flyTo({ center:[selected.lon,selected.lat], zoom:8.1, pitch:flat?0:55, padding:{top:0,bottom:10,left:0,right:0}, duration:1050 })
     }
-  },[selected,status,location,flat])
+    labelUpdate.current()
+  },[selected,status,location,flat,focusTick])
 
   useEffect(() => {
     if (status !== 'ready') return
     for (const pin of pins.current) {
       const mark = marks?.[pin.id]
+      const metric = metricMarks?.[pin.id]
       const ndvi = vegetation?.[pin.id]
       let color = mark?.color
       if (vegetation) {
@@ -255,14 +352,42 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       }
       if (color) pin.element.style.setProperty('--pin',color)
       else pin.element.style.removeProperty('--pin')
-      pin.reading.textContent = mark?.reading ?? (ndvi === undefined ? pin.reading.dataset.fallback ?? '' : 'NDVI '+ndvi.toFixed(3))
+      pin.element.style.setProperty('--status',metric?.color ?? '#8295a6')
+      pin.reading.textContent = mark?.reading ?? (ndvi === undefined ? metric?.reading ?? '' : 'NDVI '+ndvi.toFixed(3))
       pin.reading.hidden = !pin.reading.textContent
+      pin.metric.textContent = (mark?.reading || ndvi !== undefined) ? metric?.reading ?? '' : ''
+      pin.metric.hidden = !pin.metric.textContent
+      pin.element.setAttribute('aria-label','地图定位 '+pin.element.dataset.stationName+'，'+[pin.reading.textContent,pin.metric.textContent].filter(Boolean).join('，'))
       pin.element.hidden = stationIds !== undefined && !stationIds.includes(pin.id)
     }
-  },[vegetation,marks,stationIds,status])
+    labelUpdate.current()
+  },[vegetation,marks,metricMarks,stationIds,status])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance || status !== 'ready') return
+    const collection = (values:Record<string,number>):FeatureCollection<GeoPoint> => ({type:'FeatureCollection',features:stations.flatMap(station => {
+      const value=values[station.id]
+      return Number.isFinite(value) ? [{type:'Feature' as const,properties:{color:vegetationColors[Math.min(4,Math.floor(Math.max(0,value)*5))]},
+        geometry:{type:'Point' as const,coordinates:[station.lon,station.lat]}}] : []
+    })})
+    for (const [key,values,opacity] of [['a',compare?.a,compare ? 1-compare.blend : 0],['b',compare?.b,compare?.blend ?? 0]] as const) {
+      const source='comparison-'+key
+      if (!instance.getSource(source)) {
+        instance.addSource(source,{type:'geojson',data:{type:'FeatureCollection',features:[]}})
+        instance.addLayer({id:source,type:'circle',source,paint:{'circle-radius':16,'circle-color':['get','color'],
+          'circle-opacity':0,'circle-blur':.3,'circle-stroke-width':1,'circle-stroke-color':'#e4faff',
+          'circle-stroke-opacity':0,'circle-opacity-transition':{duration:300},'circle-stroke-opacity-transition':{duration:300}}})
+      }
+      ;(instance.getSource(source) as GeoJSONSource).setData(collection(values ?? {}))
+      instance.setPaintProperty(source,'circle-opacity',opacity*.72)
+      instance.setPaintProperty(source,'circle-stroke-opacity',opacity*.9)
+    }
+  },[status,stations,compare])
 
   useEffect(() => {
     if (status !== 'ready' || !map.current || selected || location) return
+    if (skipInitialReframe.current) { skipInitialReframe.current = false; return }
     if (entire && config.expandedRiverBounds) {
       const horizontal = Math.min(185,Math.floor((ref.current?.clientWidth ?? 850)/4))
       map.current.fitBounds(config.expandedRiverBounds, { padding:{left:horizontal,right:horizontal,top:35,bottom:35}, bearing:0,
@@ -294,7 +419,7 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
     const change = document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen()
     void change.then(()=>setMapHint("")).catch(()=>setMapHint('当前窗口无法切换全屏'))
   }
-  return <div className="map-surface">
+  return <div className="map-surface" data-map-status={status}>
     <div ref={ref} className="terrain" aria-label="金沙江数字高程三维地图"/>
     {status !== 'ready' && <div className="map-status" role="status">{status === 'loading' ? '正在读取地形与河网' : '三维地图暂不可用'}</div>}
     <div className="map-tools" aria-label="地图控制">
@@ -302,9 +427,14 @@ export function TerrainMap({ config, stations, selected, scene, relief, rivers, 
       <button type="button" onClick={reframe} aria-label="复位地图"><LocateFixed size={17}/></button>
       <button type="button" onClick={() => map.current?.zoomIn()} aria-label="放大地图"><Plus size={17}/></button>
       <button type="button" onClick={() => map.current?.zoomOut()} aria-label="缩小地图"><Minus size={17}/></button>
-      <button type="button" onClick={()=>setFlat(!flat)} aria-label={flat?'切换三维地形':'切换二维地图'}>{flat?'3D':'2D'}</button>
+      <button type="button" onClick={()=>onFlatChange(!flat)} aria-label={flat?'切换三维地形':'切换二维地图'}>{flat?'3D':'2D'}</button>
       <button type="button" onClick={toggleFullscreen} aria-label={fullscreen?'退出全屏':'全屏工作台'}><Maximize size={16}/></button>
       {mapHint && <small role="status" className="map-control-hint">{mapHint}</small>}
+    </div>
+    <div className="map-source-note"><b>{online && !onlineFailed && zoomLevel>=7?'EOX 多级影像 · 2024 年合成':'区域影像预览 · 采集日期未提供'}</b>
+      <span>{online && !onlineFailed && zoomLevel>=7?`源采样 10 m · 请求层级 ≤${Math.min(14,Math.floor(zoomLevel))}；${zoomLevel>14?'已达源层级上限':'非实时实景'}`:'预览约 180–370 m/像素，放大不会增加真实细节'}</span>
+      {online && !onlineFailed && config.onlineImagery && <a href="https://cloudless.eox.at/documentation/license" target="_blank" rel="noreferrer">EOxCloudless by EOX · Contains modified Copernicus Sentinel data 2024 · CC BY-NC-SA 4.0</a>}
+      {layerError && <span role="status">{layerError}<button type="button" onClick={()=>{const center=map.current?.getCenter();if(center && map.current)initialCamera.current={lon:center.lng,lat:center.lat,zoom:map.current.getZoom()};setRetry(v=>v+1)}}>重试图层</button></span>}
     </div>
   </div>
 }

@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { extname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { archiveCatalog, readArchive } from "./archives.ts";
 import { readFloodReplay, readFloodSeries } from "./flood.ts";
 import { getEngineeringCatalog } from "./operations.ts";
@@ -12,6 +12,8 @@ import { createWorkflow, readJsonBody, WorkflowError } from "./workflow.ts";
 import { runEcologyAgent } from "./agent.ts";
 import { readScientificSummary } from "./scientific.ts";
 import { fileURLToPath } from "node:url";
+import { createLiveService } from "./live.ts";
+import { forecastUsable } from "./forecast-model.ts";
 
 const workbenchRoot = fileURLToPath(new URL("../", import.meta.url));
 const sourceRoot = process.env.JINSHA_WORKBENCH_SOURCE || fileURLToPath(new URL("../../系统/", import.meta.url));
@@ -20,7 +22,9 @@ const frontDist = join(workbenchRoot, "dist");
 const newData = join(workbenchRoot, "data");
 const host = "127.0.0.1";
 const port = Number(process.env.JINSHA_WORKBENCH_PORT || 8732);
-const workflow = createWorkflow(sourceData, process.env.JINSHA_WORKBENCH_STATE || join(newData, "ecology-workflow.sqlite"));
+const statePath = process.env.JINSHA_WORKBENCH_STATE || join(newData, "ecology-workflow.sqlite");
+const workflow = createWorkflow(sourceData, statePath);
+const live = createLiveService(newData,sourceData,process.env.JINSHA_WORKBENCH_RUNTIME || join(dirname(statePath),"live-data"));
 const bounds = [97.6, 25.9, 105.4, 32.5];
 const regionalBounds = [88,20,112,39];
 
@@ -226,12 +230,11 @@ async function sendFile(request: IncomingMessage, response: ServerResponse, path
 }
 
 const sourceAssets: Record<string, string> = {
-  "/assets/source/dem.bin": join(sourceData, "dem.bin"),
-  "/assets/source/dem256.bin": join(sourceData, "dem256.bin"),
-  "/assets/source/satellite-3d.jpg": join(sourceRoot, "web", "assets", "img", "satellite-3d.jpg"),
-  "/assets/source/satellite-3d-hd.jpg": join(sourceRoot, "web", "assets", "img", "satellite-3d-hd.jpg"),
+  "/assets/source/satellite-3d.jpg": join(newData, "source-assets", "satellite-3d.jpg"),
+  "/assets/source/satellite-3d-hd.jpg": join(newData, "source-assets", "satellite-3d-hd.jpg"),
   "/assets/source/context-relief.webp": join(newData, "map-context", "relief.webp"),
   "/assets/source/context-imagery.webp": join(newData, "map-context", "imagery.webp"),
+  "/assets/source/blue-marble.webp": join(newData,"public-map","blue-marble.webp"),
 };
 
 function sourceTile(path: string) {
@@ -306,6 +309,10 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
     if (origin && !localOrigins.includes(origin) && !/^http:\/\/(?:127\.0\.0\.1|localhost):517[3-9]$/.test(origin)) {
       throw new WorkflowError("请从本机工作台提交请求", 403);
     }
+    if (path === "/api/live/refresh") {
+      void live.refresh(true).catch(error=>console.error(error.message));
+      reply(request,response,202,{accepted:true,message:"后台检查资料，可在数据与方法查看进度"});return;
+    }
     const revertPath = /^\/api\/ecology\/amendments\/(\d+)\/revert$/.exec(path);
     if (!revertPath && !["/api/ecology/amendments/preview", "/api/ecology/amendments", "/api/ecology/agent"].includes(path)) {
       response.setHeader("Allow", "GET, HEAD");
@@ -326,6 +333,15 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
     }
     return;
   }
+  if (path === "/api/live/status") {reply(request,response,200,await live.status());return;}
+  if (path === "/api/live/forecast") {
+    const batch=url.searchParams.get("batch");
+    if(batch && !/^[a-f0-9]{24}$/.test(batch))throw new WorkflowError("预报批次格式无效");
+    const snapshot=await live.forecast(batch);
+    reply(request,response,200,{snapshot,usable:snapshot ? forecastUsable(snapshot) : false,
+      sourceStatus:(await live.status()).sources.find(source=>source.id==='forecast')});return;
+  }
+  if (path === "/api/live/observations") {reply(request,response,200,{snapshot:await live.observations()});return;}
   if (path === "/api/ecology/options") {
     reply(request, response, 200, await ecologyOptions(sourceData));
     return;
@@ -345,7 +361,7 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
   if (path === "/api/layers/rsei") {
     const year = url.searchParams.get("year") || "";
     if (!/^\d{4}$/.test(year)) throw new WorkflowError("请选择 RSEI 档案年份");
-    reply(request,response,200,await ecologyRseiLayer(newData,Number(year)));
+    reply(request,response,200,await ecologyRseiLayer(newData,Number(year),url.searchParams.get('mask') ?? 'common'));
     return;
   }
   if (path === "/api/scientific") {
@@ -482,7 +498,8 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
       reply(request, response, 400, { error: error instanceof Error ? error.message : "无效的年份范围" });
       return;
     }
-    const baseValues = seriesFor(data, metric, station);
+    const rseiSupport=metric==='rsei' && !station ? (await ecologyRsei(sourceData,newData)).research?.region : null;
+    const baseValues = rseiSupport ? rseiSupport.records.map(row=>({year:row.year,value:row.allYearsCommon.value})) : seriesFor(data, metric, station);
     const amended = station && (metric === "temperature" || metric === "precipitation")
       ? workflow.stationSeries(station.id,metric) : undefined;
     const sourceValues = amended?.size ? new Map(baseValues.map(row=>[row.year,row.value])) : null;
@@ -493,7 +510,8 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
     const { label, unit, source } = metrics[metric];
     reply(request, response, 200, {
       metric, label, unit, source:values.some(row=>amended?.has(row.year)) ? source+" · 工作台修正档案" : source, station: station?.id ?? null,
-      scope: station?.name ?? (metric === "ndvi" ? "有观测站点均值" : metric === "discharge" ? "站点径流档案" : "流域面平均"),
+      scope: station?.name ?? (metric === "ndvi" ? "有观测站点均值" : metric === "discharge" ? "站点径流档案" : metric==='rsei' ? "统一边界八期共同有效覆盖" : "流域面平均"),
+      ...(rseiSupport ? {maskMode:'all-years-common',areaKm2:rseiSupport.areaKm2,coverageKm2:rseiSupport.records[0]?.allYearsCommon.coverageKm2} : {}),
       values,
     });
     return;
@@ -515,16 +533,22 @@ async function api(request: IncomingMessage, response: ServerResponse, url: URL)
     return;
   }
   const contextPaths = ["/assets/source/context-relief.webp", "/assets/source/context-imagery.webp"];
-  const [reliefContext,featheredImagery,hiDetail,regionalDem] = await Promise.all([
+  const [reliefContext,featheredImagery,hiDetail,regionalDem,publicPreview] = await Promise.all([
     ...contextPaths.map(path=>stat(sourceAssets[path]).catch(()=>null)),
     stat(join(sourceData,"tiles_dem","10")).catch(()=>null),
     stat(join(newData,"regional-dem","complete")).catch(()=>null),
+    stat(sourceAssets["/assets/source/blue-marble.webp"]).catch(()=>null),
   ]);
   const baseView = {
     ...map,
+    onlineImagery:{url:"https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg",
+      minZoom:0,maxZoom:14,year:"2024 年合成（非实时）",resolution:"10 m 源采样；瓦片显示不代表定位精度",
+      attribution:"Sentinel-2 cloudless © EOX · contains modified Copernicus Sentinel data 2024",licenseUrl:"https://maps.eox.at/"},
+    imageryManifest:{verified:false,note:"原本地 XYZ 影像未核验覆盖与再分发许可，保持停用。可选 EOX 在线逐级影像；离线使用区域预览。"},
     terrainMaxZoom:hiDetail?.isDirectory() ? 10 : 9,
     ...(reliefContext?.size ? { context:{url:contextPaths[0],bounds:regionalBounds} } : {}),
     ...(featheredImagery?.size ? { fallbackImageUrl:contextPaths[1] } : {}),
+    ...(publicPreview?.size ? {fallbackImageUrl:"/assets/source/blue-marble.webp",imagerySource:"NASA Blue Marble · GIBS"} : {}),
     ...(regionalDem?.isFile() ? { regionalTerrain:{ url:"/assets/source/regional-dem/{z}/{x}/{y}.png", bounds:regionalBounds } } : {}),
   };
   const hasMainstem = archive?.layers["river-mainstem.geojson"] && (await stat(join(newData, "river-mainstem.geojson")).catch(()=>null))?.isFile();

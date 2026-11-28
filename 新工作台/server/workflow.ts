@@ -72,13 +72,14 @@ function requiredText(value: unknown, label: string, max: number) {
   return value.trim();
 }
 
-function amendmentFrom(input: Record<string, unknown>, stations: Station[]): Amendment {
+function amendmentFrom(input: Record<string, unknown>, stations: Station[], climate:ClimateRow[]): Amendment {
   const { stationIds, field, year, value } = input;
   if (!Array.isArray(stationIds) || !stationIds.length || stationIds.length > stations.length
       || stationIds.some(id => typeof id !== "string" || !stations.some(station => station.id === id))) {
     throw new WorkflowError("请在流域台账中选择有效站点");
   }
   if (!checkedYear(year)) throw new WorkflowError("请输入有效的历史年份");
+  if (!climate.some(row=>row.year===year)) throw new WorkflowError("该年份不在可评估的年度气候档案中");
   if (!fieldFor(field)) throw new WorkflowError("可修正字段为年均气温和年降水量");
   const { low, high, name, unit } = fields[field];
   if (typeof value !== "number" || !Number.isFinite(value) || value < low || value > high) {
@@ -181,7 +182,7 @@ export function createWorkflow(root: string, databasePath: string) {
 
   async function preview(input: Record<string, unknown>) {
     const { stations, climate } = await sources();
-    const change = amendmentFrom(input, stations);
+    const change = amendmentFrom(input, stations, climate);
     const applied = overrides(change.year);
     const meta = fields[change.field];
     const previous = change.stationIds.map(id => {
@@ -193,7 +194,8 @@ export function createWorkflow(root: string, databasePath: string) {
   }
 
   async function commit(input: Record<string, unknown>) {
-    const change = amendmentFrom(input, (await sources()).stations);
+    const {stations,climate}=await sources();
+    const change = amendmentFrom(input, stations, climate);
     return transact(revisionFrom(input), connection => {
       connection.prepare(`INSERT INTO amendments (target_ids, field, year, value, source, reason, created_at)
         VALUES (?,?,?,?,?,?,?)`).run(JSON.stringify(change.stationIds), change.field, change.year,

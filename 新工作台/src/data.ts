@@ -1,4 +1,4 @@
-export type Scene = 'ecology' | 'overview' | 'vegetation' | 'water' | 'engineering' | 'dispatch' | 'flood' | 'quality' | 'emergency' | 'data'
+export type Scene = 'ecology' | 'vegetation' | 'water' | 'engineering' | 'dispatch' | 'flood' | 'quality' | 'emergency' | 'warning' | 'data' | 'forecast' | 'methods' | 'results'
 export type Metric = 'ndvi' | 'temperature' | 'precipitation' | 'evapotranspiration' | 'discharge'
 
 export interface MapLocation {
@@ -11,6 +11,7 @@ export interface MapLocation {
 export interface StationMark {
   reading?: string
   color?: string
+  priority?: number
 }
 
 export interface Station {
@@ -64,6 +65,8 @@ export interface MapConfig {
   terrainMaxZoom?: number
   regionalTerrain?: { url:string; bounds:[number,number,number,number] }
   imageryUrl?: string
+  onlineImagery?: { url:string; minZoom:number; maxZoom:number; year:string; resolution:string; attribution:string; licenseUrl:string }
+  imageryManifest?: { verified:boolean; note:string }
   fallbackImageUrl: string
   riverUrl: string
   mainstemProductUrl?: string
@@ -75,6 +78,7 @@ export interface MapConfig {
 
 export interface RseiLayer {
   year: number
+  mask:'common'|'annual'
   values: Record<string,number | null>
   coverage: Record<string,number>
 }

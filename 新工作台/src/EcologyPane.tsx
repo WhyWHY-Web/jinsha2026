@@ -1,6 +1,11 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
 import { Bot, Check, Download, LocateFixed, RotateCcw, Send } from 'lucide-react'
 import type { Station, StationMark } from './data'
+import { PanelHeader } from './PanelHeader'
+import { useEcology } from './ecology-state'
+import { assessmentCsv } from './assessment-export'
+import { assessmentEvidence } from './saved-runs'
+import { DataTable } from './DataTable'
 import type {
   AgentAction, AgentReply, AmendmentDraft, AmendmentField, AmendmentHistory, AmendmentPreview,
   AssessmentReport, EcologyOptions, EcologyStation, MetricValues, RseiArchive, SoilArchive,
@@ -11,7 +16,7 @@ const fieldNames: Record<AmendmentField, string> = { temperature:'年均气温',
 const fieldUnits: Record<AmendmentField, string> = { temperature:'°C', precipitation:'mm' }
 const noStations: Station[] = []
 const promptSuggestions = ['评估当前区域生态状况', '定位石鼓站', '查看可用数据']
-const usualMetrics = ['eei', 'ei', 'risk', 'carbon', 'fvc', 'water', 'soil', 'slide', 'deg', 'lsi']
+const usualMetrics = ['eei', 'risk', 'carbon', 'fvc']
 
 function valueText(value: unknown, digits = 1) {
   return typeof value === 'number' && Number.isFinite(value)
@@ -46,71 +51,25 @@ function useEcologyRequest<T>(url: string | null, version = 0) {
   return { data:current ? result.data : null, error:current ? result.error : '', loading:Boolean(url) && !current }
 }
 
-export function useEcology(active: boolean, selectedStationId?: string | null) {
-  const [scope,setScope] = useState('basin')
-  const [year,setYear] = useState('')
-  const [scenario,setScenario] = useState('baseline')
-  const [compareYear,setCompareYear] = useState('')
-  const [bbox,setBbox] = useState('')
-  const [rseiLayer,setRseiLayer] = useState(false)
-  const [rseiYear,setRseiYear] = useState('')
-  const [revision,setRevision] = useState(0)
-  const options = useEcologyRequest<EcologyOptions>(active ? '/api/ecology/options' : null, revision)
-  const activeScope = selectedStationId ? 'station:'+selectedStationId : scope
-  const query = new URLSearchParams({ scope:activeScope, scenario })
-  if (year) query.set('year',year)
-  if (compareYear) query.set('compareYear',compareYear)
-  if (activeScope === 'bbox' && bbox.trim()) query.set('bbox',bbox.trim())
-  const hasBounds = activeScope !== 'bbox' || /^(\s*-?\d+(\.\d+)?\s*,){3}\s*-?\d+(\.\d+)?\s*$/.test(bbox)
-  const assess = useEcologyRequest<AssessmentReport>(active && hasBounds ? '/api/ecology/assess?'+query : null, revision)
-  return {
-    options:options.data, report:assess.data, loading:options.loading || assess.loading,
-    error:assess.error || options.error, scope, activeScope, year, scenario, compareYear, bbox, rseiLayer, rseiYear,
-    setScope, setYear, setScenario, setCompareYear, setBbox, selectedStationId,
-    setRseiLayer, setRseiYear,
-    refresh:() => setRevision(current => current + 1),
-  }
-}
-
-export function ecologyMarks(report: AssessmentReport | null): Record<string, StationMark> | undefined {
-  if (!report) return
-  return Object.fromEntries(report.stations.map(station => {
-    const color = /high|高/i.test(station.riskLevel) ? '#f3a67d' : /medium|moderate|中/i.test(station.riskLevel) ? '#dfca84' : '#75e2b3'
-    return [station.id, { reading:'EEI '+valueText(station.metrics.eei), color }]
-  }))
-}
-
 type EcologyState = ReturnType<typeof useEcology>
 type PaneProps = {
-  side: 'left' | 'right'
+  side: 'right' | 'setup' | 'results' | 'summary' | 'station-evidence'
   ecology: EcologyState
   stations?: Station[]
   onSelectStation: (id: string | null) => void
   onOpenData?: () => void
+  taskControls?:ReactNode
 }
 
-function EcologyCard({ title, tag, children }: { title:string; tag?:string; children:ReactNode }) {
-  return <section className="hud eco-card">
-    <header className="panel-title"><h2>{title}</h2>{tag && <span>{tag}</span>}</header>
+function EcologyCard({ title, tag, children,className='' }: { title:string; tag?:string; children:ReactNode;className?:string }) {
+  return <section className={'hud eco-card '+className}>
+    <PanelHeader title={title} tag={tag}/>
     <div className="eco-content">{children}</div>
   </section>
 }
 
-function csvField(value: string | number | null | undefined) {
-  const raw = value == null ? '' : String(value)
-  const safe = typeof value === 'string' && /^[=+\-@\t\r]/.test(raw) ? "'"+raw : raw
-  return '"'+safe.replaceAll('"','""')+'"'
-}
-
 function downloadReport(report: AssessmentReport) {
-  const definitions = report.metricDefinitions
-  const header = ['评估区域', '站点ID', '站名', '经度', '纬度', '年份', '情景', '等级', '筛查风险',
-    ...definitions.map(metric => metric.name + (metric.unit ? ' ['+metric.unit+']' : ''))]
-  const content = [header, ...report.stations.map(station => [
-    report.scope.name, station.id, station.name, station.lon, station.lat, report.year, report.scenario.name,
-    station.grade, station.riskLevel, ...definitions.map(metric => station.metrics[metric.id]),
-  ])].map(row => row.map(csvField).join(',')).join('\r\n')
-  downloadFile('金沙江生态评估-'+(report.year ?? '台账')+'.csv', '\uFEFF'+content, 'text/csv;charset=UTF-8')
+  downloadFile('金沙江生态评估-'+(report.year ?? '台账')+'.csv', assessmentCsv(report), 'text/csv;charset=UTF-8')
 }
 
 function downloadFile(name: string, content: string, type: string) {
@@ -122,13 +81,15 @@ function downloadFile(name: string, content: string, type: string) {
   window.setTimeout(() => URL.revokeObjectURL(address), 1000)
 }
 
-function AssessmentFilters({ ecology, stations, onSelectStation }: Omit<PaneProps,'side' | 'onOpenData'>) {
+function AssessmentFilters({ ecology, stations, onSelectStation,taskControls }: Omit<PaneProps,'side' | 'onOpenData'>) {
   const [boundaryInput,setBoundaryInput] = useState(ecology.bbox)
+  useEffect(()=>setBoundaryInput(ecology.bbox),[ecology.bbox])
   function chooseScope(value: string) {
     if (value.startsWith('station:')) onSelectStation(value.slice(8))
     else { ecology.setScope(value); onSelectStation(null) }
   }
-  return <EcologyCard title="生态智能评估" tag={ecology.report?.year ? String(ecology.report.year) : undefined}>
+  return <EcologyCard title="本次分析条件" tag="历史研究资料">
+    {taskControls}
     <div className="eco-form">
       <label>评估区域<select aria-label="评估区域" value={ecology.activeScope} onChange={event=>chooseScope(event.target.value)}>
         {ecology.options ? ecology.options.regions.filter(region=>!region.id.startsWith('station:') && region.id!=='bbox').map(region=>
@@ -143,18 +104,20 @@ function AssessmentFilters({ ecology, stations, onSelectStation }: Omit<PaneProp
           pattern="\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*" required/></label>
         <button type="submit">应用</button>
       </form>}
-      <div className="eco-cols">
         <label>评估年份<select aria-label="评估年份" value={ecology.year} onChange={event=>ecology.setYear(event.target.value)}>
           <option value="">台账基准</option>{ecology.options?.years.slice().reverse().map(year=><option key={year} value={year}>{year}</option>)}
         </select></label>
+      <details className="ecology-advanced" open={ecology.compareYear || ecology.scenario!=='baseline' ? true : undefined}><summary>对照与敏感性条件</summary><div className="eco-form">
         <label>对照年份<select aria-label="对照年份" value={ecology.compareYear} onChange={event=>ecology.setCompareYear(event.target.value)}>
           <option value="">关闭</option>{ecology.options?.years.slice().reverse().map(year=><option key={year} value={year}>{year}</option>)}
         </select></label>
-      </div>
       <label>评估情景<select aria-label="评估情景" value={ecology.scenario} onChange={event=>ecology.setScenario(event.target.value)}>
         {(ecology.options?.scenarios ?? [{ id:'baseline', name:'基准情景' }]).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
       </select></label>
+      </div></details>
       {ecology.report?.scenario.id !== 'baseline' && ecology.report?.scenario.description && <p className="eco-note">{ecology.report.scenario.description}</p>}
+      <button type="button" className="eco-primary" onClick={ecology.refresh} disabled={ecology.loading}>生成 / 刷新评估</button>
+      <p className="eco-note">选择条件后自动重算。年度输入截至档案可用年份；经验情景属于敏感性分析。</p>
       {ecology.error && <div className="eco-error" role="alert">{ecology.error} <button type="button" onClick={ecology.refresh}>重试</button></div>}
       {ecology.loading && <p className="eco-note" role="status">正在计算所选区域…</p>}
     </div>
@@ -180,43 +143,48 @@ function IndexRows({ report, values }: { report:AssessmentReport; values:MetricV
 }
 
 function AssessmentResults({ report, onSelectStation }: { report:AssessmentReport; onSelectStation:PaneProps['onSelectStation'] }) {
+  const means=report.comparison?.currentMeans ?? report.summary.means
   const changes = ['eei','risk','carbon'].flatMap(id => {
     const deltas = report.stations.map(station=>station.delta[id]).filter((value): value is number => typeof value==='number')
     const metric = report.metricDefinitions.find(item=>item.id===id)
     return metric && deltas.length > 0 ? [{ metric, value:deltas.reduce((sum,value)=>sum+value,0)/deltas.length }] : []
   })
   return <>
-    <EcologyCard title={report.scope.name} tag={report.summary.count+' / '+report.summary.eligible+' 站'}>
+    <EcologyCard title={report.scope.name+' · 评估结果'} tag={report.summary.count+' / '+report.summary.eligible+' 站'} className="assessment-summary">
       {report.summary.means ? <>
         <div className="eco-hero">
-          <div><span>生态环境综合指数</span><strong>{valueText(report.summary.means.eei)}</strong></div>
-          <div><span>复合风险筛查</span><strong>{valueText(report.summary.means.risk)}</strong></div>
+          <div><span>生态环境综合指数</span><strong>{valueText(means?.eei)}</strong></div>
+          <div><span>复合风险筛查</span><strong>{valueText(means?.risk)}</strong></div>
+          <div><span>植被碳密度估算 · tC/ha</span><strong>{valueText(means?.carbon)}</strong></div>
+          <div><span>植被覆盖代理 · 比例</span><strong>{valueText(means?.fvc,3)}</strong></div>
         </div>
+        <p className="eco-note">有效 {report.summary.count}/{report.summary.eligible} 站 · 站点等权均值，非流域面积统计。{report.scope.kind==='basin' && `${report.summary.sampledBasins}/${report.summary.totalBasins} 个子流域有纳入站点。`}</p>
+        <p className="eco-note">EEI 为经验分，无固定 100 分上限；项目经验等级未作国家标准认证。</p>
         {report.comparison && <p className="eco-note">与 {report.comparison.year} 年对照，纳入 {report.comparison.count} 站。</p>}
         {report.scenario.id !== 'baseline' && changes.length > 0 && <details className="eco-details" open>
           <summary>与同年基准比较</summary>
           <dl className="eco-metrics">{changes.map(({metric,value})=><div key={metric.id}><dt>{metric.name}</dt>
             <dd>{value > 0 ? '+' : ''}{valueText(value,2)} <small>{metric.unit}</small></dd></div>)}</dl>
         </details>}
-        <IndexRows report={report} values={report.summary.means}/>
+        <details className="eco-details metric-details"><summary>查看指标分量与两期差值</summary><IndexRows report={report} values={means ?? {}}/></details>
         <div className="eco-exports">
           <button className="eco-download" onClick={()=>downloadReport(report)} type="button"><Download size={14}/> 站点 CSV</button>
           <button className="eco-download" onClick={()=>downloadFile('金沙江-评估证据-'+(report.year ?? '台账')+'.json',
-            JSON.stringify(report,null,2),'application/json;charset=UTF-8')} type="button">评估证据 JSON</button>
+            JSON.stringify(assessmentEvidence(report,window.location.href),null,2),'application/json;charset=UTF-8')} type="button">完整证据 JSON</button>
         </div>
-      </> : <p className="eco-note" role="status">该范围暂无满足评估条件的站点。</p>}
+      </> : <p className="eco-note" role="status">该范围暂无满足评估条件的站点，不能据此判为低风险。子流域可在右侧“遥感与土壤资料”检查有效覆盖，或改选有站范围。</p>}
+      <p className="eco-note">运行 {report.run.id} · {report.method}</p>
     </EcologyCard>
-    {report.stations.length > 1 && <EcologyCard title="站点评估" tag={report.stations.length+' 站'}>
-      <ul className="eco-stations">
-        {report.stations.map(station=><li key={station.id}>
-          <button type="button" onClick={()=>onSelectStation(station.id)}>
-            <LocateFixed size={13}/><span>{station.name}</span><small>{station.grade} · {station.riskLevel}</small>
-            <b>{valueText(station.metrics.eei)}</b>
-          </button>
-        </li>)}
-      </ul>
+    {report.stations.length > 1 && <EcologyCard title="站点明细与核查" tag={report.stations.length+' 站'} className="assessment-station-table">
+      <DataTable name="本次评估站点" rows={report.stations} initialSort={{key:'eei',descending:true}} columns={[
+        {key:'name',label:'研究站点',value:row=>row.name,render:row=><button type="button" onClick={()=>onSelectStation(row.id)}><LocateFixed size={13}/>{row.name}</button>},
+        {key:'eei',label:'EEI 经验分',value:row=>row.metrics.eei,numeric:true},
+        {key:'risk',label:'敏感性',value:row=>row.metrics.risk,numeric:true},
+        {key:'grade',label:'经验分组',value:row=>row.grade},
+        {key:'ndvi',label:'年度 NDVI',value:row=>row.ndvi,numeric:true},
+      ]}/>
     </EcologyCard>}
-    <EcologyCard title="方法与质量">
+    <EcologyCard title="方法与质量" className="assessment-method">
       <p className="eco-note">{typeof report.method === 'string' ? report.method : '站点生态评估'}</p>
       <ul className="eco-evidence">{report.quality.notes.map(note=><li key={note}>{note}</li>)}</ul>
       {Boolean(report.quality.missingStations.length) && <p className="eco-note">缺测站点 {report.quality.missingStations.join('、')}</p>}
@@ -225,6 +193,7 @@ function AssessmentResults({ report, onSelectStation }: { report:AssessmentRepor
         <ul className="eco-evidence">{report.quality.anomalies.map(row=><li key={row.stationId+'-'+row.field}>
           <b>{row.station} · {row.name} · {row.level}</b>
           <span>现值 {valueText(row.value,2)} {row.unit}，邻站参考 {valueText(row.reference,2)} {row.unit}</span>
+          <span>最近参考距离 {valueText(row.nearestKm)} km，高差 {valueText(row.elevationDifferenceM,0)} m。</span>
           <span>{row.note}</span>
           <button type="button" onClick={()=>onSelectStation(row.stationId)}>定位站点</button>
         </li>)}</ul>
@@ -254,6 +223,7 @@ function ResearchAgent({ ecology, onAction, canAmend }: { ecology:EcologyState; 
       const reply = await postJson<AgentReply>('/api/ecology/agent', {
         prompt:question, stationId:ecology.selectedStationId ?? undefined,
         scope:ecology.activeScope, year:ecology.year ? Number(ecology.year) : undefined,
+        ledger:!ecology.year,scenario:ecology.scenario,compareYear:ecology.compareYear?Number(ecology.compareYear):undefined,
         bbox:ecology.activeScope === 'bbox' ? ecology.bbox : undefined,
       })
       setInteractions(current=>[...current.slice(-4), { prompt:question, reply }])
@@ -376,8 +346,8 @@ function RegionAmendment({ stations, ecology, preset, afterWrite }: {
         <label>修正指标<select aria-label="修正指标" value={draft.field} disabled={busy} onChange={event=>update({ field:event.target.value as AmendmentField })}>
           {Object.entries(fieldNames).map(([id,name])=><option key={id} value={id}>{name}</option>)}
         </select></label>
-        <label>年份<input type="number" inputMode="numeric" min="1900" max={new Date().getFullYear()} step="1" value={draft.year}
-          disabled={busy} required onChange={event=>update({ year:event.target.value })}/></label>
+        <label>档案年份<select value={draft.year} disabled={busy} required onChange={event=>update({year:event.target.value})}>
+          {ecology.options?.years.slice().reverse().map(year=><option key={year} value={year}>{year}</option>)}</select></label>
       </div>
       <label>修正值（{fieldUnits[draft.field]}）<input type="number" step="any" min={draft.field==='temperature' ? -65 : 0}
         max={draft.field==='temperature' ? 60 : 12000} value={draft.value} disabled={busy}
@@ -408,10 +378,10 @@ function RegionAmendment({ stations, ecology, preset, afterWrite }: {
   </>
 }
 
-function StationEvidence({ station }: { station:EcologyStation }) {
+function StationEvidence({ station,year }: { station:EcologyStation; year?:number | null }) {
   const { inputs } = station
   return <EcologyCard title={station.name+' · 评估依据'} tag={station.grade}>
-    <p className="eco-note">{station.zone} · {station.riskLevel}</p>
+    <p className="eco-note">{year !== undefined && (year === null ? '台账基准 · ' : year+' 年 · ')}{station.zone} · {station.riskLevel}</p>
     <dl className="eco-metrics">
       <div><dt>经度</dt><dd>{valueText(station.lon,4)}°</dd></div>
       <div><dt>纬度</dt><dd>{valueText(station.lat,4)}°</dd></div>
@@ -428,8 +398,10 @@ function StationEvidence({ station }: { station:EcologyStation }) {
 function RseiEvidence({ ecology, basin }: { ecology:EcologyState; basin:string | null }) {
   const endpoint = '/api/ecology/rsei'+(basin ? '?scope='+encodeURIComponent('subbasin:'+basin) : '')
   const { data, error, loading } = useEcologyRequest<RseiArchive>(endpoint)
-  const [common,setCommon] = useState(false)
-  const [compareYear,setCompareYear] = useState('')
+  const common=ecology.rseiMask==='common'
+  const setCommon=(value:boolean)=>ecology.setRseiMask(value?'common':'annual')
+  const compareYear=ecology.compareYear
+  const setCompareYear=ecology.setCompareYear
   const record = data?.records.find(item=>item.year === Number(ecology.rseiYear)) ?? data?.records.at(-1)
   const region = data?.research?.region
   const annual = region?.records.find(item=>item.year===record?.year)
@@ -445,7 +417,7 @@ function RseiEvidence({ ecology, basin }: { ecology:EcologyState; basin:string |
         <label><input type="checkbox" checked={ecology.rseiLayer} onChange={event=>{
           if (event.target.checked && !ecology.rseiYear) ecology.setRseiYear(String(record.year))
           ecology.setRseiLayer(event.target.checked)
-        }}/> 地图显示各期有效覆盖 RSEI</label>
+        }}/> 地图显示{common?'八期共同覆盖':'当期有效覆盖'} RSEI</label>
         <label><input type="checkbox" checked={common} onChange={event=>setCommon(event.target.checked)}/> 统计使用八期共同掩膜</label>
       </div>}
       <div className="eco-rsei-years" aria-label="遥感档案年份">
@@ -463,6 +435,7 @@ function RseiEvidence({ ecology, basin }: { ecology:EcologyState; basin:string |
         <div><dt>{record.year} 年 RSEI</dt><dd>{valueText(region ? summary?.value : record.value,3)}</dd></div>
         <div><dt>传感器 / 影像量</dt><dd>{record.sensor} / {record.scenes}</dd></div>
         <div><dt>{common && region ? '共同有效覆盖' : '当期有效覆盖'}</dt><dd>{valueText(region ? summary?.coverageKm2 : record.coverageKm2,0)} km²</dd></div>
+        {region && <div><dt>所选边界有效面积占比</dt><dd>{valueText((summary?.coverageKm2 ?? 0)/region.areaKm2*100,2)}%</dd></div>}
         {annual && <div><dt>当期口径待核零值</dt><dd>{valueText(annual.ambiguousZeroPixels,0)} 像元</dd></div>}
       </dl>
       {region && <div className="eco-form"><label>两期共同覆盖对照
@@ -483,7 +456,7 @@ function RseiEvidence({ ecology, basin }: { ecology:EcologyState; basin:string |
         <dl className="eco-metrics">{Object.entries(record.loadings).map(([key,value])=><div key={key}><dt>PC1 · {key.toUpperCase()}</dt><dd>{valueText(value,4)}</dd></div>)}</dl>
         <ul className="eco-evidence">{data.notes.map(note=><li key={note}>{note}</li>)}</ul>
         <button type="button" onClick={()=>downloadFile('金沙江-RSEI-'+(basin ?? '全流域')+'.json',
-          JSON.stringify(data,null,2), 'application/json;charset=UTF-8')}>导出 RSEI 数据和来源 JSON</button>
+          JSON.stringify({selection:{scope:ecology.activeScope,year:record.year,compareYear,mask:common?'all-years-common':'per-year'},selectedStatistics:summary,pair:comparison ?? null,archive:data},null,2), 'application/json;charset=UTF-8')}>导出 RSEI 数据和来源 JSON</button>
       </details>
     </>}
   </div>
@@ -512,18 +485,18 @@ function SoilEvidence({ basin }: { basin: string | null }) {
   </div>
 }
 
-function ResearchEvidence({ ecology }: { ecology:EcologyState }) {
-  const [opened,setOpened] = useState(false)
+function ResearchEvidence({ ecology,initialOpen=false }: { ecology:EcologyState;initialOpen?:boolean }) {
+  const [opened,setOpened] = useState(initialOpen)
   const basin = ecology.activeScope.startsWith('subbasin:') ? ecology.activeScope.slice('subbasin:'.length) : null
-  return <EcologyCard title="遥感与土壤资料">
+  return <EcologyCard title="遥感与土壤证据" className="assessment-research">
     <button type="button" className="eco-text-button" aria-expanded={opened} onClick={()=>setOpened(!opened)}>
       {opened ? '收起档案' : '查看遥感与土壤档案'}
     </button>
-    {opened && <><RseiEvidence ecology={ecology} basin={basin}/><SoilEvidence basin={basin}/></>}
+    {opened && <>{(ecology.activeScope==='basin' || basin)?<><RseiEvidence ecology={ecology} basin={basin}/><SoilEvidence basin={basin}/></>:<p className="eco-note">遥感面积统计目前仅支持全流域或指定水文子流域。当前站点/框选不以全流域结果替代，请选择子流域后查看。</p>}</>}
   </EcologyCard>
 }
 
-export function EcologyPane({ side, ecology, stations = noStations, onSelectStation, onOpenData }: PaneProps) {
+export function EcologyPane({ side, ecology, stations = noStations, onSelectStation, onOpenData,taskControls }: PaneProps) {
   const canAmend = document.documentElement.dataset.jinshaMode !== 'public'
   const [editOpen,setEditOpen] = useState(false)
   const [preset,setPreset] = useState<EditorPreset | null>(null)
@@ -543,12 +516,37 @@ export function EcologyPane({ side, ecology, stations = noStations, onSelectStat
       setEditOpen(true)
     }
   }
-  if (side === 'left') return <>
-    <AssessmentFilters ecology={ecology} stations={stations} onSelectStation={onSelectStation}/>
+  if(side==='summary') {
+    const report=ecology.report,means=report?.comparison?.currentMeans ?? report?.summary.means
+    return <div className="workspace-summary">
+      {ecology.loading ? <p role="status">正在计算当前条件…</p> : ecology.error ? <p role="alert">{ecology.error}</p> : report && <>
+        <div className="workspace-metrics">{(['eei','risk','carbon','fvc'] as const).map(id=><div key={id}><span>{report.metricDefinitions.find(item=>item.id===id)?.name ?? id}</span><strong>{valueText(means?.[id],id==='fvc'?3:1)}</strong><small>{report.metricDefinitions.find(item=>item.id===id)?.unit}{report.comparison?.delta?.[id]!=null && ` · 对照差值 ${report.comparison.delta[id]!>0?'+':''}${valueText(report.comparison.delta[id],2)}`}</small></div>)}</div>
+        <p>{report.scope.name} · {report.year ?? '台账基准'} · {report.scenario.name} · 有效 {report.summary.count}/{report.summary.eligible} 站 · 站点等权，非面积统计 · EEI 经验分无固定上限{report.comparison && ` · ${report.comparison.year} 年共同样本 ${report.comparison.count} 站`}</p>
+      </>}
+    </div>
+  }
+  if(side==='station-evidence') {
+    const { selectedStationId,activeScope,report,loading } = ecology
+    const year=ecology.year ? Number(ecology.year) : null
+    const station=report?.run.parameters.scope===activeScope && report.year===year
+      ? report.stations.find(item=>item.id===selectedStationId)
+      : undefined
+    if(station)return <StationEvidence station={station} year={year}/>
+    const message=!selectedStationId ? '请选择一个站点后查看本站依据。'
+      : loading ? '正在读取本站依据…' : '当前站点在所选年份暂无可用依据。'
+    return <p className="eco-note" role="status">{message}</p>
+  }
+  if(side==='setup')return <AssessmentFilters ecology={ecology} stations={stations} onSelectStation={onSelectStation}/>
+  if(side==='results')return <>
+    {ecology.loading && <p className="research-notice" role="status">正在计算当前条件，请稍候…</p>}
+    {ecology.error && <p className="research-error" role="alert">{ecology.error}</p>}
     {ecology.report && <AssessmentResults report={ecology.report} onSelectStation={onSelectStation}/>}
+    <ResearchEvidence ecology={ecology} initialOpen/>
   </>
   const focused = ecology.report?.stations.find(station=>station.id===ecology.selectedStationId)
   return <>
+    <ResearchEvidence ecology={ecology}/>
+    {focused && <StationEvidence station={focused}/>}
     <ResearchAgent ecology={ecology} onAction={applyAction} canAmend={canAmend}/>
     <EcologyCard title="区域数据修正">
       {canAmend ? <>
@@ -556,7 +554,5 @@ export function EcologyPane({ side, ecology, stations = noStations, onSelectStat
         {editOpen && <RegionAmendment key={editVersion} ecology={ecology} stations={stations} preset={preset} afterWrite={ecology.refresh}/>}
       </> : <p className="eco-note">数据修正请使用桌面版。</p>}
     </EcologyCard>
-    {focused && <StationEvidence station={focused}/>}
-    <ResearchEvidence ecology={ecology}/>
   </>
 }

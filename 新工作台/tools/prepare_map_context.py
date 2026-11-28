@@ -10,7 +10,7 @@ from PIL import Image
 
 
 WORKBENCH = Path(__file__).resolve().parents[1]
-IMAGERY = WORKBENCH.parent / "系统" / "web" / "assets" / "img" / "satellite-3d-hd.jpg"
+IMAGERY = WORKBENCH / "data" / "source-assets" / "satellite-3d-hd.jpg"
 OUTPUT = WORKBENCH / "data" / "map-context"
 BOUNDS = 88.0, 20.0, 112.0, 39.0
 ZOOM = 6

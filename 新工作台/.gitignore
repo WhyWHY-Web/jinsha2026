@@ -4,3 +4,5 @@ data/map-context/imagery.webp
 data/ecology-workflow.sqlite*
 data/*.zip
 *.log
+data/live-data/
+releases/

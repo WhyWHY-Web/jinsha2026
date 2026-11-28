@@ -1,6 +1,6 @@
 {
   "name": "jinsha-watershed-workbench",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,12 +8,17 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node tools/check_first_screen.mjs",
     "start": "node --experimental-strip-types server/index.ts",
     "test:workflow": "node tools/verify_workflow.mjs",
+    "test:live": "node tools/verify_live.mjs",
+    "test:research": "node tools/verify_research.mjs",
+    "test": "node tools/verify_live.mjs && node tools/verify_research.mjs && node tools/verify_view_query.mjs && node tools/verify_warning.mjs && node tools/verify_workflow.mjs",
     "export:web": "tsc --noEmit && node scripts/export_web.mjs"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.81.0",
     "maplibre-gl": "^6.19.0",
     "react": "^19.3.1",

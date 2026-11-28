@@ -204,6 +204,7 @@ internal static class WindowsLauncher
             setup.EnvironmentVariables["JINSHA_WORKBENCH_SOURCE"] = source;
             setup.EnvironmentVariables["JINSHA_WORKBENCH_PORT"] = port.ToString(CultureInfo.InvariantCulture);
             setup.EnvironmentVariables["JINSHA_WORKBENCH_STATE"] = Path.Combine(state, "ecology-workflow.sqlite");
+            setup.EnvironmentVariables["JINSHA_WORKBENCH_RUNTIME"] = Path.Combine(state, "live-data");
 
             var service = new LocalService(setup, port, log);
             var timer = Stopwatch.StartNew();

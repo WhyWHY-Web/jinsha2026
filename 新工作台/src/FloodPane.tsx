@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useFloodReplay } from './flood-state'
 import { ArrowUpRight, CalendarRange, Gauge, Pause, Play, Waves } from 'lucide-react'
 import type { FloodArchive, FloodEvent, FloodLevel, FloodStationDay } from '../data/flood/types'
+import { PanelHeader } from './PanelHeader'
 import './flood.css'
 
 export const floodColors: Record<FloodLevel, string> = {
@@ -17,72 +18,6 @@ const levels: Record<FloodLevel, { label: string, range: string }> = {
 const playbackRates = [.5, 1, 2, 4] as const
 type PlaybackRate = typeof playbackRates[number]
 const formatFlow = new Intl.NumberFormat('zh-CN', { maximumFractionDigits:0 }).format
-
-export function useFloodReplay(active: boolean) {
-  const [archive,setArchive] = useState<FloodArchive | null>(null)
-  const [failed,setFailed] = useState(false)
-  const [attempt,setAttempt] = useState(0)
-  const [eventId,setEventId] = useState<string | null>(null)
-  const [selectedIndex,setSelectedIndex] = useState<number | null>(null)
-  const [playing,setPlaying] = useState(false)
-  const [speed,setSpeed] = useState<PlaybackRate>(1)
-
-  useEffect(() => {
-    if (!active || archive) return
-    const controller = new AbortController()
-    fetch('/api/flood/replay',{ signal:controller.signal }).then(response => {
-      if (!response.ok) throw new Error('历史流量档案读取失败')
-      return response.json() as Promise<FloodArchive>
-    }).then(setArchive).catch(error => {
-      if (error.name !== 'AbortError') setFailed(true)
-    })
-    return () => controller.abort()
-  },[active,archive,attempt])
-
-  const event = archive?.events.find(item=>item.id===eventId) ?? archive?.events[0]
-  const peakIndex = Math.max(0, event?.frames.findIndex(item=>item.date===event.peakDate) ?? 0)
-  const index = selectedIndex ?? peakIndex
-  const frame = event?.frames[index]
-  const lastIndex = Math.max(0,(event?.frames.length ?? 1)-1)
-
-  useEffect(() => {
-    if (!active) setPlaying(false)
-  },[active])
-
-  useEffect(() => {
-    if (!active || !playing) return
-    const timer = window.setTimeout(() => {
-      const next = Math.min(lastIndex,index+1)
-      setSelectedIndex(next)
-      if (next === lastIndex) setPlaying(false)
-    },850/speed)
-    return () => window.clearTimeout(timer)
-  },[active,playing,speed,index,lastIndex])
-
-  function selectEvent(id: string) {
-    setEventId(id)
-    setSelectedIndex(null)
-    setPlaying(false)
-  }
-
-  function selectFrame(value: number) {
-    setSelectedIndex(Math.max(0,Math.min(lastIndex,value)))
-    setPlaying(false)
-  }
-
-  function toggle() {
-    if (lastIndex < 1) return
-    if (!playing && (selectedIndex === null || index === lastIndex)) setSelectedIndex(0)
-    setPlaying(!playing)
-  }
-
-  function retry() {
-    setFailed(false)
-    setAttempt(value=>value+1)
-  }
-
-  return { archive, failed, event, frame, index, lastIndex, peakIndex, playing, speed, setSpeed, selectEvent, selectFrame, toggle, retry }
-}
 
 type Replay = ReturnType<typeof useFloodReplay>
 type PanelProps = { replay: Replay, selectedId?: string | null, onSelectStation:(id:string)=>void }
@@ -129,7 +64,7 @@ export function FloodLeft({ replay,selectedId,onSelectStation }: PanelProps) {
   const current = frame?.stations.find(item=>item.id===station?.id)
   return <>
     <section className="hud flood-panel">
-      <header className="panel-title"><h2>逐日流量过程线</h2><span>历史模拟</span></header>
+      <PanelHeader title="逐日流量过程线" tag="历史模拟" state={replay.failed ? 'error' : !archive ? 'loading' : undefined}/>
       {archive && station && event ? <>
         <div className="flood-chart-toolbar">
           <select aria-label="回放站点" value={station.id} onChange={change=>onSelectStation(change.target.value)}>
@@ -148,7 +83,7 @@ export function FloodLeft({ replay,selectedId,onSelectStation }: PanelProps) {
       </> : '正在读取历史流量档案…'}</div>}
     </section>
     {archive && <section className="hud flood-panel">
-      <header className="panel-title"><h2>代表性洪峰</h2><span>向家坝 · {archive.events.length} 期</span></header>
+      <PanelHeader title="代表性洪峰" tag={'向家坝 · '+archive.events.length+' 期'}/>
       <div className="flood-events">
         {archive.events.map(item=><button type="button" key={item.id}
           aria-pressed={event?.id===item.id} onClick={()=>replay.selectEvent(item.id)}>
@@ -180,7 +115,7 @@ export function FloodRight({ replay,selectedId,onSelectStation }: PanelProps) {
   if (!archive || !event || !frame) return null
   return <>
     <section className="hud flood-panel">
-      <header className="panel-title"><h2>向家坝洪峰</h2><span>事件摘要</span></header>
+      <PanelHeader title="向家坝洪峰" tag="事件摘要"/>
       <div className="flood-metrics">
         <div><Waves size={14}/><span><small>峰值流量</small><strong>{formatFlow(event.peak)} <small>m³/s</small></strong></span></div>
         <div><CalendarRange size={14}/><span><small>峰值日期</small><strong>{event.peakDate}</strong></span></div>
@@ -188,12 +123,12 @@ export function FloodRight({ replay,selectedId,onSelectStation }: PanelProps) {
       </div>
     </section>
     <section className="hud flood-panel">
-      <header className="panel-title"><h2>站点模型流量</h2><span>{frame.date}</span></header>
+      <PanelHeader title="站点模型流量" tag={frame.date}/>
       <div className="flood-stations">{frame.stations.map(station=><StationRow key={station.id} station={station}
         selected={station.id===(selectedId ?? archive.referenceId)} onSelect={()=>onSelectStation(station.id)}/>)}</div>
     </section>
     <section className="hud flood-panel">
-      <header className="panel-title"><h2>回放数据口径</h2><span>GloFAS v4</span></header>
+      <PanelHeader title="回放数据口径" tag="GloFAS v4"/>
       <div className="flood-method">
         <div className="flood-levels">{(Object.entries(levels) as [FloodLevel,(typeof levels)[FloodLevel]][]).map(([level,meta])=>
           <div key={level}><LevelDot level={level}/><span>{meta.label}</span><small>{meta.range}</small></div>)}</div>

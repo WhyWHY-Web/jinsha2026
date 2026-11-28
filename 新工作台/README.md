@@ -1,14 +1,10 @@
-# 金沙江智能生态评估工作台
+# 金沙江生态研究工作台 0.3.1
 
-本目录包含独立前端和后端。新工作台从既有资料读取站点、流域边界和可用影像，并通过独立目录加载新获取的公开资料。
+同一套产品支持网页使用和 Windows 便携软件启动。工作台围绕“选范围 → 核对资料 → 读取结果 → 保存证据”组织，不需要先理解大量专题图标。
 
-- [在线浏览](https://whywhy-web.github.io/jinsha2026/)使用公开的研究数据。支持地图、评估、档案查询和导出。
-- [Windows 软件](https://github.com/WhyWHY-Web/jinsha2026/releases)解压后即可启动。包内含运行时和离线资料，工作台在默认浏览器打开。
-- 桌面版可按区域选站，并对年度气候数据做预览、修正、确认与撤销。工作台生效值和原始档案都可追溯。
+## 开始使用
 
-## 启动
-
-需要 Node.js 24。安装依赖并构建之后，工作台和地图可以在本地运行。服务地址为 `http://127.0.0.1:8732/`。开发服务只监听本机。
+网页服务需要 Node.js 24。在本目录执行：
 
 ```powershell
 npm.cmd ci
@@ -16,41 +12,109 @@ npm.cmd run build
 npm.cmd start
 ```
 
-默认从同级的旧项目目录读取本地资料。需要指定源目录时，可设置 `JINSHA_WORKBENCH_SOURCE`。衍生地形瓦片由 `tools/prepare_terrain.py` 从实有的 4096² 高程栅格重投影生成，输出到 `data/terrain`。
+浏览器打开 `http://127.0.0.1:8732/`。开发时可运行 `npm.cmd run dev`，默认代理本机 8732 服务。服务只监听本机；不应直接放开原有写入接口用于公网访问。
 
-工作台使用 Node 的 SQLite 将修正写入本机状态文件。可用 `JINSHA_WORKBENCH_STATE` 指定该文件路径。智能体默认查询本机 Ollama 的 `qwen2.5:3b`。可用 `JINSHA_AGENT_MODEL` 指定已安装的本机模型或设为 `off`。无可用模型时，离线指令仍可查询评估结果和定位站点。
+Windows 便携包解压后双击 `金沙江生态评估工作台.exe`。不需要另装 Node 或 Python；启动器在默认浏览器打开同一界面，并在通知区域提供退出入口。默认端口被占时自动尝试 8733–8761。
 
-## 前端和后端如何选
+## 功能与操作
 
-| 路线 | 前端与地图 | 数据与 API | 适用条件 |
-|---|---|---|---|
-| 浏览器数字孪生 | React + TypeScript + CesiumJS | Go 或 ASP.NET Core + PostGIS。科学处理用 Python | 研究区需要进一步上载坝体、点云、无人机实景和分级高精地形 |
-| 多图层地理分析 | React + MapLibre GL JS，可增加 deck.gl | Node.js/Go + PostGIS。单机查询可组合 DuckDB Spatial 与 GeoParquet | 重点是空间筛选、历史对照、大量资料图层和本机浏览 |
-| 专用展厅 | Unreal Engine + Cesium for Unreal | 共用空间数据服务 | 固定显示设备，重点是低空漫游、模型和大屏演示，可承担较重的客户端交付 |
+| 主入口 | 用途 |
+| --- | --- |
+| 生态评估 | 紧凑条件栏设置范围和年份，左侧切换任务；中央同时查看评估摘要、地图与年度证据，右侧查看站点、完整结果、智能体和修正工具 |
+| 地图探索 | 浏览站点、2D/3D 地形、河网与年度序列，带相同对象返回评估 |
+| 数据与方法 | 检查真实资料时间、采集状态、NOAA 逐站记录、模型卡及历史解释资料 |
+| 成果中心 | 查看保存的输入与结果快照，导入并校验证据，导出 JSON、CSV 与 PDF |
 
-当前原型采用第二条路线的地图和轻量 Node.js 数据 API。底部导航联动地图、双侧面板与时间轴。流域态势中的植被演变可按年重放站点 NDVI，工程与调度呈现有出处的工程档案，洪水专题以历史模拟日流量重放洪峰。
+默认收起底部年度趋势和右侧站点列表，突出地图与评估摘要；点击“展开趋势图”“站点列表”可恢复，右侧面板也可随时收起。选中站点后点击“查看本站依据”，会在当前结果面板原地展开该站所选年份的输入与来源；更换站点或年份会收起旧依据。
 
-生态评估涵盖综合生态质量、森林退化、滑坡敏感性、水源涵养、土壤保持与模型碳密度。情景页支持模型敏感性对照。年度比较基于两期均有输入的相同站点。风险等级用于研究筛查。
+“年度状态、变化分析、未来七天、敏感性”均位于生态评估板块内部。高级条件保留框选坐标、对照年份和全部情景。站点列表、地图、年度曲线与评估共用选中对象；曲线支持点击或方向键、Home、End 选年，并同步评估年份与分享链接。年度曲线是独立指标证据，不是 EEI 时序；子流域没有对应曲线时不以全流域替代。年度状态使用所选历史年度或台账基准，不能当作实时实测。变化比较采用两期均有效的共同站点。敏感性使用同一经验模型改变输入，不能当作未来预言。
 
-推荐将栅格及大文件以 COG 保存，并用 STAC 记录来源、日期和范围。PostGIS 用于站点、河段与流域边界的空间联查。Martin 可针对常用图层发布矢量瓦片。
+第一次进入可选择石鼓站示例，也可跳过并从右上角重新打开帮助。全局快捷键 1–4 切换四个主入口，输入框内不会触发。
 
-[Cesium 地形](https://cesium.com/learn/cesiumjs-learn/cesiumjs-terrain/) · [Cesium 离线指南](https://github.com/CesiumGS/cesium/blob/main/Documentation/OfflineGuide/README.md) · [MapLibre 地形](https://maplibre.org/maplibre-gl-js/docs/examples/3d-terrain/) · [deck.gl](https://deck.gl/docs/developer-guide/base-maps/using-with-maplibre) · [Cesium for Unreal](https://cesium.com/learn/unreal/unreal-faq/)
+研究资料中保留工程档案、公开调度事实、水质报告、历史洪水与白格案例。模拟总览、独立查表情景、虚拟预案、示例视频、虚拟无人机及假动态告警已删除。
 
-[PostGIS 空间索引](https://postgis.net/documentation/faq/spatial-indexes/) · [OGC COG](https://docs.ogc.org/is/21-026/21-026.html) · [OGC STAC](https://www.ogc.org/standards/stac/) · [Martin](https://maplibre.org/martin/architecture/) · [.NET 单文件发布](https://learn.microsoft.com/dotnet/core/deploying/single-file/overview)
+## 科学口径
 
-## 原型中的数据
+- EEI 保留 `jinsha-legacy-ecology-v1` 公式。水源涵养项未封顶，因此无固定 100 分上限；不截断结果。A/B/C/D 是项目经验分组，不宣称符合 HJ 192 的行政区 EQI 标准。
+- 区域 EEI 是有效站点等权均值，明确显示有效站数与有站子流域数，不是面积加权的全流域状态。地形和土地覆盖为固定背景，年度气温和降水为变化输入。NDVI 单列为年度证据，未进入 EEI。
+- RSEI 图表、地图和时序默认使用八期共同有效掩膜，可切换当期覆盖。两期对照使用共同像元，界面显示有效面积与覆盖率，无数据不当作稳定或低风险。站点或框选不以全域遥感统计替代。
+- 研究关注等级使用历史样本相对分位；缺测和不足以判断独立列示。邻站异常提示同时列出距离和高差，不能自动纠错。
+- 六种生态情景是基准、植被恢复、森林退化、降水减少、降水增加和气温上升。尚未完成独立地面校准的模型不提供发生概率、准确率或置信百分比。
 
-- 高分辨率三维窗口为经度 97.6–105.4°E、纬度 25.9–32.5°N。外圈以 Mapzen Terrarium 瓦片派生的区域晕渲连续显示。高程资料由美国地质调查局和 NOAA 提供。区域晕渲与原卫星影像边缘羽化由 `tools/prepare_map_context.py` 生成。全流域模式可查看边界和主要河段。 [Mapzen 开放数据目录](https://registry.opendata.aws/terrain-tiles/) · [高程资料署名](https://github.com/tilezen/joerd/blob/master/docs/attribution.md)
-- HydroRIVERS 加入了 27,524 条公开河段，包含 4,248 条供界面使用的主要河段。径流长期估计来自模型数据。 [数据来源与许可](data/河网来源.md)
-- NOAA GHCN-Daily 表包含流域内 11 站、694,730 条气温、降水和雪深日记录。日期 1980-01-01 至 2026-11-21，按站实有覆盖。 [目录](data/ghcn/manifest.json) · [NOAA 产品](https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily)
-- ESA WorldCover 2021 表包含 447,637 个 0.01° 网格类别样本。样本由官方遥感产品概览层获得，精细变化研究需另按原始分辨率处理。 [目录](data/landcover/manifest.json) · [ESA 产品](https://esa-worldcover.org/en/data-access)
-- CHIRPS v2.0 表包含 713 个流域内点的 391,437 条月降水记录，覆盖 1981-01 至 2026-09。以 0.25° 点距对官方 0.05° 产品进行抽样。 [目录](data/precipitation/manifest.json) · [UCSB CHIRPS](https://www.chc.ucsb.edu/data/chirps)
-- GloFAS v4 日流量增加 42,368 条模型再分析记录。石鼓、攀枝花、屏山、向家坝四个代表格点覆盖 1997–2025 年。洪水专题以向家坝格点的年度最大日流量选取 8 个历史过程，用各格点自身日流量的第 95 百分位进行比较。 [Open-Meteo Flood API](https://open-meteo.com/en/docs/flood-api)
-- 工程专题收录乌东德、白鹤滩、溪洛渡、向家坝四座电站的设计参数和 2023 年发电量。调度页包含 2018–2026 年的 12 份公开管理文件、生态试验和阶段总结。 [工程与调度档案](data/engineering/catalog.json)
-- 水质专题录入 8 个选录断面、10 个报告期的 80 条地表水类别记录，按同口径报告期对照。应急专题定位 2018 年白格堰塞湖并展示官方通报的 4 个历史节点。 [水质来源](data/water-quality/reports.ts) · [应急管理部通报](https://www.mem.gov.cn/xw/bndt/201811/t20181112_229767.shtml)
-- ISRIC SoilGrids v2.0 增加 484,614 条三层土壤栅格记录。土壤剖面按子流域和深度显示样点覆盖，以及 pH、有机碳含量、黏粒含量和细土容重分布。 [数据说明](data/scientific/README.md)
-- RSEI 研究档案按 27 个子流域重新裁剪和汇总，支持全流域、8 期、任意两期共同有效覆盖、地图着色及带来源哈希的统计导出。原 GeoTIFF 的零值编码有歧义，界面注明掩膜规则。 [统计与来源](data/ecology/rsei-support.json)
-- 区域三维模式以 115 张 Mapzen Terrarium 瓦片覆盖全流域。内区读取原档案及衍生高程。在线版影像由 NASA Blue Marble 提供。 [瓦片来源](https://registry.opendata.aws/terrain-tiles/) · [NASA Blue Marble](https://visibleearth.nasa.gov/collection/1484/blue-marble)
-- 用户现有站点、气候、NDVI 与径流资料仍以档案显示。数据资源页可浏览新表，并可按年份、站号或类别筛选和分页。数据表字段、质量检查、授权信息与复现脚本一并存放在本目录内。
+具体公式、输入角色和限制可在数据与方法或 `server/ecology.ts` 的模型卡查看。
 
-后端接口详见 [服务说明](server/README.md)。
+## 持续资料与未来七天
+
+常驻 Node 服务每六小时检查 Open-Meteo 七天逐小时格点气象，每日重扫 NOAA 的 11 个 GHCN 站文件以回补修订。各站各变量分别显示最新观测，抓取时间不会替代观测时间。实际传感器、水位、水质实时站网尚未接入。
+
+预报保存固定批次、实际格点、有效期、完整输入与 SHA-256。源接口未提供独立起报时刻，界面如实标注；没有把处理耗时或抓取时间冒充起报时间。超过 12 小时未更新或有效期结束后停止展示未来驱动。P−ET₀ 仅为降水与参考蒸散的气象差值，不是土壤水分收支或生态灾害概率。
+
+采集有超时、重试、单位/范围/时间连续性质检、失败隔离和原子快照发布。失败保留最后有效资料并显示失败；重启恢复快照。浏览器关闭后采集仍随本机服务运行，退出软件或关闭电脑后停止。全天采集需要常驻节点。未完成七天连续运行与独立生态模型回测。
+
+- [Open-Meteo 变量说明](https://open-meteo.com/en/docs)；[使用条件](https://open-meteo.com/en/pricing)
+- [NOAA GHCN 格式与质量标记](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt)
+
+现有 CHIRPS v2 仍是历史档案，本版未拼接 v3。WorldCover 2021、SoilGrids 与地形是背景或校验资料，不因新增记录条数自动改变综合分。
+
+## 地图
+
+默认地形夸张 1×，地形和晕渲使用独立源。区域背景使用 NASA Blue Marble；放大可加载 EOX 2024 Sentinel-2 cloudless 多级在线影像（源采样约 10 m，最高源层级 14）。合成影像不是实时实景，采样间距不是定位精度。原本地 XYZ 影像覆盖与许可未核验，保持停用。
+
+在线影像失败回退区域预览；地形失败回退二维并给出提示和重试。全流域进入内区时按视域选择较细地形。4K 模式使用实际视口重绘，不再把固定 1920×1080 Canvas 二次放大。
+
+EOX 在线影像适用于本项目非商业研究，署名和 [CC BY-NC-SA 4.0 使用条件](https://cloudless.eox.at/documentation/license) 在地图显示；没有把在线瓦片下载并打包。其他资料包括 Mapzen Terrarium / SRTM 与 HydroRIVERS v1，来源与授权随数据目录列示。
+
+## 保存、分享与导出
+
+评估响应包含实际输入、同年基准、两期共同样本、结果、方法卡、完整条件及内容哈希。页面、CSV、JSON、PDF 均读取同一次响应。分享链接保留范围、bbox、年份/台账、对照年、情景、RSEI 掩膜、地图状态及预报批次；链接中的运行哈希和当前数据不一致时会提示，不冒用原运行号。
+
+成果保存在当前浏览器，最多 30 份；请下载完整证据 JSON 备份。导入时验证 SHA-256。旧快照不会被重算覆盖。跨设备复核应同时传递 JSON，链接本身不携带完整历史输入。
+
+地图未就绪时 PNG 会提示等待，评估 PDF 可改为捕获当前摘要并注明地图不可用。PDF 包含视图、指标表、来源说明和可检索的英文复核附页；精确输入及机器复核以匹配的 JSON/CSV 为准。
+
+## 两种分发方式
+
+| 能力 | 本机网页 / Windows 软件 | 静态网页包 |
+| --- | --- | --- |
+| 同一套评估、地图与成果界面 | 支持 | 支持 |
+| 自动采集公开气象 | 服务运行时支持 | 发布时快照，需重新导出更新 |
+| 本地气候修正与撤销 | 支持 SQLite 留痕 | 只读 |
+| Ollama 智能体 | 本机有模型时可用 | 确定工具查询 |
+| 离线使用 | 随包基准与最后有效快照；在线影像需联网 | 随包基准与快照；在线影像需联网 |
+
+导出前先启动最新后端，输出目录必须为空：
+
+```powershell
+npm.cmd run export:web -- --output ../dist/Jinsha-Workbench-Web-0.3.1 --origin http://127.0.0.1:8732
+```
+
+不传 `--output` 时在 `releases/` 创建带时间戳的独立目录。静态目录应放到 HTTP(S) 服务器，不能直接双击 `index.html` 代替服务。此命令只导出同一产品，不另建展示网站或自动改变既有线上发布。
+
+Windows 打包使用本机 Python 标准库和 Windows .NET Framework 编译器，包含资源预检、中文空格路径解压测试、端口占用回退及离线数据查询：
+
+```powershell
+python tools/package_windows.py --preflight
+python tools/package_windows.py --output ../dist/Jinsha-Workbench-Windows-x64-0.3.1.zip
+```
+
+ZIP 内 `BUILD.json` 记录版本、Git 提交、未提交修改标记、构建时间及文件 SHA-256。ZIP 同级生成校验文件。原数据根保持原位；不提交运行 SQLite、采集快照、二进制资料或切片。
+
+## 环境变量与检查
+
+| 变量 | 默认 / 用途 |
+| --- | --- |
+| `JINSHA_WORKBENCH_SOURCE` | `../系统/`，原始数据根，不要随意移动 |
+| `JINSHA_WORKBENCH_PORT` | `8732` |
+| `JINSHA_WORKBENCH_STATE` | `data/ecology-workflow.sqlite`；便携版在当前用户 LocalAppData |
+| `JINSHA_WORKBENCH_RUNTIME` | 状态库同目录的 `live-data/`，与原资料分开 |
+| `JINSHA_LIVE_UPDATES` | 设为 `off` 停止自动外源采集 |
+| `JINSHA_AGENT_MODEL` | `qwen2.5:3b`，可设为 `off` |
+
+```powershell
+npm.cmd test
+npm.cmd run build
+```
+
+检查覆盖资料质检、缺测与零值、过期、失败保留、并发刷新去重、进程重启、六情景、共同样本、成果哈希、URL 往返、RSEI 掩膜，以及修正冲突/撤销/原文件完整性。首屏入口静态 JS/CSS gzip 预算 200 KiB，不包括按需地图及数据文件。
+
+后端路由与安全边界见 [服务说明](server/README.md)。数据详情继续保存在各资料目录的 manifest、来源说明与复现脚本中。

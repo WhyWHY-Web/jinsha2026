@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict'
+import { readViewQuery, writeViewQuery } from '../src/view-query.ts'
+
+const original = readViewQuery('?scene=water&station=S%201&year=2024&metric=discharge&relief=0&rivers=1&border=1&expanded=0&entire=1&indicator=eei&rsei=1&rseiYear=2020&lon=101.12345&lat=27.54321&zoom=8.25')
+assert.equal(original.scene,'water')
+assert.equal(original.station,'S 1')
+assert.equal(original.year,2024)
+assert.deepEqual(original.camera,{lon:101.12345,lat:27.54321,zoom:8.25})
+const url = writeViewQuery(original,new URL('https://example.org/workbench?extra=keep#/water'))
+assert.equal(url.searchParams.get('extra'),'keep')
+assert.equal(url.hash,'#/water')
+assert.deepEqual(readViewQuery(url.search),original)
+assert.equal(readViewQuery('?scene=bad&year=NaN&zoom=99&lon=0&lat=0').camera,null)
+assert.equal(readViewQuery('?scene=bad&year=NaN').scene,'ecology')
+for(const scene of ['overview','scenario','plan'])assert.equal(readViewQuery('?scene='+scene).scene,'ecology')
+const conditions=readViewQuery('?scene=ecology&scope=bbox&bbox=98,26,103,31&year=2025&compareYear=2020&scenario=restoration&analysis=sensitivity&view=map&mask=annual&batch='+ 'a'.repeat(24)+'&run='+ 'b'.repeat(64))
+assert.deepEqual(readViewQuery(writeViewQuery(conditions,new URL('https://example.org/')).search),conditions)
+assert.equal(conditions.bbox,'98,26,103,31')
+assert.equal(conditions.compareYear,'2020')
+assert.equal(conditions.scenario,'restoration')
+console.log('view query roundtrip passed')

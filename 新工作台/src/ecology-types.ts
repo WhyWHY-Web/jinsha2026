@@ -56,6 +56,7 @@ export interface AssessmentScenario {
   id: string
   name: string
   description: string
+  inputRole?:string
 }
 
 export interface EcologyMetric {
@@ -63,6 +64,7 @@ export interface EcologyMetric {
   name: string
   unit: string
   description: string
+  inputRole?:string
 }
 
 export type MetricValues = Record<string, number | null>
@@ -106,6 +108,9 @@ export interface AssessmentReport {
   year: number | null
   scenario: AssessmentScenario
   summary: {
+    spatialSupport:string
+    totalBasins:number
+    sampledBasins:number
     count: number
     eligible: number
     means: MetricValues | null
@@ -128,6 +133,8 @@ export interface AssessmentReport {
       z: number
       relativePct: number
       nearestKm: number
+      elevationDifferenceM:number
+      referenceInsufficient:boolean
       level: string
       note: string
     }[]
@@ -137,7 +144,10 @@ export interface AssessmentReport {
     count: number
     means: MetricValues | null
     delta: MetricValues | null
+    currentMeans:MetricValues | null
   } | null
+  run:{id:string;sha256:string;generatedAt:string;parameters:{scope:string;bbox:number[]|null;year:number|null;compareYear:number|null;scenario:string};hashScope:string}
+  modelCard:{version:string;purpose:string;eeiRange:string;formula:string;gradeBasis:string;spatialSupport:string;inputs:{annual:string;fixed:string;validation:string};domain:string;validation:string;standard:string}
 }
 
 export interface RseiArchive {

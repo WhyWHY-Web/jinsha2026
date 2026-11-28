@@ -20,6 +20,20 @@
 数据和第三方许可见软件来源面板、来源说明和 licenses 文件夹。
 
 地图资料署名
-• 内区卫星底图沿用原项目保存的 Esri World Imagery 档案，区域过渡影像由该档案羽化处理。https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer
+• 离线区域影像使用 NASA Blue Marble。联网时可选 EOX 2024 Sentinel-2 cloudless 多级影像，按非商业研究条件使用，署名与许可在图中展示。https://cloudless.eox.at/documentation/license
 • 区域高程与晕渲使用 Mapzen Terrarium Terrain Tiles。https://github.com/tilezen/joerd/blob/master/docs/attribution.md
 • 河网使用 HydroRIVERS v1.0，HydroSHEDS © World Wildlife Fund, Inc. (2006–2022)。https://www.hydrosheds.org/products/hydrorivers
+
+持续资料与研究限制
+• 同一套工作台既可直接由网页访问，也可由本启动软件打开。
+• 服务运行期间每六小时检查七天气象预报，每日检查 NOAA 观测。关闭网页后继续，退出通知区程序后停止。
+• 首次离线可用随包快照；快照原有时间不因启动而变新。预报过期后停止展示未来压力。
+• 运行资料保存在 %LOCALAPPDATA%\JinshaWorkbench\live-data，不覆盖原始档案。
+• 生态风险模型尚未校准。EEI 是无固定 100 分上限的经验分，站点均值不能解释为流域面积统计。
+• 模拟总览、虚拟预案、示例视频和假动态告警已删除。
+• BUILD.json 记录构建版本、时间与文件哈希；成果 JSON 可下载备份和重新导入。
+
+界面使用
+• 默认显示大地图与评估摘要；“展开趋势图”“站点列表”可打开辅助面板。
+• “结果与证据”“智能体与修正”仍可打开；右侧的关闭按钮可再次释放地图宽度。
+• 选中站点后，“查看本站依据”在结果面板原地展开当年依据，换站点或年份后重新打开。

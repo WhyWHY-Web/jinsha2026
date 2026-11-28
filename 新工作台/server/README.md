@@ -9,6 +9,10 @@
 | 路径 | 返回内容 |
 | --- | --- |
 | /api/health | 本地服务与站点台账可用状态 |
+| /api/live/status | 各源观测/抓取/有效期、更新状态、覆盖和最近采集记录 |
+| /api/live/forecast?batch=批次ID | 七天逐小时气象快照；指定批次不静默替换；过期标记 |
+| /api/live/observations | NOAA 各站各变量最近有效观测与近期记录 |
+| POST /api/live/refresh | 本机触发检查，202 返回后后台采集；一分钟冷却与并发去重 |
 | /api/dashboard | 站点、流域面平均气候年值、站点 NDVI 均值、地图和目录 |
 | /api/stations?q=关键词 | 可按站点名称、代号和分区检索 |
 | /api/series?metric=ndvi&station=wudongde | 带单位和来源的时间序列，可用 from / to 筛选年份 |
@@ -19,7 +23,7 @@
 | /api/ecology/options | 区域、年份、指标和情景选择 |
 | /api/ecology/assess | 按区域评估，并可指定年份、对照年份和情景 |
 | /api/ecology/rsei | 遥感档案、共同覆盖统计与可复核参数 |
-| /api/layers/rsei?year=2025 | 子流域绘图值和覆盖率 |
+| /api/layers/rsei?year=2025&mask=common | 子流域绘图值和覆盖率；common 八期共同覆盖，annual 当期覆盖 |
 | /api/scientific | 按全流域或子流域查询土壤剖面统计 |
 | POST /api/ecology/agent | 自然语言查询、定位、评估和修正草稿 |
 | GET 或 POST /api/ecology/amendments | 查看历史或提交通过预览的修正 |
@@ -33,4 +37,8 @@
 
 可查询指标包括 ndvi、temperature、precipitation、evapotranspiration、discharge 和 rsei。NDVI 的流域视图展示有值站点的算术均值。气候的流域视图使用档案中的「流域面平均」序列。径流档案是 GloFAS 模型模拟，部分站点没有该指标。EEI 与分级来自原始档案中的历史评估快照。
 
-使用 WGS 84 坐标和 Terrarium XYZ 高程瓦片。原有第 10 级高程和第 9–17 级影像按需读取。第 5–9 级高程由原始高程格网重采样，存放在新工作台数据目录。区域晕渲及羽化影像仅在本地两份资源均可用时启用。
+使用 WGS 84 坐标和 Terrarium XYZ 高程瓦片。原有第 10 级高程与第 5–9 级衍生地形按需读取；原本地影像入口保留数据兼容，未核验覆盖及分发许可，前端停用。默认预览为 NASA Blue Marble，在线影像为 EOX 2024 合成。
+
+资料更新状态独立于健康检查。健康接口返回 200 不代表外源新鲜或科学模型已验证。运行快照写入独立 live-data 根并原子发布；采集失败保留旧快照。静态导出返回发布时快照，只有重新导出才更新资料。
+
+评估返回的 run.sha256 校验除 run 外的完整 JSON，包括输入、共同样本、模型卡、结果和质量说明。EEI 经验模型未归一化到固定 100 分上限。动态资料与本地修订均不覆盖原始档案。

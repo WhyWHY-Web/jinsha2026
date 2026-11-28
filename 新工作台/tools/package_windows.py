@@ -1,6 +1,7 @@
 """Build and test the self-contained Windows x64 web workbench ZIP."""
 
 import argparse
+from datetime import datetime, timezone
 from hashlib import file_digest
 import json
 import os
@@ -27,23 +28,21 @@ REQUIRED_SOURCE_FILES = [
     "data/hydro.json",
     "data/hydro_annual.json",
     "data/hydro_monthly.json",
-    "data/dem.bin",
-    "data/dem256.bin",
     "data/basin/jinsha_basin.geojson",
     "data/gee/annual.json",
     "data/rsei/rsei_all.json",
-    "web/assets/img/satellite-3d.jpg",
-    "web/assets/img/satellite-3d-hd.jpg",
 ]
 WORKBENCH_DATA = {
     "ecology": ("rsei-support.json",),
     "engineering": ("catalog.json", "types.ts"),
     "flood": ("glofas-daily.json.gz", "types.ts"),
     "water-quality": ("reports.ts",),
-    "map-context": ("relief.webp", "imagery.webp"),
+    "map-context": ("relief.webp",),
+    "public-map": ("blue-marble.webp",),
 }
 ARCHIVE_DIRS = ("ghcn", "precipitation", "landcover", "scientific")
 RIVER_FILES = ("river-mainstem.geojson", "rivers-major.geojson", "rivers.geojson", "rivers.source.json", "河网来源.md")
+asset_hashes = {}
 
 
 def execute(command, cwd=None, capture=False, env=None, timeout=None):
@@ -89,7 +88,36 @@ def validated_asset(path, base):
 
 
 def add(archive, path, destination, base):
-    archive.write(validated_asset(path, base), f"{PACKAGE}/{destination}")
+    selected = validated_asset(path, base)
+    archive.write(selected, f"{PACKAGE}/{destination}")
+    asset_hashes[destination] = {"bytes": selected.stat().st_size, "sha256": file_hash(selected)}
+
+
+def preflight(source, node):
+    for relative in REQUIRED_SOURCE_FILES:
+        validated_asset(source / relative, source)
+    for folder, names in WORKBENCH_DATA.items():
+        for name in names:
+            validated_asset(WORKBENCH / "data" / folder / name, WORKBENCH / "data")
+    for name in RIVER_FILES:
+        validated_asset(WORKBENCH / "data" / name, WORKBENCH / "data")
+    for folder in ARCHIVE_DIRS:
+        manifest_path = WORKBENCH / "data" / folder / "manifest.json"
+        manifest = read_json(manifest_path)
+        filename = manifest["file"]
+        if Path(filename).name != filename or not filename.endswith(".csv.gz"):
+            raise ValueError(f"Invalid archive filename at {manifest_path}")
+        validated_asset(manifest_path, WORKBENCH / "data")
+        validated_asset(manifest_path.parent / filename, WORKBENCH / "data")
+    validated_asset(WORKBENCH / "data/scientific/profiles.json", WORKBENCH / "data")
+    for folder, zooms in (("terrain", range(5, 10)), ("regional-dem", range(5, 8))):
+        for zoom in zooms:
+            if not next((WORKBENCH / "data" / folder / str(zoom)).glob("*/*.png"), None):
+                raise ValueError(f"Missing offline terrain tiles at {folder}/{zoom}")
+    if not next((source / "data/tiles_dem/10").glob("*/*.png"), None):
+        raise ValueError("Missing original zoom-10 terrain")
+    validated_asset(node.parent / "LICENSE", node.parent)
+    print("Portable resource preflight passed; no deleted legacy web images are required.")
 
 
 def add_build(archive):
@@ -99,7 +127,10 @@ def add_build(archive):
             add(archive, path, "app/dist/" + path.relative_to(build).as_posix(), build)
     for path in sorted((WORKBENCH / "server").glob("*.ts")):
         add(archive, path, "app/server/" + path.name, WORKBENCH / "server")
-    archive.writestr(f"{PACKAGE}/app/package.json", '{"type":"module","private":true}\n')
+    metadata = '{"type":"module","private":true}\n'
+    archive.writestr(f"{PACKAGE}/app/package.json", metadata)
+    from hashlib import sha256
+    asset_hashes["app/package.json"] = {"bytes": len(metadata.encode()), "sha256": sha256(metadata.encode()).hexdigest()}
 
 
 def add_data(archive):
@@ -157,6 +188,7 @@ def add_licenses(archive, node):
 
 
 def write_package(zip_path, launcher, node, source):
+    asset_hashes.clear()
     with ZipFile(zip_path, "w", compression=ZIP_DEFLATED, compresslevel=3) as archive:
         add(archive, launcher, PACKAGE + ".exe", launcher.parent)
         add(archive, WORKBENCH / "tools/portable-readme.txt", "使用说明.txt", WORKBENCH)
@@ -166,6 +198,17 @@ def write_package(zip_path, launcher, node, source):
         add_sources(archive, source)
         add_licenses(archive, node)
         add(archive, WORKBENCH / "README.md", "来源与项目说明.md", WORKBENCH)
+        for name in ("status.json", "forecast-latest.json", "observations-latest.json"):
+            path = WORKBENCH / "data/live-data" / name
+            if path.is_file():
+                add(archive, path, "app/data/live-seed/" + name, WORKBENCH / "data/live-data")
+        revision = execute(["git", "rev-parse", "HEAD"], cwd=REPOSITORY, capture=True).stdout.decode().strip()
+        dirty = bool(execute(["git", "status", "--porcelain", "--", "新工作台"], cwd=REPOSITORY, capture=True).stdout.strip())
+        manifest = {"product": PACKAGE, "version": read_json(WORKBENCH / "package.json")["version"],
+                    "gitCommit": revision, "uncommittedChanges": dirty, "builtAt": datetime.now(timezone.utc).isoformat(),
+                    "forecast": "Open-Meteo meteorological drivers; ecology stress model uncalibrated",
+                    "assets": asset_hashes}
+        archive.writestr(f"{PACKAGE}/BUILD.json", json.dumps(manifest, ensure_ascii=False, indent=2))
 
 
 def local_url(base, route):
@@ -185,7 +228,7 @@ def exercise_portable_data(root, state):
         env.pop(inherited, None)
     env.update(
         JINSHA_WORKBENCH_SOURCE=str(root / "sources"), JINSHA_WORKBENCH_PORT=str(port),
-        JINSHA_WORKBENCH_STATE=str(state / "service-test.sqlite"), JINSHA_AGENT_MODEL="off",
+        JINSHA_WORKBENCH_STATE=str(state / "service-test.sqlite"), JINSHA_AGENT_MODEL="off", JINSHA_LIVE_UPDATES="off",
     )
     with subprocess.Popen(
         [str(root / "runtime/node.exe"), "--disable-warning=ExperimentalWarning", "server/index.ts"],
@@ -230,7 +273,7 @@ def exercise_portable_data(root, state):
             route = "/assets/source/" + local_png.relative_to(root / "app/data").as_posix()
             if not local_url(base, route).startswith(b"\x89PNG"):
                 raise RuntimeError("Missing offline terrain response")
-            if not local_url(base, "/assets/source/context-imagery.webp").startswith(b"RIFF"):
+            if not local_url(base, "/assets/source/blue-marble.webp").startswith(b"RIFF"):
                 raise RuntimeError("Missing offline satellite response")
         finally:
             if service.poll() is None:
@@ -245,7 +288,7 @@ def smoke(zip_path, scratch):
         archive.extractall(extract)
     root = extract / PACKAGE
     state.mkdir(parents=True)
-    env = dict(os.environ, JINSHA_LAUNCHER_TEST_STATE=str(state))
+    env = dict(os.environ, JINSHA_LAUNCHER_TEST_STATE=str(state), JINSHA_LIVE_UPDATES="off")
     with socket.socket() as busy:
         try:
             busy.bind(("127.0.0.1", 8732))
@@ -280,6 +323,7 @@ def main():
     parser.add_argument("--source", type=Path, default=REPOSITORY / "系统", help="Path to the selected original archive")
     parser.add_argument("--output", type=Path, default=REPOSITORY / "dist/Jinsha-Workbench-Windows-x64.zip")
     parser.add_argument("--skip-build", action="store_true", help="Use the current, already built workbench/dist")
+    parser.add_argument("--preflight", action="store_true", help="Validate required files without building or packaging")
     args = parser.parse_args()
     if os.name != "nt":
         parser.error("Use Windows to compile and test this x64 package")
@@ -289,6 +333,9 @@ def main():
     if platform != "win32" or arch != "x64" or int(release.split(".")[0]) != 24:
         parser.error("Select a Windows x64 Node.js 24 runtime")
     execute([node, "-e", "require('node:sqlite').DatabaseSync"], capture=True)
+    preflight(args.source.resolve(), node)
+    if args.preflight:
+        return
     if not args.skip_build:
         npm = require_binary(shutil.which("npm.cmd"))
         execute([npm, "run", "build"], cwd=WORKBENCH)

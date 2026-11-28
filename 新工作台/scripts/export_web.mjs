@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { stripTypeScriptTypes } from 'node:module'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -7,8 +8,7 @@ import { parseArgs } from 'node:util'
 
 const workbench = fileURLToPath(new URL('../',import.meta.url))
 const { values } = parseArgs({options:{output:{type:'string'},origin:{type:'string'},source:{type:'string'}}})
-if (!values.output) throw new Error('Usage: node scripts/export_web.mjs --output <empty folder> [--origin http://127.0.0.1:8732] [--source <legacy 系统 folder>]')
-const output = resolve(values.output)
+const output = resolve(values.output || join(workbench,'releases','web-'+new Date().toISOString().replace(/[:.]/g,'-')))
 const origin = new URL(values.origin || 'http://127.0.0.1:8732')
 if (origin.protocol!=='http:' || !['127.0.0.1','localhost'].includes(origin.hostname) || origin.username || origin.password) {
   throw new Error('The export source must be the local workbench API')
@@ -61,13 +61,21 @@ async function copyTerrarium(input, outputLayer, predicate) {
 }
 
 async function bundleSeries(stations) {
+  const rawAnnual=await readJson(join(source,'climate_annual.json'))
   const metrics = ['ndvi','temperature','precipitation','evapotranspiration','discharge','rsei']
   const series = {}
   const jobs = ['' , ...stations.map(row=>row.id)].flatMap(station=>metrics.map(metric=>[station,metric]))
   for (let i=0;i<jobs.length;i+=12) {
     await Promise.all(jobs.slice(i,i+12).map(async ([station,metric])=>{
       const query=new URLSearchParams({metric,...(station?{station}:{})})
-      series[station.toLowerCase()+'|'+metric] = await endpoint('series?'+query)
+      const result=await endpoint('series?'+query)
+      if(station && ['temperature','precipitation'].includes(metric)) {
+        const name=stations.find(row=>row.id===station)?.name
+        const field=metric==='temperature'?'temp_c':'precip_mm'
+        result.values=rawAnnual.filter(row=>row.station===name).map(row=>({year:row.year,value:row[field]})).sort((a,b)=>a.year-b.year)
+        result.source='NASA POWER MERRA-2 · 公开基准档案'
+      }
+      series[station.toLowerCase()+'|'+metric] = result
     }))
   }
   await saveJson('api/series.json',series)
@@ -130,6 +138,9 @@ await Promise.all([
   saveJson('api/dashboard.json',dashboard),saveJson('api/catalog.json',{datasets:visibleCatalog}),saveJson('api/scientific.json',science),
   bundleSeries(dashboard.stations),
   ...['engineering','water-quality','flood/replay'].map(async route=>saveJson('api/'+route+'.json',await endpoint(route))),
+  ...['live/forecast','live/observations'].map(async route=>saveJson('api/'+route+'.json',await endpoint(route))),
+  (async()=>{const status=await endpoint('live/status');await saveJson('api/live/status.json',{...status,mode:'snapshot',collecting:false,
+    sources:status.sources.map(source=>({...source,nextCheckAt:null,state:source.state==='fresh'?'offline':source.state}))})})(),
   ...['basin','river-network',...(publicMap.expandedRiverUrl?['expanded-rivers']:[])].map(async name=>{
     const route='layers/'+name+(name==='expanded-rivers'?'?detail=major':'')
     await saveJson('map/'+name+'.geojson',await endpoint(route))
@@ -158,12 +169,19 @@ await Promise.all([
 for (const name of ['public-api.js','snapshot-io.js']) await copyFile(join(workbench,'public-export',name),'runtime',name)
 const browserIo = [['node:fs/promises','./snapshot-io.js'],['node:path','./snapshot-io.js']]
 await browserModule('ecology',browserIo)
+await browserModule('forecast-model',[])
 await browserModule('scientific',browserIo)
 await browserModule('agent',[
   ['./ecology.ts','./ecology.js'],['./scientific.ts','./scientific.js'],['./workflow.ts','./snapshot-io.js'],
   [/process\.env\.JINSHA_AGENT_MODEL\s*\?\?\s*"[^"]+"/g,'"off"'],
 ])
 await save(join(output,'.nojekyll'),'')
+const sourceFiles=['package.json','package-lock.json','server/ecology.ts','server/agent.ts','server/forecast-model.ts',
+  ...(await readdir(join(workbench,'src'),{withFileTypes:true})).filter(entry=>entry.isFile()).map(entry=>'src/'+entry.name)]
+const sourceHashes=Object.fromEntries(await Promise.all(sourceFiles.map(async file=>[file,createHash('sha256').update(await readFile(join(workbench,file))).digest('hex')])))
+const commit=spawnSync('git',['rev-parse','HEAD'],{cwd:workbench,encoding:'utf8'})
+await save(join(output,'RELEASE.json'),JSON.stringify({product:'金沙江生态研究工作台',version:(await readJson(join(workbench,'package.json'))).version,
+  mode:'read-only-snapshot',builtAt:new Date().toISOString(),gitCommit:commit.status===0?commit.stdout.trim():null,sourceHashes},null,2))
 await save(join(output,'SOURCES.txt'),['Satellite base: NASA EOSDIS GIBS, BlueMarble_ShadedRelief_Bathymetry (Visible Earth).',
   'Coverage: 97.6 E to 105.4 E; 25.9 N to 32.5 N. WMS Web Mercator subset; feathered edges.',
   'Relief: USGS SRTM / Mapzen Terrain Tiles, plus the project published Terrarium DEM.',

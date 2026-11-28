@@ -21,7 +21,7 @@ const child = spawn(process.execPath, ['server/index.ts'], {
   cwd: root,
   windowsHide: true,
   env: { ...process.env, JINSHA_WORKBENCH_PORT: String(port),
-    JINSHA_WORKBENCH_STATE: join(scratch, 'state.sqlite'), JINSHA_AGENT_MODEL: 'off' },
+    JINSHA_WORKBENCH_STATE: join(scratch, 'state.sqlite'), JINSHA_AGENT_MODEL: 'off', JINSHA_LIVE_UPDATES:'off' },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 let output = ''
@@ -77,8 +77,11 @@ try {
   assert.equal(agent.data.mode, 'local')
   const boxed = await request('/api/ecology/agent', { prompt:'评估当前范围', scope:'bbox', bbox:'98,26,104,30', year:2025 })
   assert.equal(boxed.data.action.scope, 'bbox')
-  const downstream = await request('/api/ecology/agent', { prompt:'评估下游生态状况', stationId:'shigu', year:2025 })
-  assert.equal(downstream.data.action.scope, 'seg_low')
+  const eastern = await request('/api/ecology/agent', { prompt:'评估项目东部生态状况', stationId:'shigu', year:2025 })
+  assert.equal(eastern.data.action.scope, 'seg_low')
+  const downstream = await request('/api/ecology/agent', {prompt:'评估下游生态状况',stationId:'shigu',year:2025})
+  assert.equal(downstream.data.action,undefined)
+  assert.match(downstream.data.answer,/不等同/)
   const soil = await request('/api/ecology/agent', { prompt: '查看表层土壤有机碳含量' })
   assert.match(soil.data.answer, /g\/kg/)
   console.log('Verified conflicting edits, recalculation, chart overlay, undo, source integrity and local agent tools.')
